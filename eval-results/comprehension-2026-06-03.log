@@ -1,0 +1,23 @@
+=== RUN   TestGCFComprehension
+    comprehension_test.go:179: Backend: cli (claude -p)
+    comprehension_test.go:180: GCF tokens (est): 189
+    comprehension_test.go:181: JSON tokens (est): 901
+    comprehension_test.go:182: 
+    comprehension_test.go:222:   PASS top_symbol      gcf   [match] expected="github.com/org/repo/internal/auth.AuthMiddleware" got="github.com/org/repo/internal/auth.AuthMiddleware"
+    comprehension_test.go:222:   PASS top_symbol      json  [match] expected="github.com/org/repo/internal/auth.AuthMiddleware" got="github.com/org/repo/internal/auth.AuthMiddleware"
+    comprehension_test.go:222:   PASS symbol_count    gcf   [match] expected="8" got="8"
+    comprehension_test.go:222:   PASS symbol_count    json  [match] expected="8" got="8"
+    comprehension_test.go:222:   PASS edge_count      gcf   [match] expected="4" got="4"
+    comprehension_test.go:222:   PASS edge_count      json  [match] expected="4" got="4"
+    comprehension_test.go:222:   PASS top_kind        gcf   [match] expected="function" got="function"
+    comprehension_test.go:222:   PASS top_kind        json  [match] expected="function" got="function"
+    comprehension_test.go:222:   PASS edge_types      gcf   [exact] expected="calls, implements, references" got="calls, implements, references"
+    comprehension_test.go:222:   PASS edge_types      json  [exact] expected="calls, implements, references" got="calls, implements, references"
+    comprehension_test.go:227: 
+    comprehension_test.go:228: === Summary ===
+    comprehension_test.go:229: Format Accuracy Est Tokens
+    comprehension_test.go:236: gcf      100.0%        189
+    comprehension_test.go:236: json     100.0%        901
+--- PASS: TestGCFComprehension (48.62s)
+PASS
+ok  	github.com/blackwell-systems/gcf-go	48.922s
