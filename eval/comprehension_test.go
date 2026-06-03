@@ -1,20 +1,18 @@
-// LLM format comprehension benchmark for GCF.
+// LLM comprehension benchmark: GCF vs TOON vs JSON at 500 symbols.
 //
-// Generates a realistic 60-symbol, 40-edge payload and sends it in both GCF
-// and JSON to an LLM. Verifies the LLM can answer structured extraction
-// questions correctly. At this scale, JSON's verbosity causes counting errors
-// while GCF's compact format remains accurate.
-//
-// Two backends:
-//
-//	EVAL_BACKEND=cli  (default) - shells out to `claude -p "..."`.
-//	EVAL_BACKEND=api            - calls Anthropic Messages API.
-//	                              Requires ANTHROPIC_API_KEY.
+// Generates a realistic 500-symbol, 200-edge payload, encodes it in all three
+// formats using the official libraries, sends each to an LLM, and measures
+// accuracy on 6 structured extraction questions.
 //
 // Run:
 //
-//	GOWORK=off go test -run TestGCFComprehension -v -timeout 10m
-package gcf
+//	GOWORK=off go test -run TestComprehension -v -timeout 15m
+//
+// Backends:
+//
+//	EVAL_BACKEND=cli  (default) - uses `claude -p`
+//	EVAL_BACKEND=api            - uses Anthropic API (requires ANTHROPIC_API_KEY)
+package eval
 
 import (
 	"bytes"
@@ -26,11 +24,13 @@ import (
 	"os/exec"
 	"strings"
 	"testing"
+
+	gcf "github.com/blackwell-systems/gcf-go"
+	toon "github.com/toon-format/toon-go"
 )
 
-// buildLargeFixture generates a realistic payload with the given number of
-// symbols and edges, spanning multiple packages and distance groups.
-func buildLargeFixture(numSymbols, numEdges int) *Payload {
+// buildFixture generates a realistic payload with the given symbol/edge count.
+func buildFixture(numSymbols, numEdges int) *gcf.Payload {
 	packages := []string{
 		"internal/auth", "internal/server", "internal/store",
 		"internal/cache", "internal/config", "internal/middleware",
@@ -57,13 +57,12 @@ func buildLargeFixture(numSymbols, numEdges int) *Payload {
 		"Factory", "Builder", "Provider", "Resolver", "Adapter",
 	}
 
-	p := &Payload{
+	p := &gcf.Payload{
 		Tool:        "context_for_task",
 		TokenBudget: 50000,
 		PackRoot:    "e7a3f1b2c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1",
 	}
 
-	// Generate symbols across packages and distance groups.
 	for i := 0; i < numSymbols; i++ {
 		pkg := packages[i%len(packages)]
 		kind := kinds[i%len(kinds)]
@@ -83,13 +82,12 @@ func buildLargeFixture(numSymbols, numEdges int) *Payload {
 		}
 
 		qn := fmt.Sprintf("github.com/org/project/%s.%s%s", pkg, name, suffix)
-		// Alternate method names for methods.
 		if kind == "method" {
 			typeName := suffixes[i%len(suffixes)]
 			qn = fmt.Sprintf("github.com/org/project/%s.%s.%s", pkg, typeName, name)
 		}
 
-		p.Symbols = append(p.Symbols, Symbol{
+		p.Symbols = append(p.Symbols, gcf.Symbol{
 			QualifiedName: qn,
 			Kind:          kind,
 			Score:         score,
@@ -98,15 +96,14 @@ func buildLargeFixture(numSymbols, numEdges int) *Payload {
 		})
 	}
 
-	p.TokensUsed = len(p.Symbols) * 35 // rough estimate
+	p.TokensUsed = len(p.Symbols) * 35
 
-	// Generate edges between symbols.
 	edgeTypes := []string{"calls", "imports", "implements", "references"}
 	for i := 0; i < numEdges && i+1 < len(p.Symbols); i++ {
 		src := p.Symbols[(i*3+1)%len(p.Symbols)]
 		tgt := p.Symbols[(i*3)%len(p.Symbols)]
 		et := edgeTypes[i%len(edgeTypes)]
-		p.Edges = append(p.Edges, Edge{
+		p.Edges = append(p.Edges, gcf.Edge{
 			Source:   src.QualifiedName,
 			Target:   tgt.QualifiedName,
 			EdgeType: et,
@@ -116,10 +113,52 @@ func buildLargeFixture(numSymbols, numEdges int) *Payload {
 	return p
 }
 
+// encodeTOON encodes a Payload using the official toon-go library.
+func encodeTOON(p *gcf.Payload) (string, error) {
+	type toonSymbol struct {
+		Name       string  `toon:"name"`
+		Kind       string  `toon:"kind"`
+		Score      float64 `toon:"score"`
+		Provenance string  `toon:"provenance"`
+		Distance   int     `toon:"distance"`
+	}
+	type toonEdge struct {
+		Source   string `toon:"source"`
+		Target   string `toon:"target"`
+		EdgeType string `toon:"type"`
+	}
+	type toonPayload struct {
+		Tool        string       `toon:"tool"`
+		TokensUsed  int          `toon:"tokens_used"`
+		TokenBudget int          `toon:"token_budget"`
+		Symbols     []toonSymbol `toon:"symbols"`
+		Edges       []toonEdge   `toon:"edges,omitempty"`
+	}
+
+	tp := toonPayload{
+		Tool:        p.Tool,
+		TokensUsed:  p.TokensUsed,
+		TokenBudget: p.TokenBudget,
+		Symbols:     make([]toonSymbol, len(p.Symbols)),
+		Edges:       make([]toonEdge, len(p.Edges)),
+	}
+	for i, s := range p.Symbols {
+		prov := s.Provenance
+		if prov == "" {
+			prov = "-"
+		}
+		tp.Symbols[i] = toonSymbol{Name: s.QualifiedName, Kind: s.Kind, Score: s.Score, Provenance: prov, Distance: s.Distance}
+	}
+	for i, e := range p.Edges {
+		tp.Edges[i] = toonEdge{Source: e.Source, Target: e.Target, EdgeType: e.EdgeType}
+	}
+	return toon.MarshalString(tp)
+}
+
 type question struct {
 	Name     string
 	Question string
-	Expected func(p *Payload) string
+	Expected func(p *gcf.Payload) string
 	Verify   func(expected, response string) (bool, string)
 }
 
@@ -134,23 +173,23 @@ func exactOrContains(expected, resp string) (bool, string) {
 	return false, fmt.Sprintf("got %q", resp)
 }
 
-var comprehensionQuestions = []question{
+var questions = []question{
 	{
 		Name:     "symbol_count",
 		Question: "How many symbols are in the context? Reply with ONLY a number, nothing else.",
-		Expected: func(p *Payload) string { return fmt.Sprintf("%d", len(p.Symbols)) },
+		Expected: func(p *gcf.Payload) string { return fmt.Sprintf("%d", len(p.Symbols)) },
 		Verify:   exactOrContains,
 	},
 	{
 		Name:     "edge_count",
 		Question: "How many edges (relationships between symbols) are in the context? Reply with ONLY a number, nothing else.",
-		Expected: func(p *Payload) string { return fmt.Sprintf("%d", len(p.Edges)) },
+		Expected: func(p *gcf.Payload) string { return fmt.Sprintf("%d", len(p.Edges)) },
 		Verify:   exactOrContains,
 	},
 	{
 		Name:     "top_symbol",
 		Question: "What is the short name (last component after the final dot) of the highest-scored symbol? Reply with ONLY the name, nothing else.",
-		Expected: func(p *Payload) string {
+		Expected: func(p *gcf.Payload) string {
 			qn := p.Symbols[0].QualifiedName
 			if dot := strings.LastIndex(qn, "."); dot >= 0 {
 				return qn[dot+1:]
@@ -169,10 +208,10 @@ var comprehensionQuestions = []question{
 	{
 		Name:     "top_kind",
 		Question: "What is the kind of the highest-scored symbol? Reply with ONLY the kind (e.g. function, type, method), nothing else.",
-		Expected: func(p *Payload) string { return p.Symbols[0].Kind },
+		Expected: func(p *gcf.Payload) string { return p.Symbols[0].Kind },
 		Verify: func(expected, resp string) (bool, string) {
 			resp = strings.TrimSpace(strings.ToLower(resp))
-			if resp == expected || resp == KindAbbrev[expected] {
+			if resp == expected || resp == gcf.KindAbbrev[expected] {
 				return true, "match"
 			}
 			return false, fmt.Sprintf("got %q", resp)
@@ -181,7 +220,7 @@ var comprehensionQuestions = []question{
 	{
 		Name:     "target_count",
 		Question: "How many symbols are in the 'targets' group (distance 0)? Reply with ONLY a number, nothing else.",
-		Expected: func(p *Payload) string {
+		Expected: func(p *gcf.Payload) string {
 			count := 0
 			for _, s := range p.Symbols {
 				if s.Distance == 0 {
@@ -195,7 +234,7 @@ var comprehensionQuestions = []question{
 	{
 		Name:     "edge_types",
 		Question: "List all unique edge types in the context, comma-separated, alphabetically. Reply with ONLY the list, nothing else.",
-		Expected: func(p *Payload) string {
+		Expected: func(p *gcf.Payload) string {
 			types := make(map[string]bool)
 			for _, e := range p.Edges {
 				types[e.EdgeType] = true
@@ -214,11 +253,9 @@ var comprehensionQuestions = []question{
 			return strings.Join(sorted, ", ")
 		},
 		Verify: func(expected, resp string) (bool, string) {
-			resp = strings.TrimSpace(strings.ToLower(resp))
-			resp = strings.ReplaceAll(resp, "`", "")
-			expected = strings.ToLower(expected)
-			// Normalize spacing around commas.
 			normalize := func(s string) string {
+				s = strings.ToLower(strings.TrimSpace(s))
+				s = strings.ReplaceAll(s, "`", "")
 				parts := strings.Split(s, ",")
 				for i, p := range parts {
 					parts[i] = strings.TrimSpace(p)
@@ -228,9 +265,8 @@ var comprehensionQuestions = []question{
 			if normalize(resp) == normalize(expected) {
 				return true, "exact"
 			}
-			// Partial: check all types present.
 			for _, t := range strings.Split(expected, ", ") {
-				if !strings.Contains(resp, t) {
+				if !strings.Contains(strings.ToLower(resp), t) {
 					return false, fmt.Sprintf("missing %q", t)
 				}
 			}
@@ -239,7 +275,7 @@ var comprehensionQuestions = []question{
 	},
 }
 
-func TestGCFComprehension(t *testing.T) {
+func TestComprehension(t *testing.T) {
 	backendName := os.Getenv("EVAL_BACKEND")
 	if backendName == "" {
 		backendName = "cli"
@@ -275,62 +311,66 @@ func TestGCFComprehension(t *testing.T) {
 		}
 		backendLabel = fmt.Sprintf("api (%s)", model)
 		callLLM = func(prompt string) (string, error) {
-			return callAnthropicAPI(apiKey, model, prompt)
+			return callAPI(apiKey, model, prompt)
 		}
 	default:
 		t.Fatalf("unknown EVAL_BACKEND %q (use cli or api)", backendName)
 	}
 
-	// Generate a 500-symbol, 200-edge payload: deliberately large to stress
-	// counting accuracy. JSON miscounts at 133 symbols in the knowing eval;
-	// 500 should make the difference undeniable.
-	fixture := buildLargeFixture(500, 200)
+	fixture := buildFixture(500, 200)
 
-	gcfOutput := Encode(fixture)
+	gcfOutput := gcf.Encode(fixture)
 	jsonOutput, _ := json.MarshalIndent(fixture, "", "  ")
+	toonOutput, err := encodeTOON(fixture)
+	if err != nil {
+		t.Fatalf("TOON encode failed: %v", err)
+	}
 
-	gcfTokens := len(gcfOutput) / 4
-	jsonTokens := len(jsonOutput) / 4
+	formats := []struct {
+		name    string
+		content string
+	}{
+		{"gcf", gcfOutput},
+		{"toon", toonOutput},
+		{"json", string(jsonOutput)},
+	}
 
 	t.Logf("Backend: %s", backendLabel)
 	t.Logf("Fixture: %d symbols, %d edges", len(fixture.Symbols), len(fixture.Edges))
-	t.Logf("GCF tokens (est): %d", gcfTokens)
-	t.Logf("JSON tokens (est): %d", jsonTokens)
-	t.Logf("Savings: %.0f%%", 100.0*(1.0-float64(gcfTokens)/float64(jsonTokens)))
 	t.Log("")
-
-	formats := map[string]string{
-		"gcf":  gcfOutput,
-		"json": string(jsonOutput),
+	for _, f := range formats {
+		t.Logf("%-5s tokens (est): %d", f.name, len(f.content)/4)
 	}
+	t.Logf("GCF vs JSON savings: %.0f%%", 100.0*(1.0-float64(len(gcfOutput))/float64(len(jsonOutput))))
+	t.Logf("GCF vs TOON savings: %.0f%%", 100.0*(1.0-float64(len(gcfOutput))/float64(len(toonOutput))))
+	t.Log("")
 
 	type result struct {
 		correct int
 		total   int
 		tokens  int
 	}
-	results := map[string]*result{
-		"gcf":  {tokens: gcfTokens},
-		"json": {tokens: jsonTokens},
+	results := make(map[string]*result)
+	for _, f := range formats {
+		results[f.name] = &result{tokens: len(f.content) / 4}
 	}
 
-	for _, q := range comprehensionQuestions {
+	for _, q := range questions {
 		expected := q.Expected(fixture)
-		for _, f := range []string{"gcf", "json"} {
-			content := formats[f]
+		for _, f := range formats {
 			prompt := fmt.Sprintf("Here is a code context payload in %s format:\n\n%s\n\nQuestion: %s",
-				strings.ToUpper(f), content, q.Question)
+				strings.ToUpper(f.name), f.content, q.Question)
 
 			resp, err := callLLM(prompt)
 			if err != nil {
-				t.Logf("  SKIP %-15s %-5s error: %v", q.Name, f, err)
+				t.Logf("  SKIP %-15s %-5s error: %v", q.Name, f.name, err)
 				continue
 			}
 
 			ok, detail := q.Verify(expected, resp)
-			results[f].total++
+			results[f.name].total++
 			if ok {
-				results[f].correct++
+				results[f.name].correct++
 			}
 
 			mark := "PASS"
@@ -338,42 +378,39 @@ func TestGCFComprehension(t *testing.T) {
 				mark = "FAIL"
 			}
 			t.Logf("  %s %-15s %-5s [%s] expected=%q got=%q",
-				mark, q.Name, f, detail, expected, strings.TrimSpace(resp))
+				mark, q.Name, f.name, detail, expected, strings.TrimSpace(resp))
 		}
 	}
 
 	t.Log("")
 	t.Log("=== Summary ===")
 	t.Logf("%-6s %8s %10s %10s", "Format", "Accuracy", "Est Tokens", "vs JSON")
-	for _, f := range []string{"gcf", "json"} {
-		r := results[f]
+	jsonTokens := results["json"].tokens
+	for _, f := range formats {
+		r := results[f.name]
 		acc := 0.0
 		if r.total > 0 {
 			acc = 100.0 * float64(r.correct) / float64(r.total)
 		}
 		vsJSON := "baseline"
-		if f != "json" && results["json"].tokens > 0 {
-			vsJSON = fmt.Sprintf("%.0f%%", 100.0*float64(r.tokens)/float64(results["json"].tokens))
+		if f.name != "json" && jsonTokens > 0 {
+			vsJSON = fmt.Sprintf("%.0f%%", 100.0*float64(r.tokens)/float64(jsonTokens))
 		}
-		t.Logf("%-6s %7.1f%% %10d %10s", f, acc, r.tokens, vsJSON)
+		t.Logf("%-6s %7.1f%% %10d %10s", f.name, acc, r.tokens, vsJSON)
 	}
-	t.Log("")
-	t.Logf("If GCF accuracy >= JSON accuracy, GCF comprehension is validated.")
 }
 
-func callAnthropicAPI(apiKey, model, prompt string) (string, error) {
+func callAPI(apiKey, model, prompt string) (string, error) {
 	body := map[string]any{
 		"model":      model,
 		"max_tokens": 200,
 		"messages":   []map[string]string{{"role": "user", "content": prompt}},
 	}
 	bodyBytes, _ := json.Marshal(body)
-
 	req, _ := http.NewRequest("POST", "https://api.anthropic.com/v1/messages", bytes.NewReader(bodyBytes))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("x-api-key", apiKey)
 	req.Header.Set("anthropic-version", "2023-06-01")
-
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return "", err
@@ -383,7 +420,6 @@ func callAnthropicAPI(apiKey, model, prompt string) (string, error) {
 	if resp.StatusCode != 200 {
 		return "", fmt.Errorf("API %d: %s", resp.StatusCode, string(respBody))
 	}
-
 	var result struct {
 		Content []struct{ Text string `json:"text"` } `json:"content"`
 	}
