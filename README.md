@@ -1,8 +1,8 @@
 # gcf-go
 
-Go implementation of [GCF (Graph Compact Format)](https://github.com/blackwell-systems/gcf): a token-optimized wire format for LLM tool responses.
+Go implementation of [GCF (Graph Compact Format)](https://github.com/blackwell-systems/gcf).
 
-**84% fewer tokens than JSON. 100% LLM comprehension accuracy.**
+**84% fewer tokens than JSON. 32% fewer than TOON. 100% LLM comprehension accuracy at 500 symbols, where JSON fails.**
 
 ## Install
 
@@ -10,9 +10,9 @@ Go implementation of [GCF (Graph Compact Format)](https://github.com/blackwell-s
 go get github.com/blackwell-systems/gcf-go
 ```
 
-## Usage
+Zero dependencies. Single package.
 
-### Encode
+## Quick Start
 
 ```go
 import gcf "github.com/blackwell-systems/gcf-go"
@@ -44,7 +44,7 @@ GCF tool=context_for_task budget=5000 tokens=1847 symbols=2
 @0<@1 calls
 ```
 
-### Decode
+## Decode
 
 ```go
 p, err := gcf.Decode(input)
@@ -54,9 +54,9 @@ if err != nil {
 fmt.Println(p.Tool, len(p.Symbols), "symbols", len(p.Edges), "edges")
 ```
 
-### Session Deduplication
+## Session Deduplication
 
-Track transmitted symbols across multiple responses. Previously-sent symbols become bare references:
+Track transmitted symbols across multiple tool responses. Previously-sent symbols become bare references instead of full declarations:
 
 ```go
 sess := gcf.NewSession()
@@ -67,9 +67,9 @@ out2 := gcf.EncodeWithSession(payload2, sess) // reused symbols as "@N  # previo
 
 By the 5th call in a session: 92.7% token savings vs JSON.
 
-### Delta Encoding
+## Delta Encoding
 
-Send only what changed between two context packs:
+When the consumer already has a prior context pack, send only what changed:
 
 ```go
 delta := &gcf.DeltaPayload{
@@ -85,7 +85,7 @@ delta := &gcf.DeltaPayload{
 output := gcf.EncodeDelta(delta)
 ```
 
-81.2% token savings on re-queries where the pack changed slightly.
+81.2% savings on re-queries where the pack changed slightly.
 
 ## API
 
@@ -95,16 +95,34 @@ output := gcf.EncodeDelta(delta)
 | `Decode(input string) (*Payload, error)` | Parse GCF text back to a Payload |
 | `EncodeWithSession(p *Payload, s *Session) string` | Encode with session deduplication |
 | `EncodeDelta(d *DeltaPayload) string` | Encode a delta (added/removed only) |
-| `NewSession() *Session` | Create a new session tracker |
+| `NewSession() *Session` | Create a new session tracker (thread-safe) |
 
 ## Types
 
-- `Payload`: tool name, token budget/used, pack root, symbols, edges
-- `Symbol`: qualified name, kind, score, provenance, distance, signature, components
-- `Edge`: source, target, edge type, status
-- `DeltaPayload`: base root, new root, removed/added symbols and edges
-- `Session`: thread-safe tracker for transmitted symbols
-- `KindAbbrev` / `KindExpand`: kind abbreviation maps (extensible)
+| Type | Purpose |
+|------|---------|
+| `Payload` | Full GCF payload: tool, budget, symbols, edges, pack root |
+| `Symbol` | Graph node: qualified name, kind, score, provenance, distance |
+| `Edge` | Directed relationship: source, target, edge type |
+| `DeltaPayload` | Diff between two packs: added/removed symbols and edges |
+| `Session` | Thread-safe tracker for multi-call deduplication |
+| `KindAbbrev` / `KindExpand` | Bidirectional kind abbreviation maps |
+
+## Comprehension Eval
+
+The `eval/` submodule contains a rigorous 3-way benchmark (GCF vs TOON vs JSON) at 500 symbols, 200 edges. Six structured extraction questions sent to an LLM:
+
+| Format | Accuracy | Tokens | vs JSON |
+|--------|----------|--------|---------|
+| **GCF** | **100%** (6/6) | **11,090** | **79% fewer** |
+| TOON | 100% (6/6) | 16,378 | 69% fewer |
+| JSON | 66.7% (4/6) | 53,341 | baseline |
+
+JSON failed on counting tasks. GCF and TOON both achieved perfect accuracy. GCF does it in 32% fewer tokens.
+
+```bash
+cd eval && GOWORK=off go test -run TestComprehension -v -timeout 15m
+```
 
 ## Specification
 

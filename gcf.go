@@ -36,21 +36,21 @@ import (
 
 // Symbol represents a node in a GCF payload.
 type Symbol struct {
-	QualifiedName string
-	Kind          string
-	Score         float64
-	Provenance    string
-	Distance      int
-	Signature     string
-	Components    Components
+	QualifiedName string     // fully qualified identifier (e.g., "pkg/auth.Middleware")
+	Kind          string     // node type: "function", "type", "method", etc.
+	Score         float64    // relevance score (0.0 to 1.0)
+	Provenance    string     // discovery method: "lsp_resolved", "ast_inferred", etc.
+	Distance      int        // hops from query center (0=target, 1=related, 2+=extended)
+	Signature     string     // optional: function/method signature
+	Components    Components // optional: score breakdown
 }
 
 // Components holds the score breakdown for a symbol.
 type Components struct {
-	BlastRadius float64
-	Confidence  float64
-	Recency     float64
-	Distance    float64
+	BlastRadius float64 // number of callers (normalized)
+	Confidence  float64 // edge provenance confidence
+	Recency     float64 // git recency signal
+	Distance    float64 // graph distance penalty
 }
 
 // Edge represents a directed relationship in a GCF payload.
@@ -63,12 +63,12 @@ type Edge struct {
 
 // Payload is the input/output structure for GCF encoding/decoding.
 type Payload struct {
-	Tool        string
-	TokensUsed  int
-	TokenBudget int
-	PackRoot    string // content-addressed identity of this context pack (hex hash)
-	Symbols     []Symbol
-	Edges       []Edge
+	Tool        string   // producing tool name (e.g., "context_for_task")
+	TokensUsed  int      // actual tokens consumed by this payload
+	TokenBudget int      // token budget requested by the consumer
+	PackRoot    string   // content-addressed identity (hex SHA-256), enables delta encoding
+	Symbols     []Symbol // ordered by score descending within each distance group
+	Edges       []Edge   // directed relationships between symbols
 }
 
 // KindAbbrev maps full kind names to short GCF abbreviations.
