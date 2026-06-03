@@ -124,6 +124,20 @@ JSON failed on counting tasks. GCF and TOON both achieved perfect accuracy. GCF 
 cd eval && GOWORK=off go test -run TestComprehension -v -timeout 15m
 ```
 
+## Token Efficiency (TOON's Own Benchmark)
+
+Running [TOON's benchmark harness](https://github.com/blackwell-systems/toon/tree/gcf-comparison) with GCF inserted (their datasets, their tokenizer):
+
+| Track | GCF | TOON | Result |
+|-------|-----|------|--------|
+| Mixed-structure (nested, semi-uniform) | 169,554 | 227,896 | **GCF 34% smaller** |
+| Flat-only (tabular) | 66,026 | 67,837 | **GCF 3% smaller** |
+| Semi-uniform event logs | 107,269 | 154,032 | **GCF 44% smaller** |
+
+GCF wins on every dataset except deeply nested config (75 tokens on a 618-token payload). On semi-uniform data, GCF uses 44% fewer tokens than TOON.
+
+Reproducible: [blackwell-systems/toon@gcf-comparison](https://github.com/blackwell-systems/toon/tree/gcf-comparison)
+
 ## Specification
 
 Full grammar and encoding rules: [github.com/blackwell-systems/gcf](https://github.com/blackwell-systems/gcf)
