@@ -59,34 +59,3 @@ jobs:
           files: artifacts/*
           generate_release_notes: true
 
-  npm-publish:
-    needs: release
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          registry-url: https://registry.npmjs.org
-      - name: Set version from tag
-        run: cd npm && npm version ${{ github.ref_name }} --no-git-tag-version --allow-same-version
-      - run: cd npm && npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-  pypi-publish:
-    needs: release
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - name: Set version from tag
-        run: cd pypi && sed -i "s/version = \".*\"/version = \"${GITHUB_REF_NAME#v}\"/" pyproject.toml
-      - run: pip install build twine
-      - run: cd pypi && python -m build
-      - run: cd pypi && twine upload dist/*
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
