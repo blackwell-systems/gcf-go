@@ -1,0 +1,18 @@
+{
+  "name": "@blackwell-systems/gcf-cli",
+  "version": "0.1.0",
+  "description": "GCF CLI: token-optimized wire format for LLM tool responses. Encode, decode, stats.",
+  "license": "MIT",
+  "bin": {
+    "gcf": "bin/gcf.js"
+  },
+  "scripts": {
+    "postinstall": "node install.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/blackwell-systems/gcf-go"
+  },
+  "keywords": ["gcf", "llm", "mcp", "token-efficient", "cli", "wire-format"],
+  "files": ["bin/", "install.js", "README.md"]
+}
