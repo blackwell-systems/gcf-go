@@ -1,3 +1,9 @@
+<p align="center">
+  <a href="https://github.com/blackwell-systems"><img src="https://raw.githubusercontent.com/blackwell-systems/blackwell-docs-theme/main/badge-trademark.svg" alt="Blackwell Systems"></a>
+  <a href="https://github.com/blackwell-systems/gcf-go/actions"><img src="https://github.com/blackwell-systems/gcf-go/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License"></a>
+</p>
+
 # gcf-go
 
 Go implementation of [GCF (Graph Compact Format)](https://github.com/blackwell-systems/gcf).
