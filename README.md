@@ -93,11 +93,35 @@ output := gcf.EncodeDelta(delta)
 
 81.2% savings on re-queries where the pack changed slightly.
 
+## Generic Encoding
+
+Encode any Go value (not just graph payloads) into GCF tabular format:
+
+```go
+data := map[string]any{
+    "employees": []map[string]any{
+        {"id": 1, "name": "Alice", "department": "Engineering", "salary": 95000},
+        {"id": 2, "name": "Bob", "department": "Sales", "salary": 72000},
+    },
+}
+output := gcf.EncodeGeneric(data)
+```
+
+Output:
+```
+## employees [2]{id,name,department,salary}
+1|Alice|Engineering|95000
+2|Bob|Sales|72000
+```
+
+Works on maps, slices, structs, and primitives. Arrays of uniform objects get tabular rows. Nested objects use `## key` section headers.
+
 ## API
 
 | Function | Description |
 |----------|-------------|
-| `Encode(p *Payload) string` | Encode a payload to GCF text |
+| `Encode(p *Payload) string` | Encode a graph payload to GCF text |
+| `EncodeGeneric(data any) string` | Encode any value to GCF tabular format |
 | `Decode(input string) (*Payload, error)` | Parse GCF text back to a Payload |
 | `EncodeWithSession(p *Payload, s *Session) string` | Encode with session deduplication |
 | `EncodeDelta(d *DeltaPayload) string` | Encode a delta (added/removed only) |
