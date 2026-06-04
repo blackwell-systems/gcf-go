@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.3.0 (2026-06-03)
+
+- `EncodeGeneric`: encode arbitrary Go values (maps, slices, structs) into GCF tabular format
+- Tabular encoding: positional rows with pipe separators, section headers, nested field support
+- Uniform array detection with 70% key overlap threshold
+
 ## v0.2.0 (2026-06-03)
 
 - 3-way comprehension eval (GCF vs TOON vs JSON at 500 symbols)
