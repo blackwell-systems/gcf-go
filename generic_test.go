@@ -49,7 +49,7 @@ func TestEncodeGeneric_FlatTabularArray(t *testing.T) {
 
 func TestEncodeGeneric_NestedObject(t *testing.T) {
 	data := map[string]any{
-		"name": "project-alpha",
+		"name":    "project-alpha",
 		"version": "1.2.3",
 		"config": map[string]any{
 			"debug":   true,

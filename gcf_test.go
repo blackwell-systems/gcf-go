@@ -130,11 +130,11 @@ func TestSession_Dedup(t *testing.T) {
 
 func TestEncodeDelta_Basic(t *testing.T) {
 	d := &DeltaPayload{
-		Tool:     "test",
-		BaseRoot: "aaa",
-		NewRoot:  "bbb",
-		Removed:  []Symbol{{QualifiedName: "pkg.Old", Kind: "function"}},
-		Added:    []Symbol{{QualifiedName: "pkg.New", Kind: "function", Score: 0.8, Provenance: "rwr"}},
+		Tool:        "test",
+		BaseRoot:    "aaa",
+		NewRoot:     "bbb",
+		Removed:     []Symbol{{QualifiedName: "pkg.Old", Kind: "function"}},
+		Added:       []Symbol{{QualifiedName: "pkg.New", Kind: "function", Score: 0.8, Provenance: "rwr"}},
 		DeltaTokens: 20,
 		FullTokens:  100,
 	}

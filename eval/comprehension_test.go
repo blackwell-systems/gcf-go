@@ -421,7 +421,9 @@ func callAPI(apiKey, model, prompt string) (string, error) {
 		return "", fmt.Errorf("API %d: %s", resp.StatusCode, string(respBody))
 	}
 	var result struct {
-		Content []struct{ Text string `json:"text"` } `json:"content"`
+		Content []struct {
+			Text string `json:"text"`
+		} `json:"content"`
 	}
 	json.Unmarshal(respBody, &result)
 	if len(result.Content) == 0 {
