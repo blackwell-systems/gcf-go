@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.3.0 (2026-06-03)
+## v0.1.1 (2026-06-03)
 
 - `EncodeGeneric`: encode arbitrary Go values (maps, slices, structs) into GCF tabular format
 - Tabular encoding: positional rows with pipe separators, section headers, nested field support
