@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.3.0 (2026-06-05)
+
+- **Breaking**: `Encode()` now emits `edges=N` in header line
+- **Breaking**: `Encode()` now emits `## edges [N]` section header (was `## edges`)
+- `Decode()` updated to parse `## edges [N]` format (strips bracket suffix)
+- Session encoder updated to emit new edge count format
+- Comprehension eval expanded to 13 questions, achieves 13/13 with new format
+
 ## v0.1.2 (2026-06-04)
 
 - Fix: decoder rejects headers missing required `tool` field (conformance)

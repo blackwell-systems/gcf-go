@@ -42,6 +42,10 @@ func Decode(input string) (*Payload, error) {
 		// Group header.
 		if strings.HasPrefix(line, "## ") {
 			group := line[3:]
+			// Strip bracket suffix: "edges [200]" -> "edges"
+			if idx := strings.Index(group, " ["); idx >= 0 {
+				group = group[:idx]
+			}
 			inEdges = group == "edges"
 			if !inEdges {
 				switch group {

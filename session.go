@@ -96,8 +96,8 @@ func EncodeWithSession(p *Payload, sess *Session) string {
 
 	var b stringBuilder
 	// Header with session=true marker.
-	b.sprintf("GCF tool=%s budget=%d tokens=%d symbols=%d session=true",
-		p.Tool, p.TokenBudget, p.TokensUsed, len(p.Symbols))
+	b.sprintf("GCF tool=%s budget=%d tokens=%d symbols=%d edges=%d session=true",
+		p.Tool, p.TokenBudget, p.TokensUsed, len(p.Symbols), len(p.Edges))
 	if p.PackRoot != "" {
 		b.sprintf(" pack_root=%s", p.PackRoot)
 	}
@@ -152,7 +152,7 @@ func EncodeWithSession(p *Payload, sess *Session) string {
 
 	// Edges section.
 	if len(p.Edges) > 0 {
-		b.writeString("## edges\n")
+		b.sprintf("## edges [%d]\n", len(p.Edges))
 		for _, e := range p.Edges {
 			srcIdx, srcOk := localIndex[e.Source]
 			tgtIdx, tgtOk := localIndex[e.Target]

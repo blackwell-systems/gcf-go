@@ -115,19 +115,29 @@ var KindExpand = map[string]string{
 func Encode(p *Payload) string {
 	var b strings.Builder
 
-	// Header line.
-	b.WriteString(fmt.Sprintf("GCF tool=%s budget=%d tokens=%d symbols=%d edges=%d",
-		p.Tool, p.TokenBudget, p.TokensUsed, len(p.Symbols), len(p.Edges)))
-	if p.PackRoot != "" {
-		b.WriteString(fmt.Sprintf(" pack_root=%s", p.PackRoot))
-	}
-	b.WriteByte('\n')
-
 	// Build symbol index for edge references.
 	symIndex := make(map[string]int, len(p.Symbols))
 	for i, s := range p.Symbols {
 		symIndex[s.QualifiedName] = i
 	}
+
+	// Count valid edges (both endpoints in symbol index).
+	validEdges := 0
+	for _, e := range p.Edges {
+		_, srcOk := symIndex[e.Source]
+		_, tgtOk := symIndex[e.Target]
+		if srcOk && tgtOk {
+			validEdges++
+		}
+	}
+
+	// Header line.
+	b.WriteString(fmt.Sprintf("GCF tool=%s budget=%d tokens=%d symbols=%d edges=%d",
+		p.Tool, p.TokenBudget, p.TokensUsed, len(p.Symbols), validEdges))
+	if p.PackRoot != "" {
+		b.WriteString(fmt.Sprintf(" pack_root=%s", p.PackRoot))
+	}
+	b.WriteByte('\n')
 
 	// Group symbols by distance.
 	groups := groupByDistance(p.Symbols)
@@ -161,7 +171,7 @@ func Encode(p *Payload) string {
 
 	// Edges section.
 	if len(p.Edges) > 0 {
-		b.WriteString(fmt.Sprintf("## edges [%d]\n", len(p.Edges)))
+		b.WriteString(fmt.Sprintf("## edges [%d]\n", validEdges))
 		for _, e := range p.Edges {
 			srcIdx, srcOk := symIndex[e.Source]
 			tgtIdx, tgtOk := symIndex[e.Target]
