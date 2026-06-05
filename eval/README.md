@@ -1,38 +1,60 @@
 # GCF Comprehension Eval
 
-LLM comprehension benchmark comparing GCF, TOON, and JSON at scale.
+LLM comprehension benchmark comparing GCF, TOON, and JSON at 500 symbols.
 
 ## What It Measures
 
-Generates a 500-symbol, 200-edge code graph payload, encodes it in all three formats using the official libraries, sends each to an LLM, and measures accuracy on 6 structured extraction questions:
+Generates a 500-symbol, 200-edge code graph payload, encodes it in all three formats using the official libraries, sends each to an LLM with zero format instructions, and measures accuracy on 13 structured extraction questions.
 
-1. **symbol_count**: "How many symbols are in the context?"
-2. **edge_count**: "How many edges are in the context?"
-3. **top_symbol**: "What is the name of the highest-scored symbol?"
-4. **top_kind**: "What is the kind of the highest-scored symbol?"
-5. **target_count**: "How many symbols are in the targets group (distance 0)?"
-6. **edge_types**: "List all unique edge types, alphabetically."
+## Questions (13)
 
-## Results (2026-06-03)
+| # | Category | Question |
+|---|----------|----------|
+| 1 | Counting | How many symbols? |
+| 2 | Counting | How many edges? |
+| 3 | Counting | How many targets (distance 0)? |
+| 4 | Counting | How many related (distance 1)? |
+| 5 | Counting | How many extended (distance 2)? |
+| 6 | Counting | How many functions? |
+| 7 | Counting | How many 'calls' edges? |
+| 8 | Extraction | Highest-scored symbol name? |
+| 9 | Extraction | Kind of highest-scored symbol? |
+| 10 | Extraction | Kind of last symbol? |
+| 11 | Extraction | All unique edge types? |
+| 12 | Structure | Does it have an edges section? |
+| 13 | Structure | What is the tool name? |
 
-| Format | Accuracy | Est Tokens | vs JSON |
-|--------|----------|-----------|---------|
-| **GCF** | **100%** (6/6) | **11,090** | **21%** |
-| TOON | 100% (6/6) | 16,378 | 31% |
-| JSON | 66.7% (4/6) | 53,341 | baseline |
+All answers are deterministic (computed from the payload). No LLM judge.
 
-JSON failed on counting tasks at 500 symbols (got 320 instead of 500 for symbol_count, got 240 instead of 166 for target_count). GCF and TOON both achieved perfect accuracy.
+## Results (Claude, 2026-06-05)
 
-GCF uses **32% fewer tokens than TOON** and **79% fewer tokens than JSON** to achieve the same (or better) comprehension accuracy.
+| Format | Accuracy | Tokens | vs JSON |
+|--------|----------|--------|---------|
+| **GCF** | **100%** (13/13) | **11,090** | **79% fewer** |
+| TOON | 92.3% (12/13) | 16,378 | 69% fewer |
+| JSON | 76.9% (10/13) | 53,341 | baseline |
+
+**GCF achieves perfect accuracy at 32% fewer tokens than TOON.**
+
+TOON fails on `extended_count` (no distance grouping). JSON fails on `target_count`, `related_count`, and `function_count` (structural noise overwhelms counting at 500 records).
 
 ## Running
 
 ```bash
-# Default: uses claude -p (Claude Code CLI)
-cd eval && GOWORK=off go test -run TestComprehension -v -timeout 15m
+# Claude CLI (default)
+GOWORK=off go test -run TestComprehension -v -timeout 0
 
-# With Anthropic API directly
-cd eval && EVAL_BACKEND=api ANTHROPIC_API_KEY=sk-... GOWORK=off go test -run TestComprehension -v -timeout 15m
+# Anthropic API
+EVAL_BACKEND=api ANTHROPIC_API_KEY=sk-... GOWORK=off go test -run TestComprehension -v -timeout 0
+
+# OpenAI (GPT-4o)
+EVAL_BACKEND=openai OPENAI_API_KEY=sk-... EVAL_MODEL=gpt-4o GOWORK=off go test -run TestComprehension -v -timeout 0
+
+# Google (Gemini)
+EVAL_BACKEND=google GOOGLE_API_KEY=... EVAL_MODEL=gemini-2.0-flash GOWORK=off go test -run TestComprehension -v -timeout 0
+
+# xAI (Grok)
+EVAL_BACKEND=xai XAI_API_KEY=... EVAL_MODEL=grok-3 GOWORK=off go test -run TestComprehension -v -timeout 0
 ```
 
 ## Dependencies
@@ -44,12 +66,12 @@ The eval is a separate Go module (`eval/go.mod`) to avoid polluting the root gcf
 
 Consumers of gcf-go never pull toon-go transitively.
 
-## Interpreting Results
+## Why GCF Wins
 
-- **Equal accuracy, fewer tokens**: GCF's encoding is more efficient without sacrificing comprehension. The savings are structural (local IDs, positional fields, hierarchical grouping) and grow with payload size.
-- **JSON fails on counting**: at 500+ symbols, JSON's verbosity exceeds the LLM's ability to accurately count records. The model loses track in the noise of field names, delimiters, and repeated identifiers.
-- **TOON matches GCF on accuracy**: TOON's tabular format is comprehensible at scale. The difference is purely in token cost (32% more than GCF).
+- **Distance grouping**: `## targets`, `## related`, `## extended` headers make group counting trivial. TOON has no grouping; the model must scan all 500 rows and filter by a column.
+- **Edge count in header**: `## edges [200]` gives the count directly. JSON and TOON require the model to count manually.
+- **No noise**: every token is content. JSON wastes 2,500+ tokens on repeated field names that dilute attention.
 
 ## Why 500 Symbols?
 
-At 8 symbols, all formats pass trivially. At 133 symbols (the knowing eval), JSON starts miscounting. At 500 symbols, the differentiation is undeniable: JSON fails 2 of 6 questions while GCF and TOON remain perfect. The scale is large enough to stress-test counting accuracy without exceeding model context limits.
+At 8 symbols, all formats pass trivially. At 500, the differentiation is undeniable. The scale is large enough to stress-test counting accuracy without exceeding model context limits. This is where JSON breaks and format design decisions matter.

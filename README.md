@@ -142,7 +142,7 @@ Works on maps, slices, structs, and primitives. Arrays of uniform objects get ta
 
 ## Comprehension Eval
 
-The `eval/` submodule contains a rigorous 3-way benchmark (GCF vs TOON vs JSON) at 500 symbols, 200 edges. Six structured extraction questions sent to an LLM:
+The `eval/` submodule contains a rigorous 3-way benchmark (GCF vs TOON vs JSON) at 500 symbols, 200 edges. 13 structured extraction questions sent to an LLM with zero format instructions:
 
 | Format | Accuracy | Tokens | vs JSON |
 |--------|----------|--------|---------|
@@ -153,7 +153,7 @@ The `eval/` submodule contains a rigorous 3-way benchmark (GCF vs TOON vs JSON) 
 JSON failed on counting tasks. GCF and TOON both achieved perfect accuracy. GCF does it in 32% fewer tokens.
 
 ```bash
-cd eval && GOWORK=off go test -run TestComprehension -v -timeout 15m
+cd eval && GOWORK=off go test -run TestComprehension -v -timeout 0
 ```
 
 ## Token Efficiency (TOON's Own Benchmark)
