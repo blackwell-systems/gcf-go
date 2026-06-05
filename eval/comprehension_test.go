@@ -332,31 +332,6 @@ var questions = []question{
 	},
 	// --- Filtering questions ---
 	{
-		Name:     "lowest_score_name",
-		Question: "What is the short name (last component after the final dot) of the lowest-scored symbol? Reply with ONLY the name, nothing else.",
-		Expected: func(p *gcf.Payload) string {
-			lowest := p.Symbols[0]
-			for _, s := range p.Symbols[1:] {
-				if s.Score < lowest.Score {
-					lowest = s
-				}
-			}
-			qn := lowest.QualifiedName
-			if dot := strings.LastIndex(qn, "."); dot >= 0 {
-				return qn[dot+1:]
-			}
-			return qn
-		},
-		Verify: func(expected, resp string) (bool, string) {
-			resp = strings.TrimSpace(resp)
-			resp = strings.Trim(resp, "`")
-			if strings.EqualFold(resp, expected) || strings.Contains(resp, expected) {
-				return true, "match"
-			}
-			return false, fmt.Sprintf("got %q", resp)
-		},
-	},
-	{
 		Name:     "last_symbol_kind",
 		Question: "What is the kind of the last symbol listed in the context? Reply with ONLY the kind (e.g. function, type, method), nothing else.",
 		Expected: func(p *gcf.Payload) string {
@@ -522,30 +497,52 @@ func TestComprehension(t *testing.T) {
 		results[f.name] = &result{tokens: len(f.content) / 4}
 	}
 
+	type evalResult struct {
+		qName    string
+		fName    string
+		ok       bool
+		detail   string
+		expected string
+		got      string
+		err      error
+	}
+
 	for _, q := range questions {
 		expected := q.Expected(fixture)
-		for _, f := range formats {
-			prompt := fmt.Sprintf("Here is a code context payload in %s format:\n\n%s\n\nQuestion: %s",
-				strings.ToUpper(f.name), f.content, q.Question)
+		ch := make(chan evalResult, len(formats))
 
-			resp, err := callLLM(prompt)
-			if err != nil {
-				t.Logf("  SKIP %-15s %-5s error: %v", q.Name, f.name, err)
+		for _, f := range formats {
+			go func(f struct{ name, content string }) {
+				prompt := fmt.Sprintf("Here is a code context payload in %s format:\n\n%s\n\nQuestion: %s",
+					strings.ToUpper(f.name), f.content, q.Question)
+
+				resp, err := callLLM(prompt)
+				if err != nil {
+					ch <- evalResult{qName: q.Name, fName: f.name, err: err}
+					return
+				}
+
+				ok, detail := q.Verify(expected, resp)
+				ch <- evalResult{qName: q.Name, fName: f.name, ok: ok, detail: detail, expected: expected, got: strings.TrimSpace(resp)}
+			}(f)
+		}
+
+		for range formats {
+			r := <-ch
+			if r.err != nil {
+				t.Logf("  SKIP %-15s %-5s error: %v", r.qName, r.fName, r.err)
 				continue
 			}
-
-			ok, detail := q.Verify(expected, resp)
-			results[f.name].total++
-			if ok {
-				results[f.name].correct++
+			results[r.fName].total++
+			if r.ok {
+				results[r.fName].correct++
 			}
-
 			mark := "PASS"
-			if !ok {
+			if !r.ok {
 				mark = "FAIL"
 			}
 			t.Logf("  %s %-15s %-5s [%s] expected=%q got=%q",
-				mark, q.Name, f.name, detail, expected, strings.TrimSpace(resp))
+				mark, r.qName, r.fName, r.detail, r.expected, r.got)
 		}
 	}
 

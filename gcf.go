@@ -116,8 +116,8 @@ func Encode(p *Payload) string {
 	var b strings.Builder
 
 	// Header line.
-	b.WriteString(fmt.Sprintf("GCF tool=%s budget=%d tokens=%d symbols=%d",
-		p.Tool, p.TokenBudget, p.TokensUsed, len(p.Symbols)))
+	b.WriteString(fmt.Sprintf("GCF tool=%s budget=%d tokens=%d symbols=%d edges=%d",
+		p.Tool, p.TokenBudget, p.TokensUsed, len(p.Symbols), len(p.Edges)))
 	if p.PackRoot != "" {
 		b.WriteString(fmt.Sprintf(" pack_root=%s", p.PackRoot))
 	}
@@ -161,7 +161,7 @@ func Encode(p *Payload) string {
 
 	// Edges section.
 	if len(p.Edges) > 0 {
-		b.WriteString("## edges\n")
+		b.WriteString(fmt.Sprintf("## edges [%d]\n", len(p.Edges)))
 		for _, e := range p.Edges {
 			srcIdx, srcOk := symIndex[e.Source]
 			tgtIdx, tgtOk := symIndex[e.Target]
