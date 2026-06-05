@@ -25,6 +25,7 @@ import (
 	"strings"
 	"testing"
 
+
 	gcf "github.com/blackwell-systems/gcf-go"
 	toon "github.com/toon-format/toon-go"
 )
@@ -273,6 +274,134 @@ var questions = []question{
 			return true, "all present"
 		},
 	},
+	// --- Aggregation questions ---
+	{
+		Name:     "related_count",
+		Question: "How many symbols are in the 'related' group (distance 1)? Reply with ONLY a number, nothing else.",
+		Expected: func(p *gcf.Payload) string {
+			count := 0
+			for _, s := range p.Symbols {
+				if s.Distance == 1 {
+					count++
+				}
+			}
+			return fmt.Sprintf("%d", count)
+		},
+		Verify: exactOrContains,
+	},
+	{
+		Name:     "extended_count",
+		Question: "How many symbols are in the 'extended' group (distance 2)? Reply with ONLY a number, nothing else.",
+		Expected: func(p *gcf.Payload) string {
+			count := 0
+			for _, s := range p.Symbols {
+				if s.Distance == 2 {
+					count++
+				}
+			}
+			return fmt.Sprintf("%d", count)
+		},
+		Verify: exactOrContains,
+	},
+	{
+		Name:     "function_count",
+		Question: "How many symbols have kind 'function' (or 'fn' in GCF)? Reply with ONLY a number, nothing else.",
+		Expected: func(p *gcf.Payload) string {
+			count := 0
+			for _, s := range p.Symbols {
+				if s.Kind == "function" {
+					count++
+				}
+			}
+			return fmt.Sprintf("%d", count)
+		},
+		Verify: exactOrContains,
+	},
+	{
+		Name:     "calls_edge_count",
+		Question: "How many edges have type 'calls'? Reply with ONLY a number, nothing else.",
+		Expected: func(p *gcf.Payload) string {
+			count := 0
+			for _, e := range p.Edges {
+				if e.EdgeType == "calls" {
+					count++
+				}
+			}
+			return fmt.Sprintf("%d", count)
+		},
+		Verify: exactOrContains,
+	},
+	// --- Filtering questions ---
+	{
+		Name:     "lowest_score_name",
+		Question: "What is the short name (last component after the final dot) of the lowest-scored symbol? Reply with ONLY the name, nothing else.",
+		Expected: func(p *gcf.Payload) string {
+			lowest := p.Symbols[0]
+			for _, s := range p.Symbols[1:] {
+				if s.Score < lowest.Score {
+					lowest = s
+				}
+			}
+			qn := lowest.QualifiedName
+			if dot := strings.LastIndex(qn, "."); dot >= 0 {
+				return qn[dot+1:]
+			}
+			return qn
+		},
+		Verify: func(expected, resp string) (bool, string) {
+			resp = strings.TrimSpace(resp)
+			resp = strings.Trim(resp, "`")
+			if strings.EqualFold(resp, expected) || strings.Contains(resp, expected) {
+				return true, "match"
+			}
+			return false, fmt.Sprintf("got %q", resp)
+		},
+	},
+	{
+		Name:     "last_symbol_kind",
+		Question: "What is the kind of the last symbol listed in the context? Reply with ONLY the kind (e.g. function, type, method), nothing else.",
+		Expected: func(p *gcf.Payload) string {
+			return p.Symbols[len(p.Symbols)-1].Kind
+		},
+		Verify: func(expected, resp string) (bool, string) {
+			resp = strings.TrimSpace(strings.ToLower(resp))
+			if resp == expected || resp == gcf.KindAbbrev[expected] {
+				return true, "match"
+			}
+			return false, fmt.Sprintf("got %q", resp)
+		},
+	},
+	// --- Structure awareness questions ---
+	{
+		Name:     "has_edges_section",
+		Question: "Does the context contain an edges/relationships section? Reply with ONLY 'yes' or 'no', nothing else.",
+		Expected: func(p *gcf.Payload) string {
+			if len(p.Edges) > 0 {
+				return "yes"
+			}
+			return "no"
+		},
+		Verify: func(expected, resp string) (bool, string) {
+			resp = strings.TrimSpace(strings.ToLower(resp))
+			if resp == expected {
+				return true, "exact"
+			}
+			return false, fmt.Sprintf("got %q", resp)
+		},
+	},
+	{
+		Name:     "tool_name",
+		Question: "What is the tool name that produced this context? Reply with ONLY the tool name, nothing else.",
+		Expected: func(p *gcf.Payload) string { return p.Tool },
+		Verify: func(expected, resp string) (bool, string) {
+			resp = strings.TrimSpace(resp)
+			resp = strings.Trim(resp, "`\"")
+			if resp == expected {
+				return true, "exact"
+			}
+			return false, fmt.Sprintf("got %q", resp)
+		},
+	},
 }
 
 func TestComprehension(t *testing.T) {
@@ -313,8 +442,47 @@ func TestComprehension(t *testing.T) {
 		callLLM = func(prompt string) (string, error) {
 			return callAPI(apiKey, model, prompt)
 		}
+	case "openai":
+		apiKey := os.Getenv("OPENAI_API_KEY")
+		if apiKey == "" {
+			t.Skip("EVAL_BACKEND=openai requires OPENAI_API_KEY")
+		}
+		model := os.Getenv("EVAL_MODEL")
+		if model == "" {
+			model = "gpt-4o"
+		}
+		backendLabel = fmt.Sprintf("openai (%s)", model)
+		callLLM = func(prompt string) (string, error) {
+			return callOpenAI(apiKey, model, prompt)
+		}
+	case "google":
+		apiKey := os.Getenv("GOOGLE_API_KEY")
+		if apiKey == "" {
+			t.Skip("EVAL_BACKEND=google requires GOOGLE_API_KEY")
+		}
+		model := os.Getenv("EVAL_MODEL")
+		if model == "" {
+			model = "gemini-2.0-flash"
+		}
+		backendLabel = fmt.Sprintf("google (%s)", model)
+		callLLM = func(prompt string) (string, error) {
+			return callGoogle(apiKey, model, prompt)
+		}
+	case "xai":
+		apiKey := os.Getenv("XAI_API_KEY")
+		if apiKey == "" {
+			t.Skip("EVAL_BACKEND=xai requires XAI_API_KEY")
+		}
+		model := os.Getenv("EVAL_MODEL")
+		if model == "" {
+			model = "grok-3"
+		}
+		backendLabel = fmt.Sprintf("xai (%s)", model)
+		callLLM = func(prompt string) (string, error) {
+			return callOpenAI(apiKey, model, prompt) // xAI uses OpenAI-compatible API
+		}
 	default:
-		t.Fatalf("unknown EVAL_BACKEND %q (use cli or api)", backendName)
+		t.Fatalf("unknown EVAL_BACKEND %q (use cli, api, openai, google, or xai)", backendName)
 	}
 
 	fixture := buildFixture(500, 200)
@@ -398,6 +566,82 @@ func TestComprehension(t *testing.T) {
 		}
 		t.Logf("%-6s %7.1f%% %10d %10s", f.name, acc, r.tokens, vsJSON)
 	}
+}
+
+func callOpenAI(apiKey, model, prompt string) (string, error) {
+	body := map[string]any{
+		"model":      model,
+		"max_tokens": 200,
+		"messages":   []map[string]string{{"role": "user", "content": prompt}},
+	}
+	bodyBytes, _ := json.Marshal(body)
+
+	url := "https://api.openai.com/v1/chat/completions"
+	// xAI uses a different base URL but same format
+	if strings.Contains(model, "grok") {
+		url = "https://api.x.ai/v1/chat/completions"
+	}
+
+	req, _ := http.NewRequest("POST", url, bytes.NewReader(bodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+apiKey)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	respBody, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		return "", fmt.Errorf("OpenAI API %d: %s", resp.StatusCode, string(respBody))
+	}
+	var result struct {
+		Choices []struct {
+			Message struct {
+				Content string `json:"content"`
+			} `json:"message"`
+		} `json:"choices"`
+	}
+	json.Unmarshal(respBody, &result)
+	if len(result.Choices) == 0 {
+		return "", fmt.Errorf("empty response")
+	}
+	return result.Choices[0].Message.Content, nil
+}
+
+func callGoogle(apiKey, model, prompt string) (string, error) {
+	body := map[string]any{
+		"contents": []map[string]any{
+			{"parts": []map[string]string{{"text": prompt}}},
+		},
+	}
+	bodyBytes, _ := json.Marshal(body)
+
+	url := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s", model, apiKey)
+	req, _ := http.NewRequest("POST", url, bytes.NewReader(bodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	respBody, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		return "", fmt.Errorf("Google API %d: %s", resp.StatusCode, string(respBody))
+	}
+	var result struct {
+		Candidates []struct {
+			Content struct {
+				Parts []struct {
+					Text string `json:"text"`
+				} `json:"parts"`
+			} `json:"content"`
+		} `json:"candidates"`
+	}
+	json.Unmarshal(respBody, &result)
+	if len(result.Candidates) == 0 || len(result.Candidates[0].Content.Parts) == 0 {
+		return "", fmt.Errorf("empty response")
+	}
+	return result.Candidates[0].Content.Parts[0].Text, nil
 }
 
 func callAPI(apiKey, model, prompt string) (string, error) {
