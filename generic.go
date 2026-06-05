@@ -114,6 +114,21 @@ func encodeGenericObjectAny(v reflect.Value, depth int) []string {
 	}
 }
 
+// isPrimitiveArray reports whether all elements of v are primitive values
+// (not objects, slices, or arrays).
+func isPrimitiveArray(v reflect.Value) bool {
+	for i := 0; i < v.Len(); i++ {
+		item := derefValue(v.Index(i))
+		if !item.IsValid() {
+			continue
+		}
+		if isObject(item) || isSliceOrArray(item) {
+			return false
+		}
+	}
+	return true
+}
+
 // encodeGenericArray encodes a slice/array value.
 func encodeGenericArray(v reflect.Value, name string, depth int) []string {
 	if v.Len() == 0 {
@@ -126,6 +141,19 @@ func encodeGenericArray(v reflect.Value, name string, depth int) []string {
 	// Check for uniform object array (tabular encoding).
 	if isUniformGenericObjectArray(v) {
 		return encodeGenericTabular(v, name, depth)
+	}
+
+	// Primitive arrays: inline as comma-separated values on one line.
+	if isPrimitiveArray(v) {
+		vals := make([]string, v.Len())
+		for i := 0; i < v.Len(); i++ {
+			vals[i] = formatGenericValue(derefValue(v.Index(i)))
+		}
+		line := strings.Join(vals, ",")
+		if name != "" {
+			return []string{fmt.Sprintf("%s%s[%d]: %s", indentStr(depth), name, v.Len(), line)}
+		}
+		return []string{indentStr(depth) + line}
 	}
 
 	// Non-uniform: per-item encoding.
