@@ -25,7 +25,6 @@ import (
 	"strings"
 	"testing"
 
-
 	gcf "github.com/blackwell-systems/gcf-go"
 	toon "github.com/toon-format/toon-go"
 )
