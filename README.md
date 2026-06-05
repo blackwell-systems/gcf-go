@@ -6,9 +6,11 @@
 
 # gcf-go
 
-Go implementation of [GCF (Graph Compact Format)](https://github.com/blackwell-systems/gcf).
+Go implementation of [GCF (Graph Compact Format)](https://gcformat.com/) — the most token-efficient wire format for LLMs. A drop-in alternative to JSON and TOON for any structured data.
 
-**84% fewer tokens than JSON. 32% fewer than TOON. 100% LLM comprehension accuracy at 500 symbols, where JSON fails.**
+**79% fewer input tokens than JSON. 75% fewer output tokens. 52% smaller than TOON. 100% LLM comprehension at 500 symbols, where JSON fails at 66.7%.**
+
+Docs: [gcformat.com](https://gcformat.com/) · [Playground](https://gcformat.com/playground.html) · [GCF vs TOON](https://gcformat.com/guide/vs-toon.html)
 
 ## Install
 
@@ -16,7 +18,7 @@ Go implementation of [GCF (Graph Compact Format)](https://github.com/blackwell-s
 go get github.com/blackwell-systems/gcf-go
 ```
 
-Zero dependencies. Single package.
+Zero dependencies. Single package. Don't want to change code? Use the [MCP proxy](https://github.com/blackwell-systems/gcf-proxy) for zero-code adoption.
 
 ## Quick Start
 
