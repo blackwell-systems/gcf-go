@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.4.0 (2026-06-05)
+
+- `EncodeGeneric`: primitive arrays inlined as `name[N]: val1,val2,val3`
+- Eliminates TOON's only benchmark win (deeply nested config)
+
 ## v0.3.0 (2026-06-05)
 
 - **Breaking**: `Encode()` now emits `edges=N` in header line
