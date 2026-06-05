@@ -23,6 +23,9 @@ func Decode(input string) (*Payload, error) {
 	if err := parseHeader(header[4:], p); err != nil {
 		return nil, err
 	}
+	if p.Tool == "" {
+		return nil, fmt.Errorf("gcf: header missing required 'tool' field")
+	}
 
 	// Parse body: symbols and edges.
 	var symbols []Symbol

@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.1.2 (2026-06-04)
+
+- Fix: decoder rejects headers missing required `tool` field (conformance)
+
 ## v0.1.1 (2026-06-03)
 
 - `EncodeGeneric`: encode arbitrary Go values (maps, slices, structs) into GCF tabular format
