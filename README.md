@@ -20,6 +20,22 @@ go get github.com/blackwell-systems/gcf-go
 
 Zero dependencies. Single package. Don't want to change code? Use the [MCP proxy](https://github.com/blackwell-systems/gcf-proxy) for zero-code adoption.
 
+## CLI
+
+Standalone binaries are attached to each [release](https://github.com/blackwell-systems/gcf-go/releases). The CLI is optional; it's for converting files from the command line without writing code.
+
+```bash
+# Install
+go install github.com/blackwell-systems/gcf-go/cmd/gcf@latest
+
+# Or download a binary from the latest release
+
+# Usage
+gcf encode < payload.json    # JSON to GCF
+gcf decode < payload.gcf     # GCF to JSON
+gcf stats  < payload.json    # token comparison
+```
+
 ## Quick Start
 
 ```go
