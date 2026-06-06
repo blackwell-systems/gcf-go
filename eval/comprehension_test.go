@@ -393,9 +393,18 @@ func TestComprehension(t *testing.T) {
 		if _, err := exec.LookPath("claude"); err != nil {
 			t.Skip("claude not on PATH; install Claude Code or set EVAL_BACKEND=api with ANTHROPIC_API_KEY")
 		}
-		backendLabel = "cli (claude -p)"
+		cliModel := os.Getenv("EVAL_MODEL")
+		if cliModel != "" {
+			backendLabel = fmt.Sprintf("cli (claude -p --model %s)", cliModel)
+		} else {
+			backendLabel = "cli (claude -p)"
+		}
 		callLLM = func(prompt string) (string, error) {
-			cmd := exec.Command("claude", "-p", prompt)
+			args := []string{"-p", prompt}
+			if cliModel != "" {
+				args = []string{"-p", "--model", cliModel, prompt}
+			}
+			cmd := exec.Command("claude", args...)
 			var stdout, stderr bytes.Buffer
 			cmd.Stdout = &stdout
 			cmd.Stderr = &stderr
