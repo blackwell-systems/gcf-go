@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.6.0 (2026-06-06)
+
+- `DecodeGeneric`: decode any GCF text (tabular or graph) back to Go values
+- `GenericStreamEncoder`: zero-buffering tabular streaming encode (BeginArray/WriteRow/EndArray/WriteKV/WriteSection/WriteInlineArray)
+
 ## v0.5.0 (2026-06-06)
 
 - `NewStreamEncoder`: zero-buffering streaming encode to any `io.Writer`
