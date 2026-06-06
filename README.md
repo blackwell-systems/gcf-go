@@ -75,6 +75,38 @@ out2 := gcf.EncodeWithSession(payload2, sess) // reused symbols as "@N  # previo
 
 By the 5th call in a session: 92.7% token savings vs JSON.
 
+## Streaming Encode
+
+Write GCF output incrementally as symbols and edges arrive. Zero buffering, O(1) memory per row. Ideal for MCP servers that walk large graphs or paginate results:
+
+```go
+enc := gcf.NewStreamEncoder(w, "context_for_task", gcf.StreamOptions{TokenBudget: 5000})
+
+// Symbols emit immediately as they're discovered.
+enc.WriteSymbol(gcf.Symbol{QualifiedName: "pkg.Auth", Kind: "function", Score: 0.95, Provenance: "lsp", Distance: 0})
+enc.WriteSymbol(gcf.Symbol{QualifiedName: "pkg.Server", Kind: "function", Score: 0.60, Provenance: "lsp", Distance: 1})
+
+// Edges emit immediately too.
+enc.WriteEdge(gcf.Edge{Source: "pkg.Server", Target: "pkg.Auth", EdgeType: "calls"})
+
+// Close emits the ## _summary trailer with final counts.
+enc.Close()
+```
+
+Output:
+```
+GCF tool=context_for_task budget=5000
+## targets
+@0 fn pkg.Auth 0.95 lsp
+## related
+@1 fn pkg.Server 0.60 lsp
+## edges [?]
+@0<@1 calls
+## _summary symbols=2 edges=1 sections=targets:1,related:1,edges:1
+```
+
+The `[?]` marker signals deferred count. The `## _summary` trailer provides counts after the data. The LLM has both the data and the counts in context. Standard `Decode()` handles streaming output with no changes.
+
 ## Delta Encoding
 
 When the consumer already has a prior context pack, send only what changed:
@@ -127,6 +159,7 @@ Works on maps, slices, structs, and primitives. Arrays of uniform objects get ta
 | `Decode(input string) (*Payload, error)` | Parse GCF text back to a Payload |
 | `EncodeWithSession(p *Payload, s *Session) string` | Encode with session deduplication |
 | `EncodeDelta(d *DeltaPayload) string` | Encode a delta (added/removed only) |
+| `NewStreamEncoder(w, tool, opts) *StreamEncoder` | Create a streaming encoder (zero-buffering) |
 | `NewSession() *Session` | Create a new session tracker (thread-safe) |
 
 ## Types
@@ -138,6 +171,8 @@ Works on maps, slices, structs, and primitives. Arrays of uniform objects get ta
 | `Edge` | Directed relationship: source, target, edge type |
 | `DeltaPayload` | Diff between two packs: added/removed symbols and edges |
 | `Session` | Thread-safe tracker for multi-call deduplication |
+| `StreamEncoder` | Streaming encoder: WriteSymbol, WriteEdge, WriteBareRef, Close |
+| `StreamOptions` | Config for streaming: TokenBudget, TokensUsed, PackRoot, Session |
 | `KindAbbrev` / `KindExpand` | Bidirectional kind abbreviation maps |
 
 ## Comprehension Eval
