@@ -24,6 +24,7 @@ import (
 	"os/exec"
 	"strings"
 	"testing"
+	"time"
 
 	gcf "github.com/blackwell-systems/gcf-go"
 	toon "github.com/toon-format/toon-go"
@@ -565,10 +566,14 @@ func TestComprehension(t *testing.T) {
 }
 
 func callOpenAI(apiKey, model, prompt string) (string, error) {
+	tokenKey := "max_tokens"
+	if strings.HasPrefix(model, "gpt-5") || strings.HasPrefix(model, "o") {
+		tokenKey = "max_completion_tokens"
+	}
 	body := map[string]any{
-		"model":      model,
-		"max_tokens": 200,
-		"messages":   []map[string]string{{"role": "user", "content": prompt}},
+		"model":    model,
+		tokenKey:   200,
+		"messages": []map[string]string{{"role": "user", "content": prompt}},
 	}
 	bodyBytes, _ := json.Marshal(body)
 
@@ -578,30 +583,42 @@ func callOpenAI(apiKey, model, prompt string) (string, error) {
 		url = "https://api.x.ai/v1/chat/completions"
 	}
 
-	req, _ := http.NewRequest("POST", url, bytes.NewReader(bodyBytes))
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+apiKey)
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return "", err
+	// Retry with exponential backoff on 429s.
+	maxRetries := 5
+	for attempt := 0; attempt <= maxRetries; attempt++ {
+		req, _ := http.NewRequest("POST", url, bytes.NewReader(bodyBytes))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", "Bearer "+apiKey)
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			return "", err
+		}
+		respBody, _ := io.ReadAll(resp.Body)
+		resp.Body.Close()
+
+		if resp.StatusCode == 429 && attempt < maxRetries {
+			wait := time.Duration(1<<uint(attempt)) * 5 * time.Second // 5s, 10s, 20s, 40s, 80s
+			time.Sleep(wait)
+			continue
+		}
+
+		if resp.StatusCode != 200 {
+			return "", fmt.Errorf("OpenAI API %d: %s", resp.StatusCode, string(respBody))
+		}
+		var result struct {
+			Choices []struct {
+				Message struct {
+					Content string `json:"content"`
+				} `json:"message"`
+			} `json:"choices"`
+		}
+		json.Unmarshal(respBody, &result)
+		if len(result.Choices) == 0 {
+			return "", fmt.Errorf("empty response")
+		}
+		return result.Choices[0].Message.Content, nil
 	}
-	defer resp.Body.Close()
-	respBody, _ := io.ReadAll(resp.Body)
-	if resp.StatusCode != 200 {
-		return "", fmt.Errorf("OpenAI API %d: %s", resp.StatusCode, string(respBody))
-	}
-	var result struct {
-		Choices []struct {
-			Message struct {
-				Content string `json:"content"`
-			} `json:"message"`
-		} `json:"choices"`
-	}
-	json.Unmarshal(respBody, &result)
-	if len(result.Choices) == 0 {
-		return "", fmt.Errorf("empty response")
-	}
-	return result.Choices[0].Message.Content, nil
+	return "", fmt.Errorf("max retries exceeded")
 }
 
 func callGoogle(apiKey, model, prompt string) (string, error) {
