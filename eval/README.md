@@ -28,20 +28,20 @@ All answers are deterministic (computed from the payload). No LLM judge.
 
 ## Results (multi-model, 2026-06-06)
 
-12 runs across 6 models and 2 providers. GCF wins 11, ties 1, loses 0.
+13 runs across 6 models and 2 providers. GCF wins 12, ties 1, loses 0.
 
-| Model | GCF | TOON | JSON |
-|-------|-----|------|------|
-| Claude Opus 4.6 | **100%** | 92.3% | 76.9% |
-| Claude Sonnet 4.6 | **100%** | 76.9% | 53.8% |
-| Claude Haiku 4.5 | **92.3%** | 69.2% | 61.5% |
-| GPT-5.5 (4 runs avg) | **84.3%** | 67.9% | 48.1% |
-| GPT-5.4 (3 runs avg) | **76.3%** | 55.3% | 42.1% |
-| GPT-5.4-mini (2 runs avg) | **71.8%** | 64.1% | 54.2% |
+| Model | Runs | GCF | TOON | JSON |
+|-------|------|-----|------|------|
+| Claude Opus 4.6 | 1 | **100%** | 92.3% | 76.9% |
+| Claude Sonnet 4.6 | 1 | **100%** | 76.9% | 53.8% |
+| Claude Haiku 4.5 | 2 | **96.2%** | 69.2% | 57.7% |
+| GPT-5.5 | 4 | **84.3%** | 67.9% | 48.1% |
+| GPT-5.4 | 3 | **76.3%** | 55.3% | 42.1% |
+| GPT-5.4-mini | 2 | **71.8%** | 64.1% | 54.2% |
 
 **GCF wins on every model. The ordering GCF > TOON > JSON never flips.**
 
-TOON fails on distance grouping (no section headers). JSON fails on counting at scale (field-name repetition overwhelms attention). All raw logs in `results/comprehension/`.
+Claude models achieve near-perfect scores on GCF (100%, 100%, 96.2%). TOON fails on distance grouping (no section headers). JSON fails on counting at scale (field-name repetition overwhelms attention). All raw logs in `results/comprehension/`.
 
 ## Running
 
