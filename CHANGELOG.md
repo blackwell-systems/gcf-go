@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.5.0 (2026-06-06)
+
+- `NewStreamEncoder`: zero-buffering streaming encode to any `io.Writer`
+- `WriteSymbol`, `WriteEdge`, `WriteBareRef`: emit lines immediately as data arrives
+- `Close`: emits `## _summary` trailer with final counts
+- O(1) memory per row, thread-safe
+- Decoder handles `[?]` deferred counts and `## _summary` (no changes needed)
+
 ## v0.4.0 (2026-06-05)
 
 - `EncodeGeneric`: primitive arrays inlined as `name[N]: val1,val2,val3`
