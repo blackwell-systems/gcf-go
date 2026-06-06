@@ -776,11 +776,11 @@ func callGoogleGen(apiKey, model, prompt string) (string, error) {
 		"contents": []map[string]any{
 			{"parts": []map[string]string{{"text": prompt}}},
 		},
-		"generationConfig": map[string]any{"maxOutputTokens": 4096},
+		"generationConfig": map[string]any{"maxOutputTokens": 16384},
 	}
 	if t := os.Getenv("EVAL_TEMPERATURE"); t != "" {
 		if temp, err := strconv.ParseFloat(t, 64); err == nil {
-			body["generationConfig"] = map[string]any{"temperature": temp, "maxOutputTokens": 4096}
+			body["generationConfig"] = map[string]any{"temperature": temp, "maxOutputTokens": 16384}
 		}
 	}
 	bodyBytes, _ := json.Marshal(body)
