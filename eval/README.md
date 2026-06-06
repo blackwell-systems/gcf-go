@@ -26,17 +26,22 @@ Generates a 500-symbol, 200-edge code graph payload, encodes it in all three for
 
 All answers are deterministic (computed from the payload). No LLM judge.
 
-## Results (Claude, 2026-06-05)
+## Results (multi-model, 2026-06-06)
 
-| Format | Accuracy | Tokens | vs JSON |
-|--------|----------|--------|---------|
-| **GCF** | **100%** (13/13) | **11,090** | **79% fewer** |
-| TOON | 92.3% (12/13) | 16,378 | 69% fewer |
-| JSON | 76.9% (10/13) | 53,341 | baseline |
+12 runs across 6 models and 2 providers. GCF wins 11, ties 1, loses 0.
 
-**GCF achieves perfect accuracy at 32% fewer tokens than TOON.**
+| Model | GCF | TOON | JSON |
+|-------|-----|------|------|
+| Claude Opus 4.6 | **100%** | 92.3% | 76.9% |
+| Claude Sonnet 4.6 | **100%** | 76.9% | 53.8% |
+| Claude Haiku 4.5 | **92.3%** | 69.2% | 61.5% |
+| GPT-5.5 (4 runs avg) | **84.3%** | 67.9% | 48.1% |
+| GPT-5.4 (3 runs avg) | **76.3%** | 55.3% | 42.1% |
+| GPT-5.4-mini (2 runs avg) | **71.8%** | 64.1% | 54.2% |
 
-TOON fails on `extended_count` (no distance grouping). JSON fails on `target_count`, `related_count`, and `function_count` (structural noise overwhelms counting at 500 records).
+**GCF wins on every model. The ordering GCF > TOON > JSON never flips.**
+
+TOON fails on distance grouping (no section headers). JSON fails on counting at scale (field-name repetition overwhelms attention). All raw logs in `results/comprehension/`.
 
 ## Running
 
