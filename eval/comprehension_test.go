@@ -22,6 +22,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -584,6 +585,11 @@ func callOpenAI(apiKey, model, prompt string) (string, error) {
 		tokenKey:   200,
 		"messages": []map[string]string{{"role": "user", "content": prompt}},
 	}
+	if t := os.Getenv("EVAL_TEMPERATURE"); t != "" {
+		if temp, err := strconv.ParseFloat(t, 64); err == nil {
+			body["temperature"] = temp
+		}
+	}
 	bodyBytes, _ := json.Marshal(body)
 
 	url := "https://api.openai.com/v1/chat/completions"
@@ -636,34 +642,52 @@ func callGoogle(apiKey, model, prompt string) (string, error) {
 			{"parts": []map[string]string{{"text": prompt}}},
 		},
 	}
+	if t := os.Getenv("EVAL_TEMPERATURE"); t != "" {
+		if temp, err := strconv.ParseFloat(t, 64); err == nil {
+			body["generationConfig"] = map[string]any{"temperature": temp}
+		}
+	}
 	bodyBytes, _ := json.Marshal(body)
 
 	url := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s", model, apiKey)
-	req, _ := http.NewRequest("POST", url, bytes.NewReader(bodyBytes))
-	req.Header.Set("Content-Type", "application/json")
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return "", err
+
+	// Retry with exponential backoff on 429s (free tier: 5 RPM).
+	maxRetries := 8
+	for attempt := 0; attempt <= maxRetries; attempt++ {
+		req, _ := http.NewRequest("POST", url, bytes.NewReader(bodyBytes))
+		req.Header.Set("Content-Type", "application/json")
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			return "", err
+		}
+		respBody, _ := io.ReadAll(resp.Body)
+		resp.Body.Close()
+
+		if resp.StatusCode == 429 && attempt < maxRetries {
+			wait := time.Duration(10+attempt*5) * time.Second // 10s, 15s, 20s, 25s...
+			time.Sleep(wait)
+			continue
+		}
+
+		if resp.StatusCode != 200 {
+			return "", fmt.Errorf("Google API %d: %s", resp.StatusCode, string(respBody))
+		}
+		var result struct {
+			Candidates []struct {
+				Content struct {
+					Parts []struct {
+						Text string `json:"text"`
+					} `json:"parts"`
+				} `json:"content"`
+			} `json:"candidates"`
+		}
+		json.Unmarshal(respBody, &result)
+		if len(result.Candidates) == 0 || len(result.Candidates[0].Content.Parts) == 0 {
+			return "", fmt.Errorf("empty response")
+		}
+		return result.Candidates[0].Content.Parts[0].Text, nil
 	}
-	defer resp.Body.Close()
-	respBody, _ := io.ReadAll(resp.Body)
-	if resp.StatusCode != 200 {
-		return "", fmt.Errorf("Google API %d: %s", resp.StatusCode, string(respBody))
-	}
-	var result struct {
-		Candidates []struct {
-			Content struct {
-				Parts []struct {
-					Text string `json:"text"`
-				} `json:"parts"`
-			} `json:"content"`
-		} `json:"candidates"`
-	}
-	json.Unmarshal(respBody, &result)
-	if len(result.Candidates) == 0 || len(result.Candidates[0].Content.Parts) == 0 {
-		return "", fmt.Errorf("empty response")
-	}
-	return result.Candidates[0].Content.Parts[0].Text, nil
+	return "", fmt.Errorf("max retries exceeded")
 }
 
 func callAPI(apiKey, model, prompt string) (string, error) {
