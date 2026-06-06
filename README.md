@@ -142,7 +142,7 @@ Works on maps, slices, structs, and primitives. Arrays of uniform objects get ta
 
 ## Comprehension Eval
 
-The `eval/` submodule contains a rigorous 3-way benchmark (GCF vs TOON vs JSON) at 500 symbols, 200 edges. 13 structured extraction questions sent to an LLM with zero format instructions:
+Rigorous 3-way benchmark (GCF vs TOON vs JSON) at 500 symbols, 200 edges. 13 structured extraction questions sent to an LLM with zero format instructions:
 
 | Format | Accuracy | Tokens | vs JSON |
 |--------|----------|--------|---------|
@@ -152,9 +152,7 @@ The `eval/` submodule contains a rigorous 3-way benchmark (GCF vs TOON vs JSON) 
 
 GCF is the only format with perfect accuracy at scale, at 32% fewer tokens than TOON.
 
-```bash
-cd eval && GOWORK=off go test -run TestComprehension -v -timeout 0
-```
+Reproduce: `git clone https://github.com/blackwell-systems/gcf-go && cd gcf-go/eval && GOWORK=off go test -run TestComprehension -v -timeout 0`
 
 ## Token Efficiency (TOON's Own Benchmark)
 
@@ -168,7 +166,7 @@ Running [TOON's benchmark harness](https://github.com/blackwell-systems/toon/tre
 
 GCF wins all 6 datasets. On semi-uniform data (the most common real-world pattern), GCF uses 42% fewer tokens than TOON.
 
-Reproducible: [blackwell-systems/toon@gcf-comparison](https://github.com/blackwell-systems/toon/tree/gcf-comparison)
+Reproduce: `git clone https://github.com/blackwell-systems/toon && cd toon && git checkout gcf-comparison && cd benchmarks && pnpm install && pnpm benchmark:tokens`
 
 ## Links
 
