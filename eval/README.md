@@ -28,7 +28,7 @@ All answers are deterministic (computed from the payload). No LLM judge.
 
 ## Results (multi-model, 2026-06-06)
 
-22 comprehension runs across 9 models and 3 providers. GCF wins 21, ties 1, loses 0.
+23 comprehension runs across 10 models and 3 providers. GCF wins 22, ties 1, loses 0.
 
 | Model | Runs | GCF | TOON | JSON |
 |-------|------|-----|------|------|
@@ -38,13 +38,14 @@ All answers are deterministic (computed from the payload). No LLM judge.
 | GPT-5.5 | 5 | **84.1%** | 67.7% | 45.8% |
 | GPT-5.4 | 4 | **76.4%** | 56.0% | 44.1% |
 | GPT-5.4-mini | 2 | **71.8%** | 64.1% | 54.2% |
-| Gemini 2.5 Flash | 3 | **80.6%** | 54.6% | 57.0% |
-| Gemini 3.5 Flash | 1 | **100%** | 61.5% | 46.2% |
 | Gemini 2.5 Pro | 1 | **100%** | 76.9% | 58.3% |
+| Gemini 3.1 Pro | 1 | **100%** | 76.9% | 46.2% |
+| Gemini 3.5 Flash | 1 | **100%** | 61.5% | 46.2% |
+| Gemini 2.5 Flash | 3 | **80.6%** | 54.6% | 57.0% |
 
 **GCF wins on every model. The ordering GCF > TOON > JSON never flips.**
 
-Three models achieve 100%: Sonnet (Anthropic), Gemini 2.5 Pro (Google), Gemini 3.5 Flash (Google). All raw logs in [gcf/eval/results](https://github.com/blackwell-systems/gcf/tree/main/eval/results).
+Four models achieve 100%: Sonnet (Anthropic), Gemini 2.5 Pro, Gemini 3.1 Pro, Gemini 3.5 Flash (all Google). All raw logs in [gcf/eval/results](https://github.com/blackwell-systems/gcf/tree/main/eval/results).
 
 ## Running
 
