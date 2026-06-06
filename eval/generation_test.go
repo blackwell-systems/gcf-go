@@ -25,6 +25,7 @@ import (
 	"time"
 
 	gcf "github.com/blackwell-systems/gcf-go"
+	toon "github.com/toon-format/toon-go"
 )
 
 var genSizes = []struct {
@@ -286,6 +287,404 @@ func TestGeneration(t *testing.T) {
 		t.Logf("%-8d %-6d %-6s %-10d %-10d %-8.0f%%", r.symbols, r.edges, valid, r.gcfBytes, r.jsonBytes, r.savings)
 	}
 	t.Logf("\n%d/%d valid.", validCount, len(results))
+}
+
+const toonPrimer = `TOON format example (3 symbols, 2 edges):
+tool: example
+symbols[3]{name,kind,score,provenance,distance}:
+  pkg.Foo,function,0.9,lsp_resolved,0
+  pkg.Bar,type,0.7,ast_inferred,1
+  pkg.Baz,method,0.5,structural,2
+edges[2]{source,target,type}:
+  pkg.Foo,pkg.Bar,calls
+  pkg.Bar,pkg.Baz,imports
+
+Rules:
+- Header format: arrayName[count]{field1,field2,...}:
+- Each row indented with 2 spaces, fields comma-separated
+- Key-value pairs use "key: value" syntax
+- Output ONLY raw TOON. No explanation, no code fences. First line starts with "tool:".`
+
+func buildToonGenPrompt(nSymbols, nEdges int, payload *gcf.Payload) string {
+	var symDescs []string
+	for _, s := range payload.Symbols {
+		distLabel := []string{"target", "related", "extended"}[s.Distance]
+		symDescs = append(symDescs, fmt.Sprintf("- %s (%s, score %.2f, %s, %s)", s.QualifiedName, s.Kind, s.Score, s.Provenance, distLabel))
+	}
+	var edgeDescs []string
+	for _, e := range payload.Edges {
+		edgeDescs = append(edgeDescs, fmt.Sprintf("- %s %s %s", e.Source, e.EdgeType, e.Target))
+	}
+
+	return fmt.Sprintf(`%s
+
+Now encode this data as TOON:
+Tool: context_for_task
+Symbols (%d):
+%s
+Edges (%d):
+%s`,
+		toonPrimer,
+		nSymbols, strings.Join(symDescs, "\n"),
+		nEdges, strings.Join(edgeDescs, "\n"))
+}
+
+func TestGenerationTOON(t *testing.T) {
+	backendName := os.Getenv("EVAL_BACKEND")
+	if backendName == "" {
+		backendName = "cli"
+	}
+
+	var callLLM func(prompt string) (string, error)
+	var backendLabel string
+
+	switch backendName {
+	case "cli":
+		if _, err := exec.LookPath("claude"); err != nil {
+			t.Skip("claude not on PATH")
+		}
+		cliModel := os.Getenv("EVAL_MODEL")
+		if cliModel != "" {
+			backendLabel = fmt.Sprintf("cli (claude -p --model %s)", cliModel)
+		} else {
+			backendLabel = "cli (claude -p)"
+		}
+		callLLM = func(prompt string) (string, error) {
+			args := []string{"-p", prompt}
+			if cliModel != "" {
+				args = []string{"-p", "--model", cliModel, prompt}
+			}
+			cmd := exec.Command("claude", args...)
+			var stdout, stderr bytes.Buffer
+			cmd.Stdout = &stdout
+			cmd.Stderr = &stderr
+			if err := cmd.Run(); err != nil {
+				return "", fmt.Errorf("claude -p failed: %w\nstderr: %s", err, stderr.String())
+			}
+			return stdout.String(), nil
+		}
+	case "openai":
+		apiKey := os.Getenv("OPENAI_API_KEY")
+		if apiKey == "" {
+			t.Skip("EVAL_BACKEND=openai requires OPENAI_API_KEY")
+		}
+		model := os.Getenv("EVAL_MODEL")
+		if model == "" {
+			model = "gpt-4o"
+		}
+		backendLabel = fmt.Sprintf("openai (%s)", model)
+		callLLM = func(prompt string) (string, error) {
+			return callOpenAIGen(apiKey, model, prompt)
+		}
+	case "google":
+		apiKey := os.Getenv("GOOGLE_API_KEY")
+		if apiKey == "" {
+			t.Skip("EVAL_BACKEND=google requires GOOGLE_API_KEY")
+		}
+		model := os.Getenv("EVAL_MODEL")
+		if model == "" {
+			model = "gemini-2.5-flash"
+		}
+		backendLabel = fmt.Sprintf("google (%s)", model)
+		callLLM = func(prompt string) (string, error) {
+			return callGoogleGen(apiKey, model, prompt)
+		}
+	case "api":
+		apiKey := os.Getenv("ANTHROPIC_API_KEY")
+		if apiKey == "" {
+			t.Skip("EVAL_BACKEND=api requires ANTHROPIC_API_KEY")
+		}
+		model := os.Getenv("EVAL_MODEL")
+		if model == "" {
+			model = "claude-haiku-4-5-20251001"
+		}
+		backendLabel = fmt.Sprintf("api (%s)", model)
+		callLLM = func(prompt string) (string, error) {
+			return callAPIGen(apiKey, model, prompt)
+		}
+	default:
+		t.Fatalf("unknown EVAL_BACKEND %q", backendName)
+	}
+
+	t.Logf("Backend: %s", backendLabel)
+	t.Logf("Tests: %d sizes (5 to 100 symbols)", len(genSizes))
+	t.Log("")
+
+	type result struct {
+		symbols   int
+		edges     int
+		valid     bool
+		toonBytes int
+		jsonBytes int
+		savings   float64
+		err       string
+	}
+
+	var results []result
+	for _, sz := range genSizes {
+		_, payload := buildGenPrompt(sz.symbols, sz.edges)
+		prompt := buildToonGenPrompt(sz.symbols, sz.edges, payload)
+		t.Logf("Generating %d symbols, %d edges...", sz.symbols, sz.edges)
+
+		output, err := callLLM(prompt)
+		if err != nil {
+			t.Logf("  ERROR: %v", err)
+			results = append(results, result{symbols: sz.symbols, edges: sz.edges, err: err.Error()})
+			continue
+		}
+
+		// Strip code fences.
+		toonText := stripToTOON(output)
+
+		// Validate: try to unmarshal with toon-go.
+		type toonSymbol struct {
+			Name       string  `toon:"name"`
+			Kind       string  `toon:"kind"`
+			Score      float64 `toon:"score"`
+			Provenance string  `toon:"provenance"`
+			Distance   int     `toon:"distance"`
+		}
+		type toonEdge struct {
+			Source string `toon:"source"`
+			Target string `toon:"target"`
+			Type   string `toon:"type"`
+		}
+		type toonPayload struct {
+			Tool    string       `toon:"tool"`
+			Symbols []toonSymbol `toon:"symbols"`
+			Edges   []toonEdge   `toon:"edges"`
+		}
+
+		var parsed toonPayload
+		decErr := toon.UnmarshalString(toonText, &parsed)
+		if decErr != nil {
+			t.Logf("  INVALID: %v", decErr)
+			t.Logf("  Output (first 500 chars): %s", truncate(toonText, 500))
+			results = append(results, result{symbols: sz.symbols, edges: sz.edges, err: decErr.Error(), toonBytes: len(toonText)})
+			continue
+		}
+
+		toonBytes := len(toonText)
+		jsonOut, _ := json.Marshal(payload)
+		jsonBytes := len(jsonOut)
+		savings := 100.0 * (1.0 - float64(toonBytes)/float64(jsonBytes))
+
+		t.Logf("  VALID  %d symbols, %d edges  (%d B TOON, %d B JSON, %.0f%% savings)",
+			len(parsed.Symbols), len(parsed.Edges), toonBytes, jsonBytes, savings)
+
+		results = append(results, result{
+			symbols: sz.symbols, edges: sz.edges, valid: true,
+			toonBytes: toonBytes, jsonBytes: jsonBytes, savings: savings,
+		})
+	}
+
+	// Summary.
+	t.Log("")
+	t.Log("=== Summary ===")
+	t.Logf("%-8s %-6s %-6s %-10s %-10s %-8s", "Symbols", "Edges", "Valid", "TOON bytes", "JSON bytes", "Savings")
+	validCount := 0
+	for _, r := range results {
+		valid := "NO"
+		if r.valid {
+			valid = "YES"
+			validCount++
+		}
+		t.Logf("%-8d %-6d %-6s %-10d %-10d %-8.0f%%", r.symbols, r.edges, valid, r.toonBytes, r.jsonBytes, r.savings)
+	}
+	t.Logf("\n%d/%d valid.", validCount, len(results))
+}
+
+func TestGenerationJSON(t *testing.T) {
+	backendName := os.Getenv("EVAL_BACKEND")
+	if backendName == "" {
+		backendName = "cli"
+	}
+
+	var callLLM func(prompt string) (string, error)
+	var backendLabel string
+
+	switch backendName {
+	case "cli":
+		if _, err := exec.LookPath("claude"); err != nil {
+			t.Skip("claude not on PATH")
+		}
+		cliModel := os.Getenv("EVAL_MODEL")
+		if cliModel != "" {
+			backendLabel = fmt.Sprintf("cli (claude -p --model %s)", cliModel)
+		} else {
+			backendLabel = "cli (claude -p)"
+		}
+		callLLM = func(prompt string) (string, error) {
+			args := []string{"-p", prompt}
+			if cliModel != "" {
+				args = []string{"-p", "--model", cliModel, prompt}
+			}
+			cmd := exec.Command("claude", args...)
+			var stdout, stderr bytes.Buffer
+			cmd.Stdout = &stdout
+			cmd.Stderr = &stderr
+			if err := cmd.Run(); err != nil {
+				return "", fmt.Errorf("claude -p failed: %w\nstderr: %s", err, stderr.String())
+			}
+			return stdout.String(), nil
+		}
+	case "openai":
+		apiKey := os.Getenv("OPENAI_API_KEY")
+		if apiKey == "" {
+			t.Skip("EVAL_BACKEND=openai requires OPENAI_API_KEY")
+		}
+		model := os.Getenv("EVAL_MODEL")
+		if model == "" {
+			model = "gpt-4o"
+		}
+		backendLabel = fmt.Sprintf("openai (%s)", model)
+		callLLM = func(prompt string) (string, error) {
+			return callOpenAIGen(apiKey, model, prompt)
+		}
+	case "google":
+		apiKey := os.Getenv("GOOGLE_API_KEY")
+		if apiKey == "" {
+			t.Skip("EVAL_BACKEND=google requires GOOGLE_API_KEY")
+		}
+		model := os.Getenv("EVAL_MODEL")
+		if model == "" {
+			model = "gemini-2.5-flash"
+		}
+		backendLabel = fmt.Sprintf("google (%s)", model)
+		callLLM = func(prompt string) (string, error) {
+			return callGoogleGen(apiKey, model, prompt)
+		}
+	case "api":
+		apiKey := os.Getenv("ANTHROPIC_API_KEY")
+		if apiKey == "" {
+			t.Skip("EVAL_BACKEND=api requires ANTHROPIC_API_KEY")
+		}
+		model := os.Getenv("EVAL_MODEL")
+		if model == "" {
+			model = "claude-haiku-4-5-20251001"
+		}
+		backendLabel = fmt.Sprintf("api (%s)", model)
+		callLLM = func(prompt string) (string, error) {
+			return callAPIGen(apiKey, model, prompt)
+		}
+	default:
+		t.Fatalf("unknown EVAL_BACKEND %q", backendName)
+	}
+
+	t.Logf("Backend: %s", backendLabel)
+	t.Logf("Tests: %d sizes (5 to 100 symbols)", len(genSizes))
+	t.Log("")
+
+	type result struct {
+		symbols   int
+		edges     int
+		valid     bool
+		jsonBytes int
+		err       string
+	}
+
+	var results []result
+	for _, sz := range genSizes {
+		_, payload := buildGenPrompt(sz.symbols, sz.edges)
+		t.Logf("Generating %d symbols, %d edges...", sz.symbols, sz.edges)
+
+		var symDescs []string
+		for _, s := range payload.Symbols {
+			symDescs = append(symDescs, fmt.Sprintf("- %s (%s, score %.2f, %s, distance %d)", s.QualifiedName, s.Kind, s.Score, s.Provenance, s.Distance))
+		}
+		var edgeDescs []string
+		for _, e := range payload.Edges {
+			edgeDescs = append(edgeDescs, fmt.Sprintf("- %s %s %s", e.Source, e.EdgeType, e.Target))
+		}
+
+		prompt := fmt.Sprintf(`Output ONLY valid JSON. No explanation, no code fences.
+
+Encode this data as a JSON object with "tool", "symbols" (array of objects with qualifiedName, kind, score, provenance, distance), and "edges" (array of objects with source, target, edgeType):
+
+Tool: context_for_task
+Symbols (%d):
+%s
+Edges (%d):
+%s`,
+			sz.symbols, strings.Join(symDescs, "\n"),
+			sz.edges, strings.Join(edgeDescs, "\n"))
+
+		output, err := callLLM(prompt)
+		if err != nil {
+			t.Logf("  ERROR: %v", err)
+			results = append(results, result{symbols: sz.symbols, edges: sz.edges, err: err.Error()})
+			continue
+		}
+
+		// Strip code fences and find JSON start.
+		jsonText := stripToJSON(output)
+
+		// Validate: try to parse as JSON.
+		var parsed any
+		decErr := json.Unmarshal([]byte(jsonText), &parsed)
+		if decErr != nil {
+			t.Logf("  INVALID: %v", decErr)
+			t.Logf("  Output (first 500 chars): %s", truncate(jsonText, 500))
+			results = append(results, result{symbols: sz.symbols, edges: sz.edges, err: decErr.Error(), jsonBytes: len(jsonText)})
+			continue
+		}
+
+		t.Logf("  VALID  (%d B JSON)", len(jsonText))
+		results = append(results, result{symbols: sz.symbols, edges: sz.edges, valid: true, jsonBytes: len(jsonText)})
+	}
+
+	// Summary.
+	t.Log("")
+	t.Log("=== Summary ===")
+	t.Logf("%-8s %-6s %-6s %-10s", "Symbols", "Edges", "Valid", "JSON bytes")
+	validCount := 0
+	for _, r := range results {
+		valid := "NO"
+		if r.valid {
+			valid = "YES"
+			validCount++
+		}
+		t.Logf("%-8d %-6d %-6s %-10d", r.symbols, r.edges, valid, r.jsonBytes)
+	}
+	t.Logf("\n%d/%d valid.", validCount, len(results))
+}
+
+func stripToJSON(output string) string {
+	lines := strings.Split(strings.TrimSpace(output), "\n")
+	var cleaned []string
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if strings.HasPrefix(trimmed, "```") {
+			continue
+		}
+		cleaned = append(cleaned, line)
+	}
+	// Find line starting with "{".
+	for i, line := range cleaned {
+		if strings.HasPrefix(strings.TrimSpace(line), "{") {
+			return strings.Join(cleaned[i:], "\n")
+		}
+	}
+	return strings.Join(cleaned, "\n")
+}
+
+func stripToTOON(output string) string {
+	lines := strings.Split(strings.TrimSpace(output), "\n")
+	var cleaned []string
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if strings.HasPrefix(trimmed, "```") {
+			continue
+		}
+		cleaned = append(cleaned, line)
+	}
+	// Find line starting with "tool:".
+	for i, line := range cleaned {
+		if strings.HasPrefix(strings.TrimSpace(line), "tool:") {
+			return strings.Join(cleaned[i:], "\n")
+		}
+	}
+	return strings.Join(cleaned, "\n")
 }
 
 func stripToGCF(output string) string {
