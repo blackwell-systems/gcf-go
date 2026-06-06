@@ -1,0 +1,79 @@
+=== RUN   TestGeneration
+    Backend: openai (gpt-5.5)
+    Tests: 5 sizes (5 to 100 symbols)
+
+    Generating 5 symbols, 3 edges...
+      VALID  5 symbols, 3 edges  (411 B GCF, 1463 B JSON, 72% savings)
+    Generating 10 symbols, 6 edges...
+      VALID  10 symbols, 6 edges  (695 B GCF, 2842 B JSON, 76% savings)
+    Generating 20 symbols, 12 edges...
+      VALID  20 symbols, 12 edges  (1309 B GCF, 5632 B JSON, 77% savings)
+    Generating 50 symbols, 25 edges...
+      VALID  50 symbols, 25 edges  (3025 B GCF, 13427 B JSON, 77% savings)
+    Generating 100 symbols, 50 edges...
+      VALID  100 symbols, 50 edges  (5951 B GCF, 26771 B JSON, 78% savings)
+
+    === Summary ===
+    Symbols  Edges  Valid  GCF bytes  JSON bytes Savings
+    5        3      YES    411        1463       72%
+    10       6      YES    695        2842       76%
+    20       12     YES    1309       5632       77%
+    50       25     YES    3025       13427      77%
+    100      50     YES    5951       26771      78%
+
+    5/5 valid.
+--- PASS: TestGeneration (102.45s)
+
+=== RUN   TestGenerationTOON
+    Backend: openai (gpt-5.5)
+    Tests: 5 sizes (5 to 100 symbols)
+
+    Generating 5 symbols, 3 edges...
+      VALID  5 symbols, 3 edges  (594 B TOON, 1463 B JSON, 59% savings)
+    Generating 10 symbols, 6 edges...
+      INVALID: symbols: index 0: distance: toon: cannot assign string to int
+    Generating 20 symbols, 12 edges...
+      INVALID: symbols: index 0: distance: toon: cannot assign string to int
+    Generating 50 symbols, 25 edges...
+      VALID  50 symbols, 25 edges  (4525 B TOON, 13427 B JSON, 66% savings)
+    Generating 100 symbols, 50 edges...
+      INVALID: symbols: index 0: distance: toon: cannot assign string to int
+
+    === Summary ===
+    Symbols  Edges  Valid  TOON bytes JSON bytes Savings
+    5        3      YES    594        1463       59%
+    10       6      NO     1039       0          0%
+    20       12     NO     1995       0          0%
+    50       25     YES    4525       13427      66%
+    100      50     NO     8937       0          0%
+
+    2/5 valid.
+--- PASS: TestGenerationTOON (75.57s)
+
+=== RUN   TestGenerationJSON
+    Backend: openai (gpt-5.5)
+    Tests: 5 sizes (5 to 100 symbols)
+
+    Generating 5 symbols, 3 edges...
+      VALID  (916 B JSON)
+    Generating 10 symbols, 6 edges...
+      VALID  (1744 B JSON)
+    Generating 20 symbols, 12 edges...
+      VALID  (3458 B JSON)
+    Generating 50 symbols, 25 edges...
+      VALID  (8089 B JSON)
+    Generating 100 symbols, 50 edges...
+      VALID  (16121 B JSON)
+
+    === Summary ===
+    Symbols  Edges  Valid  JSON bytes
+    5        3      YES    916
+    10       6      YES    1744
+    20       12     YES    3458
+    50       25     YES    8089
+    100      50     YES    16121
+
+    5/5 valid.
+--- PASS: TestGenerationJSON (76.39s)
+PASS
+ok  	github.com/blackwell-systems/gcf-go/eval	254.741s
