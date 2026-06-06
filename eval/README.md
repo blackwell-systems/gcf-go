@@ -28,20 +28,21 @@ All answers are deterministic (computed from the payload). No LLM judge.
 
 ## Results (multi-model, 2026-06-06)
 
-13 runs across 6 models and 2 providers. GCF wins 12, ties 1, loses 0.
+20 comprehension runs across 7 models and 3 providers. GCF wins 19, ties 1, loses 0.
 
 | Model | Runs | GCF | TOON | JSON |
 |-------|------|-----|------|------|
-| Claude Opus 4.6 | 1 | **100%** | 92.3% | 76.9% |
-| Claude Sonnet 4.6 | 1 | **100%** | 76.9% | 53.8% |
+| Claude Opus 4.6 | 2 | **96.2%** | 84.6% | 73.1% |
+| Claude Sonnet 4.6 | 2 | **100%** | 73.1% | 53.8% |
 | Claude Haiku 4.5 | 2 | **96.2%** | 69.2% | 57.7% |
-| GPT-5.5 | 4 | **84.3%** | 67.9% | 48.1% |
-| GPT-5.4 | 3 | **76.3%** | 55.3% | 42.1% |
+| GPT-5.5 | 5 | **84.1%** | 67.7% | 45.8% |
+| GPT-5.4 | 4 | **76.4%** | 56.0% | 44.1% |
 | GPT-5.4-mini | 2 | **71.8%** | 64.1% | 54.2% |
+| Gemini 2.5 Flash | 3 | **80.6%** | 54.6% | 57.0% |
 
 **GCF wins on every model. The ordering GCF > TOON > JSON never flips.**
 
-Claude models achieve near-perfect scores on GCF (100%, 100%, 96.2%). TOON fails on distance grouping (no section headers). JSON fails on counting at scale (field-name repetition overwhelms attention). All raw logs in `results/comprehension/`.
+Sonnet achieves 100% on every run. Opus and Haiku average 96.2%. GCF wins on Gemini by 26pp over TOON. All raw logs in [gcf/eval/results](https://github.com/blackwell-systems/gcf/tree/main/eval/results).
 
 ## Running
 
