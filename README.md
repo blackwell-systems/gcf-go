@@ -25,19 +25,37 @@ Zero dependencies. Single package. Don't want to change code? Use the [MCP proxy
 ```go
 import gcf "github.com/blackwell-systems/gcf-go"
 
-p := &gcf.Payload{
-    Tool:        "context_for_task",
-    TokenBudget: 5000,
-    TokensUsed:  1847,
-    Symbols: []gcf.Symbol{
-        {QualifiedName: "pkg.AuthMiddleware", Kind: "function", Score: 0.78, Provenance: "lsp_resolved", Distance: 0},
-        {QualifiedName: "pkg.NewServer", Kind: "function", Score: 0.54, Provenance: "lsp_resolved", Distance: 1},
-    },
-    Edges: []gcf.Edge{
-        {Source: "pkg.NewServer", Target: "pkg.AuthMiddleware", EdgeType: "calls"},
+data := map[string]any{
+    "employees": []map[string]any{
+        {"id": 1, "name": "Alice", "department": "Engineering", "salary": 95000},
+        {"id": 2, "name": "Bob", "department": "Sales", "salary": 72000},
     },
 }
+output := gcf.EncodeGeneric(data)
+```
 
+Output:
+```
+## employees [2]{department,id,name,salary}
+Engineering|1|Alice|95000
+Sales|2|Bob|72000
+```
+
+Works on any Go value: maps, slices, structs. One header declares field names, rows are positional values.
+
+## Graph Profile
+
+For code graph data with symbols, edges, and distance groups:
+
+```go
+p := &gcf.Payload{
+    Tool: "context_for_task", TokenBudget: 5000, TokensUsed: 1847,
+    Symbols: []gcf.Symbol{
+        {QualifiedName: "pkg.Auth", Kind: "function", Score: 0.78, Provenance: "lsp", Distance: 0},
+        {QualifiedName: "pkg.Server", Kind: "function", Score: 0.54, Provenance: "lsp", Distance: 1},
+    },
+    Edges: []gcf.Edge{{Source: "pkg.Server", Target: "pkg.Auth", EdgeType: "calls"}},
+}
 output := gcf.Encode(p)
 ```
 
@@ -45,9 +63,9 @@ Output:
 ```
 GCF tool=context_for_task budget=5000 tokens=1847 symbols=2 edges=1
 ## targets
-@0 fn pkg.AuthMiddleware 0.78 lsp_resolved
+@0 fn pkg.Auth 0.78 lsp
 ## related
-@1 fn pkg.NewServer 0.54 lsp_resolved
+@1 fn pkg.Server 0.54 lsp
 ## edges [1]
 @0<@1 calls
 ```
