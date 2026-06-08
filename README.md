@@ -235,4 +235,4 @@ GCF wins all 6 datasets on [TOON's own benchmark](https://github.com/blackwell-s
 
 ## License
 
-MIT
+MIT - [Dayna Blackwell](https://github.com/blackwell-systems)
