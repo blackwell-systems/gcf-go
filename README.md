@@ -233,8 +233,15 @@ GCF wins all 6 datasets on [TOON's own benchmark](https://github.com/blackwell-s
 - [GCF vs TOON](https://gcformat.com/guide/vs-toon.html)
 - [TOON benchmark fork](https://github.com/blackwell-systems/toon/tree/gcf-comparison)
 
+
+<details>
+<summary>More links</summary>
+
 - [betterthanjson.com](https://betterthanjson.com)
 - [jsonalternative.com](https://jsonalternative.com)
+- [betterthantoon.com](https://betterthantoon.com)
+
+</details>
 
 ## License
 
