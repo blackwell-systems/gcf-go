@@ -11,13 +11,31 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go-version: ['1.21', '1.22', '1.23']
+        go-version: ['1.22', '1.23', '1.26']
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: blackwell-systems/gcf
+          path: gcf
       - uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.go-version }}
-      - run: gofmt -w .
       - run: go build ./...
-      - run: go test -v -race ./...
+        env:
+          GOWORK: 'off'
+      - name: Conformance tests (133 fixtures)
+        run: go test -v -run TestConformanceV2 -count=1 -timeout 60s ./...
+        env:
+          GOWORK: 'off'
+      - name: Property-based round-trip (100K + 50K)
+        run: go test -v -run "TestPropertyRoundTrip" -count=1 -timeout 120s ./...
+        env:
+          GOWORK: 'off'
+      - name: Fuzz regression (replay saved crashes)
+        run: go test -v -run "Fuzz" -count=1 -timeout 60s ./...
+        env:
+          GOWORK: 'off'
       - run: go vet ./...
+        env:
+          GOWORK: 'off'

@@ -24,7 +24,19 @@ func Decode(input string) (*Payload, error) {
 		return nil, err
 	}
 	if p.Tool == "" {
-		return nil, fmt.Errorf("gcf: header missing required 'tool' field")
+		return nil, fmt.Errorf("missing_tool: header missing required 'tool' field")
+	}
+
+	// Detect delta mode.
+	isDelta := false
+	for _, part := range strings.Fields(header[4:]) {
+		if part == "delta=true" {
+			isDelta = true
+		}
+	}
+
+	var validDeltaSections = map[string]bool{
+		"removed": true, "added": true, "edges_removed": true, "edges_added": true,
 	}
 
 	// Parse body: symbols and edges.
@@ -39,6 +51,11 @@ func Decode(input string) (*Payload, error) {
 			continue
 		}
 
+		// Skip ##! summary trailer.
+		if strings.HasPrefix(line, "##! ") {
+			continue
+		}
+
 		// Group header.
 		if strings.HasPrefix(line, "## ") {
 			group := line[3:]
@@ -46,6 +63,11 @@ func Decode(input string) (*Payload, error) {
 			if idx := strings.Index(group, " ["); idx >= 0 {
 				group = group[:idx]
 			}
+
+			if isDelta && !validDeltaSections[group] {
+				return nil, fmt.Errorf("malformed_delta: invalid delta section %q", group)
+			}
+
 			inEdges = group == "edges"
 			if !inEdges {
 				switch group {
@@ -129,13 +151,13 @@ func parseSymbolLine(line string, distance int) (Symbol, int, error) {
 
 	parts := strings.Fields(line)
 	if len(parts) < 5 {
-		return Symbol{}, 0, fmt.Errorf("gcf: symbol line needs at least 5 fields, got %d in %q", len(parts), line)
+		return Symbol{}, 0, fmt.Errorf("invalid_node_line: symbol line needs at least 5 fields, got %d in %q", len(parts), line)
 	}
 
 	idStr := parts[0][1:] // strip @
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		return Symbol{}, 0, fmt.Errorf("gcf: invalid symbol id %q: %w", idStr, err)
+		return Symbol{}, 0, fmt.Errorf("invalid_symbol_id: invalid symbol id %q: %w", idStr, err)
 	}
 
 	kind := parts[1]
@@ -147,7 +169,7 @@ func parseSymbolLine(line string, distance int) (Symbol, int, error) {
 
 	score, err := strconv.ParseFloat(parts[3], 64)
 	if err != nil {
-		return Symbol{}, 0, fmt.Errorf("gcf: invalid score %q: %w", parts[3], err)
+		return Symbol{}, 0, fmt.Errorf("invalid_score: invalid score %q: %w", parts[3], err)
 	}
 
 	provenance := parts[4]
@@ -170,7 +192,7 @@ func parseEdgeLine(line string, symByID map[int]*Symbol) (Edge, error) {
 	ref := parts[0]
 	ltIdx := strings.Index(ref, "<")
 	if ltIdx < 0 {
-		return Edge{}, fmt.Errorf("gcf: edge line missing '<' separator in %q", ref)
+		return Edge{}, fmt.Errorf("invalid_edge_syntax: edge line missing '<' separator in %q", ref)
 	}
 
 	targetIDStr := ref[1:ltIdx]  // strip leading @
@@ -188,7 +210,7 @@ func parseEdgeLine(line string, symByID map[int]*Symbol) (Edge, error) {
 	targetSym := symByID[targetID]
 	sourceSym := symByID[sourceID]
 	if targetSym == nil || sourceSym == nil {
-		return Edge{}, fmt.Errorf("gcf: edge references unknown symbol id(s): target=%d source=%d", targetID, sourceID)
+		return Edge{}, fmt.Errorf("unknown_edge_reference: edge references unknown symbol id(s): target=%d source=%d", targetID, sourceID)
 	}
 
 	edgeType := parts[1]

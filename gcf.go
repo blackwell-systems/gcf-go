@@ -31,6 +31,7 @@ package gcf
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 )
 
@@ -115,10 +116,17 @@ var KindExpand = map[string]string{
 func Encode(p *Payload) string {
 	var b strings.Builder
 
-	// Build symbol index for edge references.
+	// Group symbols by distance (sorted by score descending within each group).
+	groups := groupByDistance(p.Symbols)
+
+	// Build symbol index AFTER sorting, so IDs are sequential in output order.
 	symIndex := make(map[string]int, len(p.Symbols))
-	for i, s := range p.Symbols {
-		symIndex[s.QualifiedName] = i
+	nextID := 0
+	for _, g := range groups {
+		for _, s := range g.symbols {
+			symIndex[s.QualifiedName] = nextID
+			nextID++
+		}
 	}
 
 	// Count valid edges (both endpoints in symbol index).
@@ -132,15 +140,21 @@ func Encode(p *Payload) string {
 	}
 
 	// Header line.
-	b.WriteString(fmt.Sprintf("GCF tool=%s budget=%d tokens=%d symbols=%d edges=%d",
-		p.Tool, p.TokenBudget, p.TokensUsed, len(p.Symbols), validEdges))
+	b.WriteString(fmt.Sprintf("GCF profile=graph tool=%s", p.Tool))
+	if p.TokenBudget > 0 {
+		b.WriteString(fmt.Sprintf(" budget=%d", p.TokenBudget))
+	}
+	if p.TokensUsed > 0 {
+		b.WriteString(fmt.Sprintf(" tokens=%d", p.TokensUsed))
+	}
+	b.WriteString(fmt.Sprintf(" symbols=%d", len(p.Symbols)))
+	if validEdges > 0 {
+		b.WriteString(fmt.Sprintf(" edges=%d", validEdges))
+	}
 	if p.PackRoot != "" {
 		b.WriteString(fmt.Sprintf(" pack_root=%s", p.PackRoot))
 	}
 	b.WriteByte('\n')
-
-	// Group symbols by distance.
-	groups := groupByDistance(p.Symbols)
 	groupNames := []string{"targets", "related", "extended"}
 
 	for _, g := range groups {
@@ -199,9 +213,19 @@ func groupByDistance(symbols []Symbol) []distanceGroup {
 	if len(symbols) == 0 {
 		return nil
 	}
+	// Sort by distance ascending, then score descending within each group.
+	sorted := make([]Symbol, len(symbols))
+	copy(sorted, symbols)
+	sort.SliceStable(sorted, func(i, j int) bool {
+		if sorted[i].Distance != sorted[j].Distance {
+			return sorted[i].Distance < sorted[j].Distance
+		}
+		return sorted[i].Score > sorted[j].Score
+	})
+
 	var groups []distanceGroup
 	var current *distanceGroup
-	for _, s := range symbols {
+	for _, s := range sorted {
 		if current == nil || current.distance != s.Distance {
 			groups = append(groups, distanceGroup{distance: s.Distance})
 			current = &groups[len(groups)-1]

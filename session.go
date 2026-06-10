@@ -56,6 +56,13 @@ func (s *Session) Record(symbols []Symbol) {
 	}
 }
 
+// nextSessionID returns the next available session ID without consuming it.
+func (s *Session) nextSessionID() int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.nextID
+}
+
 // Size returns the number of symbols tracked in this session.
 func (s *Session) Size() int {
 	s.mu.Lock()
@@ -96,19 +103,38 @@ func EncodeWithSession(p *Payload, sess *Session) string {
 
 	var b stringBuilder
 	// Header with session=true marker.
-	b.sprintf("GCF tool=%s budget=%d tokens=%d symbols=%d edges=%d session=true",
-		p.Tool, p.TokenBudget, p.TokensUsed, len(p.Symbols), len(p.Edges))
+	b.sprintf("GCF profile=graph tool=%s", p.Tool)
+	if p.TokenBudget > 0 {
+		b.sprintf(" budget=%d", p.TokenBudget)
+	}
+	if p.TokensUsed > 0 {
+		b.sprintf(" tokens=%d", p.TokensUsed)
+	}
+	b.sprintf(" symbols=%d", len(p.Symbols))
+	if len(p.Edges) > 0 {
+		b.sprintf(" edges=%d", len(p.Edges))
+	}
+	b.sprintf(" session=true")
 	if p.PackRoot != "" {
 		b.sprintf(" pack_root=%s", p.PackRoot)
 	}
 	b.writeByte('\n')
 
-	// Build local ID mapping for this response.
+	// Build ID mapping using session-stable IDs.
+	// Known symbols keep their existing session ID.
+	// New symbols get the next available session ID.
 	localIndex := make(map[string]int, len(p.Symbols))
-	nextLocal := 0
 	for _, e := range entries {
-		localIndex[e.symbol.QualifiedName] = nextLocal
-		nextLocal++
+		if !e.isNew {
+			localIndex[e.symbol.QualifiedName] = sess.GetID(e.symbol.QualifiedName)
+		}
+	}
+	nextNew := sess.nextSessionID()
+	for _, e := range entries {
+		if e.isNew {
+			localIndex[e.symbol.QualifiedName] = nextNew
+			nextNew++
+		}
 	}
 
 	// Group by distance.

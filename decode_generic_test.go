@@ -6,7 +6,7 @@ import (
 )
 
 func TestDecodeGeneric_Tabular(t *testing.T) {
-	input := "## employees [3]{id,name,department,salary}\n1|Alice|Engineering|95000\n2|Bob|Sales|72000\n3|Carol|Marketing|85000\n"
+	input := "GCF profile=generic\n## employees [3]{id,name,department,salary}\n1|Alice|Engineering|95000\n2|Bob|Sales|72000\n3|Carol|Marketing|85000\n"
 
 	result, err := DecodeGeneric(input)
 	if err != nil {
@@ -29,7 +29,7 @@ func TestDecodeGeneric_Tabular(t *testing.T) {
 }
 
 func TestDecodeGeneric_KeyValue(t *testing.T) {
-	input := "name=my-service\nversion=2.1.0\nport=5432\nactive=true\n"
+	input := "GCF profile=generic\nname=my-service\nversion=2.1.0\nport=5432\nactive=true\n"
 
 	result, err := DecodeGeneric(input)
 	if err != nil {
@@ -49,7 +49,7 @@ func TestDecodeGeneric_KeyValue(t *testing.T) {
 }
 
 func TestDecodeGeneric_NestedSections(t *testing.T) {
-	input := "name=app\n## database\n  host=db.example.com\n  port=5432\n## cache\n  ttl=3600\n"
+	input := "GCF profile=generic\nname=app\n## database\n  host=db.example.com\n  port=5432\n## cache\n  ttl=3600\n"
 
 	result, err := DecodeGeneric(input)
 	if err != nil {
@@ -68,7 +68,7 @@ func TestDecodeGeneric_NestedSections(t *testing.T) {
 }
 
 func TestDecodeGeneric_InlinePrimitiveArray(t *testing.T) {
-	input := "name=svc\ntags[3]: production,us-east-1,critical\nports[2]: 8080,8443\n"
+	input := "GCF profile=generic\nname=svc\ntags[3]: production,us-east-1,critical\nports[2]: 8080,8443\n"
 
 	result, err := DecodeGeneric(input)
 	if err != nil {
@@ -90,7 +90,7 @@ func TestDecodeGeneric_InlinePrimitiveArray(t *testing.T) {
 }
 
 func TestDecodeGeneric_TabularWithNested(t *testing.T) {
-	input := "## orders [2]{id,total,status}\n@0 1001|249.99|shipped\n  .customer\n    name=Alice\n    tier=premium\n@1 1002|89.50|pending\n  .customer\n    name=Bob\n    tier=standard\n"
+	input := "GCF profile=generic\n## orders [2]{id,total,status,customer}\n@0 1001|249.99|shipped|^\n  .customer {}\n    name=Alice\n    tier=premium\n@1 1002|89.50|pending|^\n  .customer {}\n    name=Bob\n    tier=standard\n"
 
 	result, err := DecodeGeneric(input)
 	if err != nil {
@@ -114,7 +114,7 @@ func TestDecodeGeneric_TabularWithNested(t *testing.T) {
 }
 
 func TestDecodeGeneric_GraphFallback(t *testing.T) {
-	input := "GCF tool=test budget=100 tokens=50 symbols=1 edges=0\n## targets\n@0 fn a.A 0.90 lsp\n"
+	input := "GCF profile=graph tool=test budget=100 tokens=50 symbols=1 edges=0\n## targets\n@0 fn a.A 0.90 lsp\n"
 
 	result, err := DecodeGeneric(input)
 	if err != nil {
@@ -133,9 +133,9 @@ func TestDecodeGeneric_GraphFallback(t *testing.T) {
 
 func TestDecodeGeneric_RoundTrip(t *testing.T) {
 	original := map[string]any{
-		"employees": []map[string]any{
-			{"id": 1, "name": "Alice", "department": "Engineering", "salary": 95000},
-			{"id": 2, "name": "Bob", "department": "Sales", "salary": 72000},
+		"employees": []any{
+			map[string]any{"id": float64(1), "name": "Alice", "department": "Engineering", "salary": float64(95000)},
+			map[string]any{"id": float64(2), "name": "Bob", "department": "Sales", "salary": float64(72000)},
 		},
 	}
 
@@ -145,21 +145,18 @@ func TestDecodeGeneric_RoundTrip(t *testing.T) {
 		t.Fatalf("round-trip failed: %v\nencoded:\n%s", err, encoded)
 	}
 
-	// Verify structure.
 	m := decoded.(map[string]any)
 	employees := m["employees"].([]any)
 	if len(employees) != 2 {
 		t.Fatalf("expected 2 employees, got %d", len(employees))
 	}
 
-	// Spot-check a value.
 	first := employees[0].(map[string]any)
 	name, _ := first["name"]
 	if name != "Alice" {
 		t.Errorf("expected Alice, got %v", name)
 	}
 
-	// Verify it can marshal to JSON.
 	_, err = json.Marshal(decoded)
 	if err != nil {
 		t.Errorf("json marshal failed: %v", err)
@@ -167,7 +164,7 @@ func TestDecodeGeneric_RoundTrip(t *testing.T) {
 }
 
 func TestDecodeGeneric_EmptyArray(t *testing.T) {
-	input := "## items [0]\n"
+	input := "GCF profile=generic\n## items [0]\n"
 
 	result, err := DecodeGeneric(input)
 	if err != nil {
@@ -182,7 +179,7 @@ func TestDecodeGeneric_EmptyArray(t *testing.T) {
 }
 
 func TestDecodeGeneric_NullAndBooleans(t *testing.T) {
-	input := "active=true\ndisabled=false\nmissing=-\n"
+	input := "GCF profile=generic\nactive=true\ndisabled=false\nmissing=-\n"
 
 	result, err := DecodeGeneric(input)
 	if err != nil {

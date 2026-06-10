@@ -140,41 +140,14 @@ func (enc *GenericStreamEncoder) Close() error {
 		return nil
 	}
 
-	parts := make([]string, len(enc.sections))
-	totalRows := 0
+	counts := make([]string, len(enc.sections))
 	for i, s := range enc.sections {
-		parts[i] = fmt.Sprintf("%s:%d", s.name, s.count)
-		totalRows += s.count
+		counts[i] = fmt.Sprintf("%d", s.count)
 	}
-	fmt.Fprintf(enc.w, "## _summary rows=%d sections=%s\n", totalRows, strings.Join(parts, ","))
+	fmt.Fprintf(enc.w, "##! summary counts=%s\n", strings.Join(counts, ","))
 	return nil
 }
 
 func formatGenericStreamValue(v any) string {
-	if v == nil {
-		return "-"
-	}
-	switch val := v.(type) {
-	case bool:
-		if val {
-			return "true"
-		}
-		return "false"
-	case int:
-		return fmt.Sprintf("%d", val)
-	case int64:
-		return fmt.Sprintf("%d", val)
-	case float64:
-		return fmt.Sprintf("%g", val)
-	case string:
-		if val == "" {
-			return `""`
-		}
-		if strings.ContainsAny(val, "|\n") {
-			return `"` + strings.ReplaceAll(val, `"`, `\"`) + `"`
-		}
-		return val
-	default:
-		return fmt.Sprintf("%v", val)
-	}
+	return formatScalar(v, '|')
 }
