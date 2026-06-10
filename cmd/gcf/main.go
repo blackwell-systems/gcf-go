@@ -21,15 +21,18 @@ import (
 const usage = `gcf - token-optimized wire format for LLM tool responses
 
 Usage:
-  gcf encode [file]    Encode JSON payload to GCF (stdin if no file)
-  gcf decode [file]    Decode GCF text to JSON (stdin if no file)
-  gcf stats  [file]    Compare token counts: JSON vs GCF (stdin if no file)
-  gcf version          Print version
+  gcf encode [file]           Encode JSON graph payload to GCF (stdin if no file)
+  gcf decode [file]           Decode GCF graph text to JSON (stdin if no file)
+  gcf encode-generic [file]   Encode any JSON value to GCF generic profile
+  gcf decode-generic [file]   Decode GCF generic profile to JSON
+  gcf stats  [file]           Compare token counts: JSON vs GCF (stdin if no file)
+  gcf version                 Print version
 
 Examples:
   gcf encode < payload.json
   gcf decode < payload.gcf
-  echo '{"tool":"test","symbols":[{"qualifiedName":"pkg.Foo","kind":"function","score":0.9,"provenance":"lsp","distance":0}],"edges":[]}' | gcf encode
+  echo '{"name":"Alice","age":30}' | gcf encode-generic
+  echo 'GCF profile=generic\nname=Alice\nage=30' | gcf decode-generic
   gcf stats payload.json
 `
 
@@ -49,6 +52,12 @@ func main() {
 	case "decode":
 		input := readInput(os.Args[2:])
 		doDecode(input)
+	case "encode-generic":
+		input := readInput(os.Args[2:])
+		doEncodeGeneric(input)
+	case "decode-generic":
+		input := readInput(os.Args[2:])
+		doDecodeGeneric(input)
 	case "stats":
 		input := readInput(os.Args[2:])
 		doStats(input)
@@ -179,6 +188,58 @@ func doDecode(input []byte) {
 
 	out, _ := json.MarshalIndent(jp, "", "  ")
 	fmt.Println(string(out))
+}
+
+func doEncodeGeneric(input []byte) {
+	var val any
+	dec := json.NewDecoder(strings.NewReader(string(input)))
+	dec.UseNumber()
+	if err := dec.Decode(&val); err != nil {
+		fmt.Fprintf(os.Stderr, "error: invalid JSON: %v\n", err)
+		os.Exit(1)
+	}
+	val = convertJSONNumbers(val)
+	fmt.Print(gcf.EncodeGeneric(val))
+}
+
+func doDecodeGeneric(input []byte) {
+	val, err := gcf.DecodeGeneric(string(input))
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error: %v\n", err)
+		os.Exit(1)
+	}
+	out, err := json.Marshal(val)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error: %v\n", err)
+		os.Exit(1)
+	}
+	fmt.Println(string(out))
+}
+
+// convertJSONNumbers converts json.Number to int or float64.
+func convertJSONNumbers(v any) any {
+	switch val := v.(type) {
+	case json.Number:
+		if i, err := val.Int64(); err == nil {
+			return i
+		}
+		if f, err := val.Float64(); err == nil {
+			return f
+		}
+		return val.String()
+	case map[string]any:
+		for k, v2 := range val {
+			val[k] = convertJSONNumbers(v2)
+		}
+		return val
+	case []any:
+		for i, v2 := range val {
+			val[i] = convertJSONNumbers(v2)
+		}
+		return val
+	default:
+		return v
+	}
 }
 
 func doStats(input []byte) {
