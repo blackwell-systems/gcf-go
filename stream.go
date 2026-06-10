@@ -18,7 +18,7 @@ import (
 //	enc.WriteSymbol(sym1) // emitted immediately
 //	enc.WriteSymbol(sym2) // emitted immediately
 //	enc.WriteEdge(edge1)  // emitted immediately
-//	enc.Close()           // emits ## _summary trailer
+//	enc.Close()           // emits ##! summary trailer
 type StreamEncoder struct {
 	w       io.Writer
 	tool    string
@@ -170,7 +170,7 @@ func (enc *StreamEncoder) WriteBareRef(qname string, distance int) {
 	enc.groupCounts[groupName]++
 }
 
-// Close emits the ## _summary trailer with final counts and flushes.
+// Close emits the ##! summary trailer with final counts and flushes.
 // Must be called after all symbols and edges have been written.
 func (enc *StreamEncoder) Close() error {
 	enc.mu.Lock()
@@ -198,8 +198,15 @@ func (enc *StreamEncoder) Close() error {
 	}
 
 	symbolCount := enc.nextID
-	fmt.Fprintf(enc.w, "## _summary symbols=%d edges=%d sections=%s\n",
-		symbolCount, enc.edgeCount, strings.Join(sections, ","))
+	counts := make([]string, 0, len(sections))
+	for _, s := range sections {
+		parts := strings.SplitN(s, ":", 2)
+		if len(parts) == 2 {
+			counts = append(counts, parts[1])
+		}
+	}
+	fmt.Fprintf(enc.w, "##! summary symbols=%d edges=%d counts=%s\n",
+		symbolCount, enc.edgeCount, strings.Join(counts, ","))
 
 	return nil
 }
