@@ -191,14 +191,11 @@ func doDecode(input []byte) {
 }
 
 func doEncodeGeneric(input []byte) {
-	var val any
-	dec := json.NewDecoder(strings.NewReader(string(input)))
-	dec.UseNumber()
-	if err := dec.Decode(&val); err != nil {
+	val, err := gcf.ParseJSONOrdered(input)
+	if err != nil {
 		fmt.Fprintf(os.Stderr, "error: invalid JSON: %v\n", err)
 		os.Exit(1)
 	}
-	val = convertJSONNumbers(val)
 	fmt.Print(gcf.EncodeGeneric(val))
 }
 
