@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.0.2 (2026-06-10)
+
+- CLI: `encode-generic` and `decode-generic` subcommands for generic profile
+- CLI now supports both graph and generic profiles
+
 ## v1.0.0 (2026-06-10)
 
 Reference implementation for GCF SPEC v2.0. All 133 conformance fixtures passing. 20M property-based round-trips with zero failures. 7.9M fuzz executions with zero crashes.
