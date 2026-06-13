@@ -65,6 +65,9 @@ Nested order data with customer objects and line items. 13 structured extraction
 | Claude Sonnet 4.6 | 16 | 1000 | GCF | 92.3% (12/13) | Failed count_orders_with_3plus_items (got 400, expected 500) |
 | Claude Sonnet 4.6 | 16 | 1000 | JSON | N/A (0/0) | ALL SKIPPED: 161K tokens exceeds context |
 | Claude Sonnet 4.6 | 16 | 1000 | TOON | N/A (0/0) | ALL SKIPPED: 84K tokens exceeds effective CLI context |
+| GPT-5.5 | 17 | 500 | GCF | **100%** (13/13) | All exact, via Codex CLI |
+| GPT-5.5 | 17 | 500 | JSON | **100%** (13/13) | All exact |
+| GPT-5.5 | 17 | 500 | TOON | 92.3% (12/13) | Failed count_premium_customers (got 250, expected 200) |
 
 ### Failure detail (500 orders)
 
