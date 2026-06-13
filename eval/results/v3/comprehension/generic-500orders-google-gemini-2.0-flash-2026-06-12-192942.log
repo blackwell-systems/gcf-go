@@ -1,0 +1,327 @@
+Generic-Profile Comprehension Eval
+Backend: google (gemini-2.0-flash)
+Orders: 500, Questions: 13, Formats: gcf, json, toon
+gcf       94613 bytes, ~23653 tokens
+json     322612 bytes, ~80653 tokens
+toon     168604 bytes, ~42151 tokens
+
+  SKIP order_count               gcf      error: Google API 404: {
+  "error": {
+    "code": 404,
+    "message": "This model models/gemini-2.0-flash is no longer available. Please update your code to use a newer model for the latest features and improvements.",
+    "status": "NOT_FOUND"
+  }
+}
+
+  SKIP order_count               json     error: Google API 404: {
+  "error": {
+    "code": 404,
+    "message": "This model models/gemini-2.0-flash is no longer available. Please update your code to use a newer model for the latest features and improvements.",
+    "status": "NOT_FOUND"
+  }
+}
+
+  SKIP order_count               toon     error: Google API 404: {
+  "error": {
+    "code": 404,
+    "message": "This model models/gemini-2.0-flash is no longer available. Please update your code to use a newer model for the latest features and improvements.",
+    "status": "NOT_FOUND"
+  }
+}
+
+  SKIP first_customer_name       gcf      error: Google API 404: {
+  "error": {
+    "code": 404,
+    "message": "This model models/gemini-2.0-flash is no longer available. Please update your code to use a newer model for the latest features and improvements.",
+    "status": "NOT_FOUND"
+  }
+}
+
+  SKIP first_customer_name       json     error: Google API 404: {
+  "error": {
+    "code": 404,
+    "message": "This model models/gemini-2.0-flash is no longer available. Please update your code to use a newer model for the latest features and improvements.",
+    "status": "NOT_FOUND"
+  }
+}
+
+  SKIP first_customer_name       toon     error: Google API 404: {
+  "error": {
+    "code": 404,
+    "message": "This model models/gemini-2.0-flash is no longer available. Please update your code to use a newer model for the latest features and improvements.",
+    "status": "NOT_FOUND"
+  }
+}
+
+  SKIP last_order_status         gcf      error: Google API 404: {
+  "error": {
+    "code": 404,
+    "message": "This model models/gemini-2.0-flash is no longer available. Please update your code to use a newer model for the latest features and improvements.",
+    "status": "NOT_FOUND"
+  }
+}
+
+  SKIP last_order_status         json     error: Google API 404: {
+  "error": {
+    "code": 404,
+    "message": "This model models/gemini-2.0-flash is no longer available. Please update your code to use a newer model for the latest features and improvements.",
+    "status": "NOT_FOUND"
+  }
+}
+
+  SKIP last_order_status         toon     error: Google API 404: {
+  "error": {
+    "code": 404,
+    "message": "This model models/gemini-2.0-flash is no longer available. Please update your code to use a newer model for the latest features and improvements.",
+    "status": "NOT_FOUND"
+  }
+}
+
+  SKIP total_items_first_order   gcf      error: Google API 404: {
+  "error": {
+    "code": 404,
+    "message": "This model models/gemini-2.0-flash is no longer available. Please update your code to use a newer model for the latest features and improvements.",
+    "status": "NOT_FOUND"
+  }
+}
+
+  SKIP total_items_first_order   json     error: Google API 404: {
+  "error": {
+    "code": 404,
+    "message": "This model models/gemini-2.0-flash is no longer available. Please update your code to use a newer model for the latest features and improvements.",
+    "status": "NOT_FOUND"
+  }
+}
+
+  SKIP total_items_first_order   toon     error: Google API 404: {
+  "error": {
+    "code": 404,
+    "message": "This model models/gemini-2.0-flash is no longer available. Please update your code to use a newer model for the latest features and improvements.",
+    "status": "NOT_FOUND"
+  }
+}
+
+  SKIP customer_email_order5     gcf      error: Google API 404: {
+  "error": {
+    "code": 404,
+    "message": "This model models/gemini-2.0-flash is no longer available. Please update your code to use a newer model for the latest features and improvements.",
+    "status": "NOT_FOUND"
+  }
+}
+
+  SKIP customer_email_order5     json     error: Google API 404: {
+  "error": {
+    "code": 404,
+    "message": "This model models/gemini-2.0-flash is no longer available. Please update your code to use a newer model for the latest features and improvements.",
+    "status": "NOT_FOUND"
+  }
+}
+
+  SKIP customer_email_order5     toon     error: Google API 404: {
+  "error": {
+    "code": 404,
+    "message": "This model models/gemini-2.0-flash is no longer available. Please update your code to use a newer model for the latest features and improvements.",
+    "status": "NOT_FOUND"
+  }
+}
+
+  SKIP count_shipped             gcf      error: Google API 404: {
+  "error": {
+    "code": 404,
+    "message": "This model models/gemini-2.0-flash is no longer available. Please update your code to use a newer model for the latest features and improvements.",
+    "status": "NOT_FOUND"
+  }
+}
+
+  SKIP count_shipped             json     error: Google API 404: {
+  "error": {
+    "code": 404,
+    "message": "This model models/gemini-2.0-flash is no longer available. Please update your code to use a newer model for the latest features and improvements.",
+    "status": "NOT_FOUND"
+  }
+}
+
+  SKIP count_shipped             toon     error: Google API 404: {
+  "error": {
+    "code": 404,
+    "message": "This model models/gemini-2.0-flash is no longer available. Please update your code to use a newer model for the latest features and improvements.",
+    "status": "NOT_FOUND"
+  }
+}
+
+  SKIP count_premium_customers   gcf      error: Google API 404: {
+  "error": {
+    "code": 404,
+    "message": "This model models/gemini-2.0-flash is no longer available. Please update your code to use a newer model for the latest features and improvements.",
+    "status": "NOT_FOUND"
+  }
+}
+
+  SKIP count_premium_customers   json     error: Google API 404: {
+  "error": {
+    "code": 404,
+    "message": "This model models/gemini-2.0-flash is no longer available. Please update your code to use a newer model for the latest features and improvements.",
+    "status": "NOT_FOUND"
+  }
+}
+
+  SKIP count_premium_customers   toon     error: Google API 404: {
+  "error": {
+    "code": 404,
+    "message": "This model models/gemini-2.0-flash is no longer available. Please update your code to use a newer model for the latest features and improvements.",
+    "status": "NOT_FOUND"
+  }
+}
+
+  SKIP highest_total             gcf      error: Google API 404: {
+  "error": {
+    "code": 404,
+    "message": "This model models/gemini-2.0-flash is no longer available. Please update your code to use a newer model for the latest features and improvements.",
+    "status": "NOT_FOUND"
+  }
+}
+
+  SKIP highest_total             json     error: Google API 404: {
+  "error": {
+    "code": 404,
+    "message": "This model models/gemini-2.0-flash is no longer available. Please update your code to use a newer model for the latest features and improvements.",
+    "status": "NOT_FOUND"
+  }
+}
+
+  SKIP highest_total             toon     error: Google API 404: {
+  "error": {
+    "code": 404,
+    "message": "This model models/gemini-2.0-flash is no longer available. Please update your code to use a newer model for the latest features and improvements.",
+    "status": "NOT_FOUND"
+  }
+}
+
+  SKIP sku_first_item_order3     gcf      error: Google API 404: {
+  "error": {
+    "code": 404,
+    "message": "This model models/gemini-2.0-flash is no longer available. Please update your code to use a newer model for the latest features and improvements.",
+    "status": "NOT_FOUND"
+  }
+}
+
+  SKIP sku_first_item_order3     json     error: Google API 404: {
+  "error": {
+    "code": 404,
+    "message": "This model models/gemini-2.0-flash is no longer available. Please update your code to use a newer model for the latest features and improvements.",
+    "status": "NOT_FOUND"
+  }
+}
+
+  SKIP sku_first_item_order3     toon     error: Google API 404: {
+  "error": {
+    "code": 404,
+    "message": "This model models/gemini-2.0-flash is no longer available. Please update your code to use a newer model for the latest features and improvements.",
+    "status": "NOT_FOUND"
+  }
+}
+
+  SKIP total_revenue_shipped     gcf      error: Google API 404: {
+  "error": {
+    "code": 404,
+    "message": "This model models/gemini-2.0-flash is no longer available. Please update your code to use a newer model for the latest features and improvements.",
+    "status": "NOT_FOUND"
+  }
+}
+
+  SKIP total_revenue_shipped     json     error: Google API 404: {
+  "error": {
+    "code": 404,
+    "message": "This model models/gemini-2.0-flash is no longer available. Please update your code to use a newer model for the latest features and improvements.",
+    "status": "NOT_FOUND"
+  }
+}
+
+  SKIP total_revenue_shipped     toon     error: Google API 404: {
+  "error": {
+    "code": 404,
+    "message": "This model models/gemini-2.0-flash is no longer available. Please update your code to use a newer model for the latest features and improvements.",
+    "status": "NOT_FOUND"
+  }
+}
+
+  SKIP unique_statuses           gcf      error: Google API 404: {
+  "error": {
+    "code": 404,
+    "message": "This model models/gemini-2.0-flash is no longer available. Please update your code to use a newer model for the latest features and improvements.",
+    "status": "NOT_FOUND"
+  }
+}
+
+  SKIP unique_statuses           json     error: Google API 404: {
+  "error": {
+    "code": 404,
+    "message": "This model models/gemini-2.0-flash is no longer available. Please update your code to use a newer model for the latest features and improvements.",
+    "status": "NOT_FOUND"
+  }
+}
+
+  SKIP unique_statuses           toon     error: Google API 404: {
+  "error": {
+    "code": 404,
+    "message": "This model models/gemini-2.0-flash is no longer available. Please update your code to use a newer model for the latest features and improvements.",
+    "status": "NOT_FOUND"
+  }
+}
+
+  SKIP count_orders_with_3plus_items gcf      error: Google API 404: {
+  "error": {
+    "code": 404,
+    "message": "This model models/gemini-2.0-flash is no longer available. Please update your code to use a newer model for the latest features and improvements.",
+    "status": "NOT_FOUND"
+  }
+}
+
+  SKIP count_orders_with_3plus_items json     error: Google API 404: {
+  "error": {
+    "code": 404,
+    "message": "This model models/gemini-2.0-flash is no longer available. Please update your code to use a newer model for the latest features and improvements.",
+    "status": "NOT_FOUND"
+  }
+}
+
+  SKIP count_orders_with_3plus_items toon     error: Google API 404: {
+  "error": {
+    "code": 404,
+    "message": "This model models/gemini-2.0-flash is no longer available. Please update your code to use a newer model for the latest features and improvements.",
+    "status": "NOT_FOUND"
+  }
+}
+
+  SKIP customer_tier_last_order  gcf      error: Google API 404: {
+  "error": {
+    "code": 404,
+    "message": "This model models/gemini-2.0-flash is no longer available. Please update your code to use a newer model for the latest features and improvements.",
+    "status": "NOT_FOUND"
+  }
+}
+
+  SKIP customer_tier_last_order  json     error: Google API 404: {
+  "error": {
+    "code": 404,
+    "message": "This model models/gemini-2.0-flash is no longer available. Please update your code to use a newer model for the latest features and improvements.",
+    "status": "NOT_FOUND"
+  }
+}
+
+  SKIP customer_tier_last_order  toon     error: Google API 404: {
+  "error": {
+    "code": 404,
+    "message": "This model models/gemini-2.0-flash is no longer available. Please update your code to use a newer model for the latest features and improvements.",
+    "status": "NOT_FOUND"
+  }
+}
+
+
+=== Summary ===
+Format     Accuracy   Pass/Total
+gcf            0.0%      0/0
+json           0.0%      0/0
+toon           0.0%      0/0
+
+Log: results/v3/comprehension/generic-500orders-google-gemini-2.0-flash-2026-06-12-192942.log

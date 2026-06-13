@@ -1,0 +1,20 @@
+Generic-Profile Comprehension Eval
+Backend: google (gemini-2.5-flash)
+Orders: 500, Questions: 13, Formats: gcf, json, toon
+gcf       94613 bytes, ~23653 tokens
+json     322612 bytes, ~80653 tokens
+toon     168604 bytes, ~42151 tokens
+
+  PASS order_count               gcf      [exact] expected="500" got="500"
+  PASS order_count               json     [exact] expected="500" got="500"
+  PASS order_count               toon     [exact] expected="500" got="500"
+  PASS first_customer_name       gcf      [exact] expected="Alice Chen" got="Alice Chen"
+  PASS first_customer_name       json     [exact] expected="Alice Chen" got="Alice Chen"
+  PASS first_customer_name       toon     [exact] expected="Alice Chen" got="Alice Chen"
+  PASS last_order_status         gcf      [exact] expected="cancelled" got="cancelled"
+  PASS last_order_status         json     [exact] expected="cancelled" got="cancelled"
+  PASS last_order_status         toon     [exact] expected="cancelled" got="cancelled"
+  PASS total_items_first_order   gcf      [exact] expected="1" got="1"
+  PASS total_items_first_order   json     [exact] expected="1" got="1"
+  PASS total_items_first_order   toon     [exact] expected="1" got="1"
+  PASS customer_email_order5     gcf      [exact] expected="eva.johansson@example.com" got="eva.johansson@example.com"
