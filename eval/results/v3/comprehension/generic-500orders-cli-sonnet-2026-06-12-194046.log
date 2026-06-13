@@ -1,0 +1,40 @@
+Generic-Profile Comprehension Eval
+Backend: cli (claude -p --model sonnet)
+Orders: 500, Questions: 13, Formats: gcf, json, toon
+gcf       94613 bytes, ~23653 tokens
+json     322612 bytes, ~80653 tokens
+toon     168604 bytes, ~42151 tokens
+
+  PASS order_count               gcf      [exact] expected="500" got="500"
+  PASS order_count               json     [exact] expected="500" got="500"
+  PASS order_count               toon     [exact] expected="500" got="500"
+  PASS first_customer_name       gcf      [exact] expected="Alice Chen" got="Alice Chen"
+  PASS first_customer_name       json     [exact] expected="Alice Chen" got="Alice Chen"
+  PASS first_customer_name       toon     [exact] expected="Alice Chen" got="Alice Chen"
+  PASS last_order_status         gcf      [exact] expected="cancelled" got="cancelled"
+  PASS last_order_status         json     [exact] expected="cancelled" got="cancelled"
+  PASS last_order_status         toon     [exact] expected="cancelled" got="cancelled"
+  PASS total_items_first_order   gcf      [exact] expected="1" got="1"
+  PASS total_items_first_order   json     [exact] expected="1" got="1"
+  PASS total_items_first_order   toon     [exact] expected="1" got="1"
+  PASS customer_email_order5     gcf      [exact] expected="eva.johansson@example.com" got="eva.johansson@example.com"
+  PASS customer_email_order5     json     [exact] expected="eva.johansson@example.com" got="eva.johansson@example.com"
+  PASS customer_email_order5     toon     [exact] expected="eva.johansson@example.com" got="eva.johansson@example.com"
+  PASS count_shipped             gcf      [exact] expected="100" got="100"
+  PASS count_shipped             json     [exact] expected="100" got="100"
+  PASS count_shipped             toon     [exact] expected="100" got="100"
+  PASS count_premium_customers   gcf      [exact] expected="200" got="200"
+  PASS count_premium_customers   json     [exact] expected="200" got="200"
+  PASS count_premium_customers   toon     [contains] expected="200" got="Looking at the data pattern, I need to count orders where customer.tier = \"premium\".\n\nThe customer data follows a repeating 20-customer cycle where customers with IDs at positions 2, 5, 7, 10, 12, 15, 17, and 20 in each cycle have tier \"premium\".\n\nThat's 8 premium customers per 20-customer cycle.\n\nWith 500 total orders:\n500 ÷ 20 = 25 complete cycles\n25 cycles × 8 premium customers per cycle = 200\n\n200"
+  PASS highest_total             gcf      [exact] expected="464.32" got="464.32"
+  PASS highest_total             json     [exact] expected="464.32" got="464.32"
+  PASS highest_total             toon     [exact] expected="464.32" got="464.32"
+  PASS sku_first_item_order3     gcf      [exact] expected="SKU-HP07" got="SKU-HP07"
+  PASS sku_first_item_order3     json     [exact] expected="SKU-HP07" got="SKU-HP07"
+  PASS sku_first_item_order3     toon     [exact] expected="SKU-HP07" got="SKU-HP07"
+  PASS total_revenue_shipped     gcf      [exact] expected="21325.50" got="21325.50"
+  PASS total_revenue_shipped     json     [exact] expected="21325.50" got="21325.50"
+  PASS total_revenue_shipped     toon     [contains] expected="21325.50" got="Looking at the data, I need to identify orders with status \"shipped\" and sum their totals.\n\nThe pattern shows that orders cycle through statuses every 5 orders: shipped, pending, processing, delivered, cancelled.\n\nOrders with \"shipped\" status are at positions: 1, 6, 11, 16, 21, 26, 31, 36, 41, 46... (every 5th position starting from 1).\n\nThe data has 500 orders with 20 unique customer patterns that repeat. In each 20-order cycle:\n- Order positions 1, 6, 11, 16 have \"shipped\" status\n- Their totals are: 32.39, 237.57, 226.74, 356.32\n\nSum per cycle: 32.39 + 237.57 + 226.74 + 356.32 = 853.02\n\nNumber of complete cycles: 500 ÷ 20 = 25\n\nTotal sum: 853.02 × 25 = 21325.50\n\n21325.50"
+  PASS unique_statuses           gcf      [exact] expected="cancelled, delivered, pending, processing, shipped" got="cancelled, delivered, pending, processing, shipped"
+  PASS unique_statuses           json     [exact] expected="cancelled, delivered, pending, processing, shipped" got="cancelled, delivered, pending, processing, shipped"
+  PASS unique_statuses           toon     [exact] expected="cancelled, delivered, pending, processing, shipped" got="cancelled, delivered, pending, processing, shipped"
