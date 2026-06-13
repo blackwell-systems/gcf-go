@@ -6,10 +6,10 @@
 // tool responses contain.
 //
 // Run a single format:
-//   GOWORK=off EVAL_FORMATS=gcf-v3 go test -run TestGenericComprehension -v -timeout 15m
+//   GOWORK=off EVAL_FORMATS=gcf go test -run TestGenericComprehension -v -timeout 15m
 //
 // Run all formats:
-//   GOWORK=off EVAL_FORMATS=gcf-v2,gcf-v3,json,toon,ploon go test -run TestGenericComprehension -v -timeout 60m
+//   GOWORK=off EVAL_FORMATS=gcf,json,toon,ploon go test -run TestGenericComprehension -v -timeout 60m
 //
 // Backends: EVAL_BACKEND=api (default haiku), openai, google
 // Models: EVAL_MODEL=claude-haiku-4-5-20251001
@@ -341,10 +341,8 @@ func encodeGenericOrders(orders []Order, format string) (string, error) {
 	wrapper := map[string]any{"orders": ordersToAny(orders)}
 
 	switch format {
-	case "gcf-v2":
+	case "gcf":
 		return gcf.EncodeGeneric(wrapper), nil
-	case "gcf-v3":
-		return gcf.EncodeGenericV3(wrapper), nil
 	case "json":
 		b, err := json.MarshalIndent(wrapper, "", "  ")
 		return string(b), err
@@ -405,7 +403,7 @@ func TestGenericComprehension(t *testing.T) {
 	// Parse which formats to test.
 	formatsEnv := os.Getenv("EVAL_FORMATS")
 	if formatsEnv == "" {
-		formatsEnv = "gcf-v3" // default: just test v3
+		formatsEnv = "gcf" // default: just test v3
 	}
 	formatList := strings.Split(formatsEnv, ",")
 	for i := range formatList {

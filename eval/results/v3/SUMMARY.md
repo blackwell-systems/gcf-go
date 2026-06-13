@@ -38,6 +38,9 @@ Nested order data with customer objects and line items. 13 structured extraction
 | Gemini 2.5 Pro | 7 | 500 | JSON | **100%** (13/13) | All exact |
 | Gemini 2.5 Pro | 7 | 500 | TOON | **100%** (13/13) | All exact |
 | Gemini 2.5 Pro | 7 | 500 | PLOON | 92.3% (12/13) | Failed count_premium_customers |
+| Claude Opus 4.6 | 8 | 500 | GCF | **100%** (13/13) | All exact, zero primer |
+| Claude Opus 4.6 | 8 | 500 | JSON | **100%** (13/13) | All exact |
+| Claude Opus 4.6 | 8 | 500 | TOON | **100%** (13/13) | All exact |
 
 ### Failure detail (500 orders)
 

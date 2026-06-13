@@ -5,10 +5,10 @@
 //
 // Run (cold, no primers):
 //   GOWORK=off EVAL_BACKEND=cli EVAL_MODEL=claude-haiku-4-5-20251001 \
-//     EVAL_FORMATS=gcf-v3,json,toon,ploon go test -run TestGenericGeneration -v -timeout 60m
+//     EVAL_FORMATS=gcf,json,toon,ploon go test -run TestGenericGeneration -v -timeout 60m
 //
 // Run with primer:
-//   EVAL_PRIMER=true EVAL_FORMATS=gcf-v3 ...
+//   EVAL_PRIMER=true EVAL_FORMATS=gcf ...
 //
 // Results written to eval/results/v3/generation/
 package eval
@@ -114,7 +114,7 @@ func buildGenPromptForFormat(format string, numOrders int, usePrimer bool) (stri
 
 	var prompt string
 	switch format {
-	case "gcf-v3":
+	case "gcf":
 		if usePrimer {
 			prompt = fmt.Sprintf("%s\n\nNow encode this order data as GCF generic profile:\n%d orders:\n%s", gcfV3Primer, numOrders, desc)
 		} else {
@@ -146,9 +146,9 @@ func buildGenPromptForFormat(format string, numOrders int, usePrimer bool) (stri
 // Returns (decoded value, output bytes, error).
 func validateGenOutput(format string, output string) (any, int, error) {
 	switch format {
-	case "gcf-v3":
+	case "gcf":
 		text := stripToGCFGeneric(output)
-		decoded, err := gcf.DecodeGenericV3(text)
+		decoded, err := gcf.DecodeGeneric(text)
 		return decoded, len(text), err
 	case "json":
 		text := stripToJSONGen(output)
@@ -245,7 +245,7 @@ func decodePLOON(text string) (any, error) {
 func TestGenericGeneration(t *testing.T) {
 	formatsEnv := os.Getenv("EVAL_FORMATS")
 	if formatsEnv == "" {
-		formatsEnv = "gcf-v3"
+		formatsEnv = "gcf"
 	}
 	formatList := strings.Split(formatsEnv, ",")
 	for i := range formatList {
@@ -347,9 +347,9 @@ func TestGenericGeneration(t *testing.T) {
 
 			// Round-trip check (format-specific).
 			roundTrip := false
-			if format == "gcf-v3" && decoded != nil {
-				reEncoded := gcf.EncodeGenericV3(decoded)
-				reDecoded, reErr := gcf.DecodeGenericV3(reEncoded)
+			if format == "gcf" && decoded != nil {
+				reEncoded := gcf.EncodeGeneric(decoded)
+				reDecoded, reErr := gcf.DecodeGeneric(reEncoded)
 				if reErr == nil {
 					d1, _ := json.Marshal(decoded)
 					d2, _ := json.Marshal(reDecoded)
@@ -367,7 +367,7 @@ func TestGenericGeneration(t *testing.T) {
 			}
 
 			rtLabel := "n/a"
-			if format == "gcf-v3" || format == "json" {
+			if format == "gcf" || format == "json" {
 				rtLabel = fmt.Sprintf("%v", roundTrip)
 			}
 
@@ -396,7 +396,7 @@ func TestGenericGeneration(t *testing.T) {
 			formatValid[r.format]++
 		}
 		rt := "n/a"
-		if r.format == "gcf-v3" || r.format == "json" {
+		if r.format == "gcf" || r.format == "json" {
 			rt = "NO"
 			if r.roundTrip {
 				rt = "YES"
