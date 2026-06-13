@@ -8,7 +8,7 @@
 
 Go implementation of [GCF](https://gcformat.com/) — the most token-efficient wire format for LLMs. A drop-in alternative to JSON and TOON for any structured data.
 
-**79% fewer input tokens than JSON. 63% fewer output tokens. 90.7% average comprehension accuracy across 10 models and 3 providers (four models hit 100%). 1,300+ LLM evaluations. Zero training.**
+**100% comprehension on every frontier model tested. 25.5% fewer tokens than TOON, 53% fewer than JSON across 15 datasets. 90.7% on structurally complex code graphs (vs TOON 68.5%, JSON 53.6%). 1,700+ LLM evaluations. Zero training.**
 
 Docs: [gcformat.com](https://gcformat.com/) · [Playground](https://gcformat.com/playground.html) · [GCF vs TOON](https://gcformat.com/guide/vs-toon.html)
 
@@ -211,7 +211,7 @@ Works on maps, slices, structs, and primitives. Arrays of uniform objects get ta
 
 ## Benchmarks
 
-1,300+ LLM evaluations across 10 models, 3 providers, and 51 independent test runs.
+1,700+ LLM evaluations across 10 models, 3 providers, and 51 independent test runs.
 
 | | GCF | TOON | JSON |
 |---|---|---|---|
@@ -220,7 +220,7 @@ Works on maps, slices, structs, and primitives. Arrays of uniform objects get ta
 | **Input tokens** (500 symbols) | **11,090** | 16,378 | 53,341 |
 | **Output tokens** (100 symbols) | **5,976** | 8,937 | 16,121 |
 
-GCF wins all 6 datasets on [TOON's own benchmark](https://github.com/blackwell-systems/toon/tree/gcf-comparison). Full results: [gcformat.com/guide/benchmarks](https://gcformat.com/guide/benchmarks.html)
+GCF wins 13/15 datasets on the expanded [token efficiency benchmark](https://github.com/blackwell-systems/toon/tree/gcf-comparison). Full results: [gcformat.com/guide/benchmarks](https://gcformat.com/guide/benchmarks.html)
 
 ## Links
 
