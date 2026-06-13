@@ -15,3 +15,13 @@ toon     168604 bytes, ~42151 tokens
     }
 }
 
+  SKIP order_count               toon     error: OpenAI API 429: {
+    "error": {
+        "message": "Request too large for gpt-4o in organization org-gM1ry562thMM8TCoutFDIK6t on tokens per min (TPM): Limit 30000, Requested 42180. The input or output tokens must be reduced in order to run successfully. Visit https://platform.openai.com/account/rate-limits to learn more.",
+        "type": "tokens",
+        "param": null,
+        "code": "rate_limit_exceeded"
+    }
+}
+
+  PASS first_customer_name       gcf      [exact] expected="Alice Chen" got="Alice Chen"
