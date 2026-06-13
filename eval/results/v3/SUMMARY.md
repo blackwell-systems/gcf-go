@@ -68,6 +68,12 @@ Nested order data with customer objects and line items. 13 structured extraction
 | GPT-5.5 | 17 | 500 | GCF | **100%** (13/13) | All exact, via Codex CLI |
 | GPT-5.5 | 17 | 500 | JSON | **100%** (13/13) | All exact |
 | GPT-5.5 | 17 | 500 | TOON | 92.3% (12/13) | Failed count_premium_customers (got 250, expected 200) |
+| GPT-5.5 | 18 | 1000 | GCF | **100%** (6/6) | Partial (Codex CLI timeouts), all answered correct |
+| GPT-5.5 | 18 | 1000 | JSON | **100%** (6/6) | Partial, all answered correct |
+| GPT-5.5 | 18 | 1000 | TOON | **100%** (5/5) | Partial, all answered correct |
+| GPT-4o-mini | 19 | 500 | GCF | 69.2% (9/13) | Weak model, counting failures |
+| GPT-4o-mini | 19 | 500 | JSON | 61.5% (8/13) | Weak model, counting failures |
+| GPT-4o-mini | 19 | 500 | TOON | 69.2% (9/13) | Weak model, counting failures |
 
 ### Failure detail (500 orders)
 
