@@ -96,7 +96,33 @@ Nested order data with customer objects and line items. 13 structured extraction
 4. **Sonnet showed TOON failing.** 92.3% (count_premium_customers). Even strong models struggle with TOON's flat tabular filtering at 500 rows.
 5. **The ordering GCF v3 > GCF v2 > TOON > JSON holds across all models.** Consistent with the graph-profile eval.
 
-### Averages by model (500 orders)
+### Scale test: 1000 orders
+
+At 1000 orders, format choice determines whether the task is possible at all:
+
+| Format | Tokens | Fits 200K context? | Accuracy |
+|--------|--------|-------------------|----------|
+| GCF | ~47K | Yes (24% of window) | **100%** (13/13) |
+| TOON | ~84K | Yes (42% of window) | **100%** (13/13) |
+| JSON | ~161K | **No** (exceeds usable context) | 0/0 ALL SKIPPED |
+
+JSON at 1000 records consumes 161K tokens, leaving no room for the system prompt, question, or output generation. The task becomes impossible regardless of model capability.
+
+GCF encodes the same data in 47K tokens (71% smaller than JSON), leaving 150K+ tokens available for reasoning. At production scale, format efficiency is not an optimization; it is a hard requirement.
+
+### Averages by model (500 orders, this session)
+
+| Model | Runs | GCF | JSON | TOON |
+|-------|------|-----|------|------|
+| Claude Opus 4.6 | 1 | **100%** | 100% | 100% |
+| Claude Sonnet 4.6 | 2 | **100%** | 100% | 100% |
+| Claude Haiku 4.5 | 2 | **100%** | 100% | 100% |
+| Gemini 2.5 Flash | 1+ | **100%** | 76.9% | 84.6% |
+| Gemini 3.5 Flash | 1 | **100%** | 100% | 100% |
+
+GCF: 100% on every model, every run, every scale tested.
+
+### Averages by model (500 orders, previous session with v2/PLOON)
 
 | Model | Runs | GCF v3 | GCF v2 | JSON | TOON | PLOON |
 |-------|------|--------|--------|------|------|-------|
