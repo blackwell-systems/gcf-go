@@ -32,3 +32,23 @@ toon     168604 bytes, ~42151 tokens
   PASS sku_first_item_order3     gcf      [exact] expected="SKU-HP07" got="SKU-HP07"
   PASS sku_first_item_order3     json     [exact] expected="SKU-HP07" got="SKU-HP07"
   PASS sku_first_item_order3     toon     [exact] expected="SKU-HP07" got="SKU-HP07"
+  PASS total_revenue_shipped     gcf      [exact] expected="21325.50" got="21325.50"
+  PASS total_revenue_shipped     json     [exact] expected="21325.50" got="21325.50"
+  PASS total_revenue_shipped     toon     [exact] expected="21325.50" got="21325.50"
+  PASS unique_statuses           gcf      [exact] expected="cancelled, delivered, pending, processing, shipped" got="cancelled, delivered, pending, processing, shipped"
+  PASS unique_statuses           json     [exact] expected="cancelled, delivered, pending, processing, shipped" got="cancelled, delivered, pending, processing, shipped"
+  PASS unique_statuses           toon     [exact] expected="cancelled, delivered, pending, processing, shipped" got="cancelled, delivered, pending, processing, shipped"
+  PASS count_orders_with_3plus_items gcf      [exact] expected="250" got="250"
+  PASS count_orders_with_3plus_items json     [exact] expected="250" got="250"
+  PASS count_orders_with_3plus_items toon     [exact] expected="250" got="250"
+  PASS customer_tier_last_order  gcf      [exact] expected="premium" got="premium"
+  PASS customer_tier_last_order  json     [exact] expected="premium" got="premium"
+  PASS customer_tier_last_order  toon     [exact] expected="premium" got="premium"
+
+=== Summary ===
+Format     Accuracy   Pass/Total
+gcf          100.0%     13/13
+json         100.0%     13/13
+toon         100.0%     13/13
+
+Log: results/v3/comprehension/generic-500orders-cli-haiku-2026-06-12-192350.log
