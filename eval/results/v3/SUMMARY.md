@@ -62,6 +62,9 @@ Nested order data with customer objects and line items. 13 structured extraction
 | Claude Opus 4.6 | 15 | 1000 | GCF | **100%** (13/13) | All exact, 47K tokens |
 | Claude Opus 4.6 | 15 | 1000 | JSON | **100%** (13/13) | All exact, 161K tokens (fits 1M context) |
 | Claude Opus 4.6 | 15 | 1000 | TOON | **100%** (13/13) | All exact, 84K tokens |
+| Claude Sonnet 4.6 | 16 | 1000 | GCF | 92.3% (12/13) | Failed count_orders_with_3plus_items (got 400, expected 500) |
+| Claude Sonnet 4.6 | 16 | 1000 | JSON | N/A (0/0) | ALL SKIPPED: 161K tokens exceeds context |
+| Claude Sonnet 4.6 | 16 | 1000 | TOON | N/A (0/0) | ALL SKIPPED: 84K tokens exceeds effective CLI context |
 
 ### Failure detail (500 orders)
 
@@ -112,9 +115,17 @@ At 1000 orders, format choice determines whether the task is possible at all:
 JSON at 1000 records consumes 161K tokens. On 200K context models (Haiku), this exceeds usable context and the task becomes impossible. On 1M context models (Opus), JSON fits and achieves 100%.
 
 GCF encodes the same data in 47K tokens (71% smaller than JSON). This means:
-- On 200K models: GCF makes the task possible where JSON cannot
-- On 1M models: GCF costs 71% less per API call for the same result
+- On 200K models: GCF is the ONLY format that fits. Both JSON (161K) and TOON (84K) exceed the effective context limit with prompt overhead.
+- On 1M models: all formats work, but GCF costs 71% less per API call
 - In agent loops: GCF leaves 150K+ tokens for conversation history, tool schemas, and reasoning
+
+| Model | Context | GCF (47K) | TOON (84K) | JSON (161K) |
+|-------|---------|-----------|------------|-------------|
+| Haiku (200K) | 200K | **100%** | 100% | IMPOSSIBLE |
+| Sonnet (200K) | 200K | **92.3%** | IMPOSSIBLE | IMPOSSIBLE |
+| Opus (1M) | 1M | **100%** | 100% | 100% |
+
+On 200K context models, GCF is the only format that can process 1000 records.
 
 ### Averages by model (500 orders, this session)
 
