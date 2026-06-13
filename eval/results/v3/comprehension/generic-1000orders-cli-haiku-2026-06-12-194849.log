@@ -10,3 +10,26 @@ toon     337306 bytes, ~84326 tokens
 stderr: 
   PASS order_count               toon     [exact] expected="1000" got="1000"
   PASS first_customer_name       gcf      [exact] expected="Alice Chen" got="Alice Chen"
+  SKIP first_customer_name       json     error: claude -p failed: exit status 1
+stderr: 
+  PASS first_customer_name       toon     [exact] expected="Alice Chen" got="Alice Chen"
+  PASS last_order_status         gcf      [exact] expected="cancelled" got="cancelled"
+  SKIP last_order_status         json     error: claude -p failed: exit status 1
+stderr: 
+  PASS last_order_status         toon     [exact] expected="cancelled" got="cancelled"
+  PASS total_items_first_order   gcf      [exact] expected="1" got="1"
+  SKIP total_items_first_order   json     error: claude -p failed: exit status 1
+stderr: 
+  PASS total_items_first_order   toon     [exact] expected="1" got="1"
+  PASS customer_email_order5     gcf      [exact] expected="eva.johansson@example.com" got="eva.johansson@example.com"
+  SKIP customer_email_order5     json     error: claude -p failed: exit status 1
+stderr: 
+  PASS customer_email_order5     toon     [exact] expected="eva.johansson@example.com" got="eva.johansson@example.com"
+  PASS count_shipped             gcf      [exact] expected="200" got="200"
+  SKIP count_shipped             json     error: claude -p failed: exit status 1
+stderr: 
+  PASS count_shipped             toon     [exact] expected="200" got="200"
+  PASS count_premium_customers   gcf      [exact] expected="400" got="400"
+  SKIP count_premium_customers   json     error: claude -p failed: exit status 1
+stderr: 
+  PASS count_premium_customers   toon     [exact] expected="400" got="400"

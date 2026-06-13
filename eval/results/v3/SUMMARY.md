@@ -53,6 +53,9 @@ Nested order data with customer objects and line items. 13 structured extraction
 | Claude Sonnet 4.6 | 12 | 500 | GCF | **100%** (13/13) | All exact, run 2 |
 | Claude Sonnet 4.6 | 12 | 500 | JSON | **100%** (13/13) | All exact |
 | Claude Sonnet 4.6 | 12 | 500 | TOON | **100%** (13/13) | All exact |
+| Gemini 2.5 Flash | 13 | 500 | GCF | **100%** (5/5) | Run 2, partial (credits exhausted), all answered correct |
+| Gemini 2.5 Flash | 13 | 500 | JSON | **100%** (5/5) | Partial |
+| Gemini 2.5 Flash | 13 | 500 | TOON | **100%** (4/4) | Partial |
 
 ### Failure detail (500 orders)
 
