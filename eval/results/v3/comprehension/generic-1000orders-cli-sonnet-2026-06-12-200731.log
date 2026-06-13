@@ -1,0 +1,80 @@
+Generic-Profile Comprehension Eval
+Backend: cli (claude -p --model sonnet)
+Orders: 1000, Questions: 13, Formats: gcf, json, toon
+gcf      189315 bytes, ~47328 tokens
+json     645313 bytes, ~161328 tokens
+toon     337306 bytes, ~84326 tokens
+
+  PASS order_count               gcf      [exact] expected="1000" got="1000"
+  SKIP order_count               json     error: claude -p failed: exit status 1
+stderr: 
+  SKIP order_count               toon     error: claude -p failed: exit status 1
+stderr: 
+  PASS first_customer_name       gcf      [exact] expected="Alice Chen" got="Alice Chen"
+  SKIP first_customer_name       json     error: claude -p failed: exit status 1
+stderr: 
+  SKIP first_customer_name       toon     error: claude -p failed: exit status 1
+stderr: 
+  PASS last_order_status         gcf      [exact] expected="cancelled" got="cancelled"
+  SKIP last_order_status         json     error: claude -p failed: exit status 1
+stderr: 
+  SKIP last_order_status         toon     error: claude -p failed: exit status 1
+stderr: 
+  PASS total_items_first_order   gcf      [exact] expected="1" got="1"
+  SKIP total_items_first_order   json     error: claude -p failed: exit status 1
+stderr: 
+  SKIP total_items_first_order   toon     error: claude -p failed: exit status 1
+stderr: 
+  PASS customer_email_order5     gcf      [exact] expected="eva.johansson@example.com" got="eva.johansson@example.com"
+  SKIP customer_email_order5     json     error: claude -p failed: exit status 1
+stderr: 
+  SKIP customer_email_order5     toon     error: claude -p failed: exit status 1
+stderr: 
+  PASS count_shipped             gcf      [exact] expected="200" got="200"
+  SKIP count_shipped             json     error: claude -p failed: exit status 1
+stderr: 
+  SKIP count_shipped             toon     error: claude -p failed: exit status 1
+stderr: 
+  PASS count_premium_customers   gcf      [exact] expected="400" got="400"
+  SKIP count_premium_customers   json     error: claude -p failed: exit status 1
+stderr: 
+  SKIP count_premium_customers   toon     error: claude -p failed: exit status 1
+stderr: 
+  PASS highest_total             gcf      [exact] expected="464.32" got="464.32"
+  SKIP highest_total             json     error: claude -p failed: exit status 1
+stderr: 
+  SKIP highest_total             toon     error: claude -p failed: exit status 1
+stderr: 
+  PASS sku_first_item_order3     gcf      [exact] expected="SKU-HP07" got="SKU-HP07"
+  SKIP sku_first_item_order3     json     error: claude -p failed: exit status 1
+stderr: 
+  SKIP sku_first_item_order3     toon     error: claude -p failed: exit status 1
+stderr: 
+  PASS total_revenue_shipped     gcf      [contains] expected="42651.00" got="Looking at the data, I need to identify all orders with status \"shipped\" and sum their totals.\n\nThe pattern shows:\n- Orders cycle through 5 statuses: shipped, pending, processing, delivered, cancelled\n- \"Shipped\" orders occur at indices 0, 5, 10, 15, 20, 25, ... (every 5th order)\n- The totals repeat every 20 orders\n\nFor shipped orders in each 20-order cycle:\n- Index 0, 20, 40, ... : 32.39\n- Index 5, 25, 45, ... : 237.57\n- Index 10, 30, 50, ... : 226.74\n- Index 15, 35, 55, ... : 356.32\n\nSum per 20-order cycle: 32.39 + 237.57 + 226.74 + 356.32 = 853.02\n\nNumber of complete cycles in 1000 orders: 1000 ÷ 20 = 50\n\nTotal sum: 50 × 853.02 = 42651.00"
+  SKIP total_revenue_shipped     json     error: claude -p failed: exit status 1
+stderr: 
+  SKIP total_revenue_shipped     toon     error: claude -p failed: exit status 1
+stderr: 
+  PASS unique_statuses           gcf      [exact] expected="cancelled, delivered, pending, processing, shipped" got="cancelled, delivered, pending, processing, shipped"
+  SKIP unique_statuses           json     error: claude -p failed: exit status 1
+stderr: 
+  SKIP unique_statuses           toon     error: claude -p failed: exit status 1
+stderr: 
+  FAIL count_orders_with_3plus_items gcf      [got "400"] expected="500" got="400"
+  SKIP count_orders_with_3plus_items json     error: claude -p failed: exit status 1
+stderr: 
+  SKIP count_orders_with_3plus_items toon     error: claude -p failed: exit status 1
+stderr: 
+  PASS customer_tier_last_order  gcf      [exact] expected="premium" got="premium"
+  SKIP customer_tier_last_order  json     error: claude -p failed: exit status 1
+stderr: 
+  SKIP customer_tier_last_order  toon     error: claude -p failed: exit status 1
+stderr: 
+
+=== Summary ===
+Format     Accuracy   Pass/Total
+gcf           92.3%     12/13
+json           0.0%      0/0
+toon           0.0%      0/0
+
+Log: results/v3/comprehension/generic-1000orders-cli-sonnet-2026-06-12-200731.log
