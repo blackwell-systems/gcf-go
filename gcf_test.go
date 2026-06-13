@@ -21,7 +21,7 @@ func TestEncode_Basic(t *testing.T) {
 
 	out := Encode(p)
 
-	if !strings.HasPrefix(out, "GCF tool=test") {
+	if !strings.HasPrefix(out, "GCF profile=graph tool=test") {
 		t.Errorf("missing GCF header, got: %s", out)
 	}
 	if !strings.Contains(out, "@0 fn pkg.Func 0.90 lsp_resolved") {

@@ -48,7 +48,7 @@ func TestStreamEncoder_Basic(t *testing.T) {
 	}
 
 	// Has trailer summary.
-	if !strings.Contains(output, "## _summary symbols=2 edges=1") {
+	if !strings.Contains(output, "##! summary symbols=2 edges=1") {
 		t.Errorf("expected summary with symbols=2 edges=1, got:\n%s", output)
 	}
 
@@ -143,7 +143,7 @@ func TestStreamEncoder_MultipleDistanceGroups(t *testing.T) {
 	if !strings.Contains(output, "## distance_5") {
 		t.Error("missing ## distance_5")
 	}
-	if !strings.Contains(output, "sections=targets:1,related:1,extended:1,distance_5:1") {
+	if !strings.Contains(output, "##! summary symbols=4 edges=0 counts=1,1,1,1") {
 		t.Errorf("wrong sections in summary:\n%s", output)
 	}
 }

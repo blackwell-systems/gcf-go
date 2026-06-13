@@ -21,7 +21,7 @@ type conformanceFixture struct {
 	InputBase64   string          `json:"inputBase64"`
 }
 
-func TestConformanceV2(t *testing.T) {
+func TestConformance(t *testing.T) {
 	fixtureDir := filepath.Join("..", "gcf", "tests", "conformance")
 	if _, err := os.Stat(fixtureDir); os.IsNotExist(err) {
 		t.Skipf("conformance fixtures not found at %s", fixtureDir)

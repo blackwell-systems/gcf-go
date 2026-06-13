@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"unicode"
 	"unicode/utf8"
 )
 
@@ -33,11 +34,22 @@ func needsQuote(s string) bool {
 	if s[0] == ' ' || s[len(s)-1] == ' ' {
 		return true
 	}
-	if s[0] == '#' || s[0] == '@' {
+	if s[0] == '#' || s[0] == '@' || s[0] == '.' {
 		return true
 	}
 	for _, c := range s {
 		if c == '"' || c == '\\' || c == '|' || c == ',' || c < 0x20 || c == '\n' || c == '\r' {
+			return true
+		}
+		// C1 controls (U+0080-U+009F).
+		if c >= 0x80 && c <= 0x9F {
+			return true
+		}
+		// Unicode whitespace (U+00A0 NBSP, U+1680, U+2000-U+200A, U+2028, U+2029, U+202F, U+205F, U+3000, U+FEFF).
+		if c > 0x7F && unicode.IsSpace(c) {
+			return true
+		}
+		if c == 0xFEFF {
 			return true
 		}
 	}

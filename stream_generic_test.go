@@ -25,7 +25,7 @@ func TestGenericStreamEncoder_Tabular(t *testing.T) {
 	if !strings.Contains(out, "1|Alice|Engineering|95000") {
 		t.Errorf("missing first row:\n%s", out)
 	}
-	if !strings.Contains(out, "## _summary rows=3 sections=employees:3") {
+	if !strings.Contains(out, "##! summary counts=3") {
 		t.Errorf("missing or wrong summary:\n%s", out)
 	}
 }
@@ -110,7 +110,7 @@ func TestGenericStreamEncoder_MultipleArrays(t *testing.T) {
 	enc.Close()
 
 	out := buf.String()
-	if !strings.Contains(out, "sections=users:2,roles:1") {
+	if !strings.Contains(out, "##! summary counts=2,1") {
 		t.Errorf("wrong sections in summary:\n%s", out)
 	}
 }

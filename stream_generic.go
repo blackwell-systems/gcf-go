@@ -40,6 +40,7 @@ type activeArray struct {
 
 // NewGenericStreamEncoder creates a streaming encoder for tabular/generic data.
 func NewGenericStreamEncoder(w io.Writer) *GenericStreamEncoder {
+	fmt.Fprintf(w, "GCF profile=generic\n")
 	return &GenericStreamEncoder{w: w}
 }
 
