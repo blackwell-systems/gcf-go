@@ -1,0 +1,12 @@
+Generic-Profile Comprehension Eval
+Backend: cli (claude -p --model haiku)
+Orders: 1000, Questions: 13, Formats: gcf, json, toon
+gcf      189315 bytes, ~47328 tokens
+json     645313 bytes, ~161328 tokens
+toon     337306 bytes, ~84326 tokens
+
+  PASS order_count               gcf      [exact] expected="1000" got="1000"
+  SKIP order_count               json     error: claude -p failed: exit status 1
+stderr: 
+  PASS order_count               toon     [exact] expected="1000" got="1000"
+  PASS first_customer_name       gcf      [exact] expected="Alice Chen" got="Alice Chen"

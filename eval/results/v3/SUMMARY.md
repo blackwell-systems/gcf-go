@@ -50,6 +50,9 @@ Nested order data with customer objects and line items. 13 structured extraction
 | Claude Haiku 4.5 | 11 | 500 | GCF | **100%** (13/13) | All exact, run 2 |
 | Claude Haiku 4.5 | 11 | 500 | JSON | **100%** (13/13) | All exact |
 | Claude Haiku 4.5 | 11 | 500 | TOON | **100%** (13/13) | All exact |
+| Claude Sonnet 4.6 | 12 | 500 | GCF | **100%** (13/13) | All exact, run 2 |
+| Claude Sonnet 4.6 | 12 | 500 | JSON | **100%** (13/13) | All exact |
+| Claude Sonnet 4.6 | 12 | 500 | TOON | **100%** (13/13) | All exact |
 
 ### Failure detail (500 orders)
 

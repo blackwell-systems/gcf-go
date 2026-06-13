@@ -38,3 +38,17 @@ toon     168604 bytes, ~42151 tokens
   PASS unique_statuses           gcf      [exact] expected="cancelled, delivered, pending, processing, shipped" got="cancelled, delivered, pending, processing, shipped"
   PASS unique_statuses           json     [exact] expected="cancelled, delivered, pending, processing, shipped" got="cancelled, delivered, pending, processing, shipped"
   PASS unique_statuses           toon     [exact] expected="cancelled, delivered, pending, processing, shipped" got="cancelled, delivered, pending, processing, shipped"
+  PASS count_orders_with_3plus_items gcf      [exact] expected="250" got="250"
+  PASS count_orders_with_3plus_items json     [exact] expected="250" got="250"
+  PASS count_orders_with_3plus_items toon     [exact] expected="250" got="250"
+  PASS customer_tier_last_order  gcf      [exact] expected="premium" got="premium"
+  PASS customer_tier_last_order  json     [exact] expected="premium" got="premium"
+  PASS customer_tier_last_order  toon     [exact] expected="premium" got="premium"
+
+=== Summary ===
+Format     Accuracy   Pass/Total
+gcf          100.0%     13/13
+json         100.0%     13/13
+toon         100.0%     13/13
+
+Log: results/v3/comprehension/generic-500orders-cli-sonnet-2026-06-12-194046.log
