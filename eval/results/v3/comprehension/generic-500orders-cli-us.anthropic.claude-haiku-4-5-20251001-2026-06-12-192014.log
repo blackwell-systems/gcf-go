@@ -1,0 +1,93 @@
+Generic-Profile Comprehension Eval
+Backend: cli (claude -p --model us.anthropic.claude-haiku-4-5-20251001)
+Orders: 500, Questions: 13, Formats: gcf, json, toon
+gcf       94613 bytes, ~23653 tokens
+json     322612 bytes, ~80653 tokens
+toon     168604 bytes, ~42151 tokens
+
+  SKIP order_count               gcf      error: claude -p failed: exit status 1
+stderr: 
+  SKIP order_count               json     error: claude -p failed: exit status 1
+stderr: 
+  SKIP order_count               toon     error: claude -p failed: exit status 1
+stderr: 
+  SKIP first_customer_name       gcf      error: claude -p failed: exit status 1
+stderr: 
+  SKIP first_customer_name       json     error: claude -p failed: exit status 1
+stderr: 
+  SKIP first_customer_name       toon     error: claude -p failed: exit status 1
+stderr: 
+  SKIP last_order_status         gcf      error: claude -p failed: exit status 1
+stderr: 
+  SKIP last_order_status         json     error: claude -p failed: exit status 1
+stderr: 
+  SKIP last_order_status         toon     error: claude -p failed: exit status 1
+stderr: 
+  SKIP total_items_first_order   gcf      error: claude -p failed: exit status 1
+stderr: 
+  SKIP total_items_first_order   json     error: claude -p failed: exit status 1
+stderr: 
+  SKIP total_items_first_order   toon     error: claude -p failed: exit status 1
+stderr: 
+  SKIP customer_email_order5     gcf      error: claude -p failed: exit status 1
+stderr: 
+  SKIP customer_email_order5     json     error: claude -p failed: exit status 1
+stderr: 
+  SKIP customer_email_order5     toon     error: claude -p failed: exit status 1
+stderr: 
+  SKIP count_shipped             gcf      error: claude -p failed: exit status 1
+stderr: 
+  SKIP count_shipped             json     error: claude -p failed: exit status 1
+stderr: 
+  SKIP count_shipped             toon     error: claude -p failed: exit status 1
+stderr: 
+  SKIP count_premium_customers   gcf      error: claude -p failed: exit status 1
+stderr: 
+  SKIP count_premium_customers   json     error: claude -p failed: exit status 1
+stderr: 
+  SKIP count_premium_customers   toon     error: claude -p failed: exit status 1
+stderr: 
+  SKIP highest_total             gcf      error: claude -p failed: exit status 1
+stderr: 
+  SKIP highest_total             json     error: claude -p failed: exit status 1
+stderr: 
+  SKIP highest_total             toon     error: claude -p failed: exit status 1
+stderr: 
+  SKIP sku_first_item_order3     gcf      error: claude -p failed: exit status 1
+stderr: 
+  SKIP sku_first_item_order3     json     error: claude -p failed: exit status 1
+stderr: 
+  SKIP sku_first_item_order3     toon     error: claude -p failed: exit status 1
+stderr: 
+  SKIP total_revenue_shipped     gcf      error: claude -p failed: exit status 1
+stderr: 
+  SKIP total_revenue_shipped     json     error: claude -p failed: exit status 1
+stderr: 
+  SKIP total_revenue_shipped     toon     error: claude -p failed: exit status 1
+stderr: 
+  SKIP unique_statuses           gcf      error: claude -p failed: exit status 1
+stderr: 
+  SKIP unique_statuses           json     error: claude -p failed: exit status 1
+stderr: 
+  SKIP unique_statuses           toon     error: claude -p failed: exit status 1
+stderr: 
+  SKIP count_orders_with_3plus_items gcf      error: claude -p failed: exit status 1
+stderr: 
+  SKIP count_orders_with_3plus_items json     error: claude -p failed: exit status 1
+stderr: 
+  SKIP count_orders_with_3plus_items toon     error: claude -p failed: exit status 1
+stderr: 
+  SKIP customer_tier_last_order  gcf      error: claude -p failed: exit status 1
+stderr: 
+  SKIP customer_tier_last_order  json     error: claude -p failed: exit status 1
+stderr: 
+  SKIP customer_tier_last_order  toon     error: claude -p failed: exit status 1
+stderr: 
+
+=== Summary ===
+Format     Accuracy   Pass/Total
+gcf            0.0%      0/0
+json           0.0%      0/0
+toon           0.0%      0/0
+
+Log: results/v3/comprehension/generic-500orders-cli-us.anthropic.claude-haiku-4-5-20251001-2026-06-12-192014.log

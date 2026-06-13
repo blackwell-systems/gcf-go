@@ -15,7 +15,7 @@ var jsonNumberRe = regexp.MustCompile(`^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d
 
 // numericLikeRe matches tokens that are numeric-like per Section 2.4:
 // after an optional leading + or -, begins with a digit, or begins with . followed by a digit.
-var numericLikeRe = regexp.MustCompile(`^[+-]?\.?\d`)
+var numericLikeRe = regexp.MustCompile(`^[+-]\.?\d|^\.\d|^0\d`)
 
 // needsQuote returns true if a string value must be quoted per Section 2.4.
 func needsQuote(s string) bool {
@@ -38,7 +38,7 @@ func needsQuote(s string) bool {
 		return true
 	}
 	for _, c := range s {
-		if c == '"' || c == '\\' || c == '|' || c == ',' || c < 0x20 || c == '\n' || c == '\r' {
+		if c == '"' || c == '\\' || c == '|' || c < 0x20 || c == '\n' || c == '\r' {
 			return true
 		}
 		// C1 controls (U+0080-U+009F).
