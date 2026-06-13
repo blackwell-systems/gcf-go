@@ -593,8 +593,9 @@ func callOpenAI(apiKey, model, prompt string) (string, error) {
 	bodyBytes, _ := json.Marshal(body)
 
 	url := "https://api.openai.com/v1/chat/completions"
-	// xAI uses a different base URL but same format
-	if strings.Contains(model, "grok") {
+	if baseURL := os.Getenv("OPENAI_BASE_URL"); baseURL != "" {
+		url = strings.TrimRight(baseURL, "/") + "/chat/completions"
+	} else if strings.Contains(model, "grok") {
 		url = "https://api.x.ai/v1/chat/completions"
 	}
 

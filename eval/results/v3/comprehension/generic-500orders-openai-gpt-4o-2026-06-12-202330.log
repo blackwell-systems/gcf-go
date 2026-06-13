@@ -1,0 +1,17 @@
+Generic-Profile Comprehension Eval
+Backend: openai (gpt-4o)
+Orders: 500, Questions: 13, Formats: gcf, json, toon
+gcf       94613 bytes, ~23653 tokens
+json     322612 bytes, ~80653 tokens
+toon     168604 bytes, ~42151 tokens
+
+  PASS order_count               gcf      [exact] expected="500" got="500"
+  SKIP order_count               json     error: OpenAI API 429: {
+    "error": {
+        "message": "Request too large for gpt-4o in organization org-gM1ry562thMM8TCoutFDIK6t on tokens per min (TPM): Limit 30000, Requested 80682. The input or output tokens must be reduced in order to run successfully. Visit https://platform.openai.com/account/rate-limits to learn more.",
+        "type": "tokens",
+        "param": null,
+        "code": "rate_limit_exceeded"
+    }
+}
+

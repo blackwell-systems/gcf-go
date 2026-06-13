@@ -1,0 +1,7 @@
+Generic-Profile Comprehension Eval
+Backend: openai (qwen2.5-coder:32b)
+Orders: 500, Questions: 13, Formats: gcf, json, toon
+gcf       94613 bytes, ~23653 tokens
+json     322612 bytes, ~80653 tokens
+toon     168604 bytes, ~42151 tokens
+
