@@ -516,9 +516,7 @@ func parseTabularBody(lines []string, start, depth int, fields []string, expecte
 			if i < len(lines) {
 				peekLine := lines[i]
 				peekContent := ""
-				if strings.HasPrefix(peekLine, indent+"  ") {
-					peekContent = peekLine[len(indent)+2:]
-				} else if strings.HasPrefix(peekLine, indent) {
+				if strings.HasPrefix(peekLine, indent) {
 					peekContent = peekLine[len(indent):]
 				}
 				if strings.HasPrefix(peekContent, ".") {
@@ -535,9 +533,7 @@ func parseTabularBody(lines []string, start, depth int, fields []string, expecte
 			for i < len(lines) && len(resolvedAttachments) < len(allAttFields) {
 				aLine := lines[i]
 				aContent := ""
-				if strings.HasPrefix(aLine, indent+"  ") {
-					aContent = aLine[len(indent)+2:]
-				} else if strings.HasPrefix(aLine, indent) {
+				if strings.HasPrefix(aLine, indent) {
 					aContent = aLine[len(indent):]
 				} else {
 					break
@@ -655,9 +651,7 @@ func parseTabularBody(lines []string, start, depth int, fields []string, expecte
 			if i < len(lines) {
 				extraLine := lines[i]
 				extraContent := ""
-				if strings.HasPrefix(extraLine, indent+"  ") {
-					extraContent = extraLine[len(indent)+2:]
-				} else if strings.HasPrefix(extraLine, indent) {
+				if strings.HasPrefix(extraLine, indent) {
 					extraContent = extraLine[len(indent):]
 				}
 				if strings.HasPrefix(extraContent, ".") {

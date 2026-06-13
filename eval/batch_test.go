@@ -104,3 +104,24 @@ func TestGenerateBatch(t *testing.T) {
 	t.Logf("  FILE_ID=$(curl -s https://api.openai.com/v1/files -H \"Authorization: Bearer $OPENAI_API_KEY\" -F purpose=batch -F file=@%s | jq -r .id)", outName)
 	t.Logf("  curl -s https://api.openai.com/v1/batches -H \"Authorization: Bearer $OPENAI_API_KEY\" -H \"Content-Type: application/json\" -d \"{\\\"input_file_id\\\":\\\"$FILE_ID\\\",\\\"endpoint\\\":\\\"/v1/chat/completions\\\",\\\"completion_window\\\":\\\"24h\\\"}\" | jq .")
 }
+
+// TestDumpFixture writes the 500-order fixture as JSON for use in token benchmarks.
+func TestDumpFixture(t *testing.T) {
+	numOrders := 500
+	if n := os.Getenv("EVAL_NUM_ORDERS"); n != "" {
+		if parsed, err := fmt.Sscanf(n, "%d", &numOrders); err != nil || parsed != 1 {
+			numOrders = 500
+		}
+	}
+	orders := buildGenericFixture(numOrders)
+	wrapper := map[string]any{"orders": ordersToAny(orders)}
+	b, err := json.MarshalIndent(wrapper, "", "  ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	outPath := fmt.Sprintf("fixture_%d_orders.json", numOrders)
+	if err := os.WriteFile(outPath, b, 0644); err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("Written %s (%d bytes)", outPath, len(b))
+}
