@@ -56,6 +56,9 @@ Nested order data with customer objects and line items. 13 structured extraction
 | Gemini 2.5 Flash | 13 | 500 | GCF | **100%** (5/5) | Run 2, partial (credits exhausted), all answered correct |
 | Gemini 2.5 Flash | 13 | 500 | JSON | **100%** (5/5) | Partial |
 | Gemini 2.5 Flash | 13 | 500 | TOON | **100%** (4/4) | Partial |
+| Claude Haiku 4.5 | 14 | 1000 | GCF | **100%** (13/13) | All exact, 47K tokens |
+| Claude Haiku 4.5 | 14 | 1000 | JSON | N/A (0/0) | ALL SKIPPED: 161K tokens exceeds context |
+| Claude Haiku 4.5 | 14 | 1000 | TOON | **100%** (13/13) | All exact, 84K tokens |
 
 ### Failure detail (500 orders)
 

@@ -33,3 +33,35 @@ stderr:
   SKIP count_premium_customers   json     error: claude -p failed: exit status 1
 stderr: 
   PASS count_premium_customers   toon     [exact] expected="400" got="400"
+  PASS highest_total             gcf      [exact] expected="464.32" got="464.32"
+  SKIP highest_total             json     error: claude -p failed: exit status 1
+stderr: 
+  PASS highest_total             toon     [exact] expected="464.32" got="464.32"
+  PASS sku_first_item_order3     gcf      [exact] expected="SKU-HP07" got="SKU-HP07"
+  SKIP sku_first_item_order3     json     error: claude -p failed: exit status 1
+stderr: 
+  PASS sku_first_item_order3     toon     [exact] expected="SKU-HP07" got="SKU-HP07"
+  PASS total_revenue_shipped     gcf      [exact] expected="42651.00" got="42651.00"
+  SKIP total_revenue_shipped     json     error: claude -p failed: exit status 1
+stderr: 
+  PASS total_revenue_shipped     toon     [contains] expected="42651.00" got="Looking at the data, I need to identify all orders with status 'shipped' and sum their totals.\n\nThe orders follow a repeating pattern every 20 orders. Within each 20-order cycle, the 'shipped' orders appear at positions 1, 6, 11, and 16 with totals of:\n- 32.39\n- 237.57\n- 226.74\n- 356.32\n\nSum per cycle: 853.02\n\nWith 1000 orders total, that's 50 complete cycles (1000 ÷ 20 = 50).\n\nTotal: 50 × 853.02 = 42,651.00\n\n**42651.00**"
+  PASS unique_statuses           gcf      [exact] expected="cancelled, delivered, pending, processing, shipped" got="cancelled, delivered, pending, processing, shipped"
+  SKIP unique_statuses           json     error: claude -p failed: exit status 1
+stderr: 
+  PASS unique_statuses           toon     [exact] expected="cancelled, delivered, pending, processing, shipped" got="cancelled, delivered, pending, processing, shipped"
+  PASS count_orders_with_3plus_items gcf      [exact] expected="500" got="500"
+  SKIP count_orders_with_3plus_items json     error: claude -p failed: exit status 1
+stderr: 
+  PASS count_orders_with_3plus_items toon     [exact] expected="500" got="500"
+  PASS customer_tier_last_order  gcf      [exact] expected="premium" got="premium"
+  SKIP customer_tier_last_order  json     error: claude -p failed: exit status 1
+stderr: 
+  PASS customer_tier_last_order  toon     [exact] expected="premium" got="premium"
+
+=== Summary ===
+Format     Accuracy   Pass/Total
+gcf          100.0%     13/13
+json           0.0%      0/0
+toon         100.0%     13/13
+
+Log: results/v3/comprehension/generic-1000orders-cli-haiku-2026-06-12-194849.log
