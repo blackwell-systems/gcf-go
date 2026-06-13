@@ -9,3 +9,4 @@ toon     168604 bytes, ~42151 tokens
   PASS order_count               json     [exact] expected="500" got="500"
   PASS order_count               toon     [exact] expected="500" got="500"
   PASS first_customer_name       gcf      [exact] expected="Alice Chen" got="Alice Chen"
+  PASS first_customer_name       json     [exact] expected="Alice Chen" got="Alice Chen"
