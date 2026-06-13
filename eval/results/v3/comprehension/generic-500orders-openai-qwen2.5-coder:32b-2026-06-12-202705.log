@@ -5,3 +5,6 @@ gcf       94613 bytes, ~23653 tokens
 json     322612 bytes, ~80653 tokens
 toon     168604 bytes, ~42151 tokens
 
+  PASS order_count               gcf      [exact] expected="500" got="500"
+  PASS order_count               json     [exact] expected="500" got="500"
+  PASS order_count               toon     [exact] expected="500" got="500"

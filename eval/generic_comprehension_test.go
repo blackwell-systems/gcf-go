@@ -597,6 +597,32 @@ func setupBackend(t *testing.T, backendName string) (func(string) (string, error
 		return func(prompt string) (string, error) {
 			return callOpenAI(apiKey, model, prompt)
 		}, label, nil
+	case "codex":
+		if _, err := exec.LookPath("codex"); err != nil {
+			t.Skip("codex not on PATH")
+		}
+		label := "codex (gpt-5.5)"
+		return func(prompt string) (string, error) {
+			tmpOut, err := os.CreateTemp("", "codex-out-*.txt")
+			if err != nil {
+				return "", err
+			}
+			tmpOut.Close()
+			defer os.Remove(tmpOut.Name())
+
+			cmd := exec.Command("codex", "exec", "-o", tmpOut.Name(), prompt)
+			cmd.Stdin = strings.NewReader("")
+			var stderr bytes.Buffer
+			cmd.Stderr = &stderr
+			if err := cmd.Run(); err != nil {
+				return "", fmt.Errorf("codex exec failed: %w\nstderr: %s", err, stderr.String())
+			}
+			out, err := os.ReadFile(tmpOut.Name())
+			if err != nil {
+				return "", err
+			}
+			return string(out), nil
+		}, label, nil
 	case "google":
 		apiKey := os.Getenv("GOOGLE_API_KEY")
 		if apiKey == "" {

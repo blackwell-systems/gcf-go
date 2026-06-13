@@ -25,3 +25,80 @@ toon     168604 bytes, ~42151 tokens
 }
 
   PASS first_customer_name       gcf      [exact] expected="Alice Chen" got="Alice Chen"
+  SKIP first_customer_name       json     error: OpenAI API 429: {
+    "error": {
+        "message": "Request too large for gpt-4o in organization org-gM1ry562thMM8TCoutFDIK6t on tokens per min (TPM): Limit 30000, Requested 80685. The input or output tokens must be reduced in order to run successfully. Visit https://platform.openai.com/account/rate-limits to learn more.",
+        "type": "tokens",
+        "param": null,
+        "code": "rate_limit_exceeded"
+    }
+}
+
+  SKIP first_customer_name       toon     error: OpenAI API 429: {
+    "error": {
+        "message": "Request too large for gpt-4o in organization org-gM1ry562thMM8TCoutFDIK6t on tokens per min (TPM): Limit 30000, Requested 42183. The input or output tokens must be reduced in order to run successfully. Visit https://platform.openai.com/account/rate-limits to learn more.",
+        "type": "tokens",
+        "param": null,
+        "code": "rate_limit_exceeded"
+    }
+}
+
+  PASS last_order_status         gcf      [exact] expected="cancelled" got="cancelled"
+  SKIP last_order_status         json     error: Post "https://api.openai.com/v1/chat/completions": remote error: tls: bad record MAC
+  SKIP last_order_status         toon     error: OpenAI API 429: {
+    "error": {
+        "message": "Request too large for gpt-4o in organization org-gM1ry562thMM8TCoutFDIK6t on tokens per min (TPM): Limit 30000, Requested 42182. The input or output tokens must be reduced in order to run successfully. Visit https://platform.openai.com/account/rate-limits to learn more.",
+        "type": "tokens",
+        "param": null,
+        "code": "rate_limit_exceeded"
+    }
+}
+
+  PASS total_items_first_order   gcf      [exact] expected="1" got="1"
+  SKIP total_items_first_order   json     error: OpenAI API 429: {
+    "error": {
+        "message": "Request too large for gpt-4o in organization org-gM1ry562thMM8TCoutFDIK6t on tokens per min (TPM): Limit 30000, Requested 80685. The input or output tokens must be reduced in order to run successfully. Visit https://platform.openai.com/account/rate-limits to learn more.",
+        "type": "tokens",
+        "param": null,
+        "code": "rate_limit_exceeded"
+    }
+}
+
+  SKIP total_items_first_order   toon     error: OpenAI API 429: {
+    "error": {
+        "message": "Request too large for gpt-4o in organization org-gM1ry562thMM8TCoutFDIK6t on tokens per min (TPM): Limit 30000, Requested 42183. The input or output tokens must be reduced in order to run successfully. Visit https://platform.openai.com/account/rate-limits to learn more.",
+        "type": "tokens",
+        "param": null,
+        "code": "rate_limit_exceeded"
+    }
+}
+
+  PASS customer_email_order5     gcf      [exact] expected="eva.johansson@example.com" got="eva.johansson@example.com"
+  SKIP customer_email_order5     json     error: OpenAI API 429: {
+    "error": {
+        "message": "Request too large for gpt-4o in organization org-gM1ry562thMM8TCoutFDIK6t on tokens per min (TPM): Limit 30000, Requested 80687. The input or output tokens must be reduced in order to run successfully. Visit https://platform.openai.com/account/rate-limits to learn more.",
+        "type": "tokens",
+        "param": null,
+        "code": "rate_limit_exceeded"
+    }
+}
+
+  SKIP customer_email_order5     toon     error: OpenAI API 429: {
+    "error": {
+        "message": "Request too large for gpt-4o in organization org-gM1ry562thMM8TCoutFDIK6t on tokens per min (TPM): Limit 30000, Requested 42185. The input or output tokens must be reduced in order to run successfully. Visit https://platform.openai.com/account/rate-limits to learn more.",
+        "type": "tokens",
+        "param": null,
+        "code": "rate_limit_exceeded"
+    }
+}
+
+  PASS count_shipped             gcf      [exact] expected="100" got="100"
+  SKIP count_shipped             json     error: OpenAI API 429: {
+    "error": {
+        "message": "Request too large for gpt-4o in organization org-gM1ry562thMM8TCoutFDIK6t on tokens per min (TPM): Limit 30000, Requested 80683. The input or output tokens must be reduced in order to run successfully. Visit https://platform.openai.com/account/rate-limits to learn more.",
+        "type": "tokens",
+        "param": null,
+        "code": "rate_limit_exceeded"
+    }
+}
+
