@@ -1,5 +1,25 @@
 # Changelog
 
+## v1.1.0 (2026-06-12)
+
+### Breaking Changes
+
+- `EncodeGeneric` now produces inline schema format (not backwards compatible with v1.x decoders)
+- Attachment lines no longer indented (same depth as parent row)
+- Inline object fields use positional encoding without field-name prefix
+
+### New Features
+
+- Inline object schema: objects with 3+ scalar fields encoded positionally with `^{fields}` header
+- Shared array schemas: identical nested arrays omit `{fields}` after first row
+- 472M+ fuzz iterations across all 6 implementations, zero failures
+
+### Bug Fixes
+
+- Quote strings starting with `.` (dot prefix)
+- Quote C1 control characters (U+0080-U+009F)
+- Quote Unicode whitespace (NBSP, hair space, etc.)
+
 ## v1.0.2 (2026-06-10)
 
 - CLI: `encode-generic` and `decode-generic` subcommands for generic profile
