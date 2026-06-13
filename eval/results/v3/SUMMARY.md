@@ -57,8 +57,11 @@ Nested order data with customer objects and line items. 13 structured extraction
 | Gemini 2.5 Flash | 13 | 500 | JSON | **100%** (5/5) | Partial |
 | Gemini 2.5 Flash | 13 | 500 | TOON | **100%** (4/4) | Partial |
 | Claude Haiku 4.5 | 14 | 1000 | GCF | **100%** (13/13) | All exact, 47K tokens |
-| Claude Haiku 4.5 | 14 | 1000 | JSON | N/A (0/0) | ALL SKIPPED: 161K tokens exceeds context |
+| Claude Haiku 4.5 | 14 | 1000 | JSON | N/A (0/0) | ALL SKIPPED: 161K tokens exceeds 200K context |
 | Claude Haiku 4.5 | 14 | 1000 | TOON | **100%** (13/13) | All exact, 84K tokens |
+| Claude Opus 4.6 | 15 | 1000 | GCF | **100%** (13/13) | All exact, 47K tokens |
+| Claude Opus 4.6 | 15 | 1000 | JSON | **100%** (13/13) | All exact, 161K tokens (fits 1M context) |
+| Claude Opus 4.6 | 15 | 1000 | TOON | **100%** (13/13) | All exact, 84K tokens |
 
 ### Failure detail (500 orders)
 
@@ -106,9 +109,12 @@ At 1000 orders, format choice determines whether the task is possible at all:
 | TOON | ~84K | Yes (42% of window) | **100%** (13/13) |
 | JSON | ~161K | **No** (exceeds usable context) | 0/0 ALL SKIPPED |
 
-JSON at 1000 records consumes 161K tokens, leaving no room for the system prompt, question, or output generation. The task becomes impossible regardless of model capability.
+JSON at 1000 records consumes 161K tokens. On 200K context models (Haiku), this exceeds usable context and the task becomes impossible. On 1M context models (Opus), JSON fits and achieves 100%.
 
-GCF encodes the same data in 47K tokens (71% smaller than JSON), leaving 150K+ tokens available for reasoning. At production scale, format efficiency is not an optimization; it is a hard requirement.
+GCF encodes the same data in 47K tokens (71% smaller than JSON). This means:
+- On 200K models: GCF makes the task possible where JSON cannot
+- On 1M models: GCF costs 71% less per API call for the same result
+- In agent loops: GCF leaves 150K+ tokens for conversation history, tool schemas, and reasoning
 
 ### Averages by model (500 orders, this session)
 
