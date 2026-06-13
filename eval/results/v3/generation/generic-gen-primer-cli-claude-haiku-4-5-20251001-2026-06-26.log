@@ -1,0 +1,76 @@
+=== Generic-Profile Generation Eval ===
+Backend: cli (claude -p --model claude-haiku-4-5-20251001)
+Primer: primer
+Sizes: [3 5 10 20 50] orders
+Formats: gcf-v3, json, toon, ploon
+
+Generating 3 orders as gcf-v3...
+  VALID  633 bytes, 982 bytes JSON ref, 36% savings, round-trip=true
+Generating 3 orders as json...
+  VALID  985 bytes, 982 bytes JSON ref, -0% savings, round-trip=true
+Generating 3 orders as toon...
+  VALID  707 bytes, 982 bytes JSON ref, 28% savings, round-trip=n/a
+Generating 3 orders as ploon...
+  VALID  579 bytes, 982 bytes JSON ref, 41% savings, round-trip=n/a
+Generating 5 orders as gcf-v3...
+  VALID  1010 bytes, 1702 bytes JSON ref, 41% savings, round-trip=true
+Generating 5 orders as json...
+  VALID  1708 bytes, 1702 bytes JSON ref, -0% savings, round-trip=true
+Generating 5 orders as toon...
+  VALID  1180 bytes, 1702 bytes JSON ref, 31% savings, round-trip=n/a
+Generating 5 orders as ploon...
+  VALID  934 bytes, 1702 bytes JSON ref, 45% savings, round-trip=n/a
+Generating 10 orders as gcf-v3...
+  VALID  1928 bytes, 3463 bytes JSON ref, 44% savings, round-trip=true
+Generating 10 orders as json...
+  VALID  3473 bytes, 3463 bytes JSON ref, -0% savings, round-trip=true
+Generating 10 orders as toon...
+  VALID  2292 bytes, 3463 bytes JSON ref, 34% savings, round-trip=n/a
+Generating 10 orders as ploon...
+  VALID  1798 bytes, 3463 bytes JSON ref, 48% savings, round-trip=n/a
+Generating 20 orders as gcf-v3...
+  VALID  3879 bytes, 7191 bytes JSON ref, 46% savings, round-trip=true
+Generating 20 orders as json...
+  VALID  7212 bytes, 7191 bytes JSON ref, -0% savings, round-trip=true
+Generating 20 orders as toon...
+  VALID  4707 bytes, 7191 bytes JSON ref, 35% savings, round-trip=n/a
+Generating 20 orders as ploon...
+  VALID  3639 bytes, 7191 bytes JSON ref, 49% savings, round-trip=n/a
+Generating 50 orders as gcf-v3...
+  VALID  9466 bytes, 17839 bytes JSON ref, 47% savings, round-trip=true
+Generating 50 orders as json...
+  VALID  17891 bytes, 17839 bytes JSON ref, -0% savings, round-trip=true
+Generating 50 orders as toon...
+  VALID  11510 bytes, 17839 bytes JSON ref, 35% savings, round-trip=n/a
+Generating 50 orders as ploon...
+  VALID  8896 bytes, 17839 bytes JSON ref, 50% savings, round-trip=n/a
+
+=== Summary ===
+Format   Orders   Valid  RoundTrip  Out bytes  JSON ref   Savings 
+gcf-v3   3        YES    YES        633        982        36      %
+json     3        YES    YES        985        982        -0      %
+toon     3        YES    n/a        707        982        28      %
+ploon    3        YES    n/a        579        982        41      %
+gcf-v3   5        YES    YES        1010       1702       41      %
+json     5        YES    YES        1708       1702       -0      %
+toon     5        YES    n/a        1180       1702       31      %
+ploon    5        YES    n/a        934        1702       45      %
+gcf-v3   10       YES    YES        1928       3463       44      %
+json     10       YES    YES        3473       3463       -0      %
+toon     10       YES    n/a        2292       3463       34      %
+ploon    10       YES    n/a        1798       3463       48      %
+gcf-v3   20       YES    YES        3879       7191       46      %
+json     20       YES    YES        7212       7191       -0      %
+toon     20       YES    n/a        4707       7191       35      %
+ploon    20       YES    n/a        3639       7191       49      %
+gcf-v3   50       YES    YES        9466       17839      47      %
+json     50       YES    YES        17891      17839      -0      %
+toon     50       YES    n/a        11510      17839      35      %
+ploon    50       YES    n/a        8896       17839      50      %
+
+gcf-v3: 5/5 valid
+json: 5/5 valid
+toon: 5/5 valid
+ploon: 5/5 valid
+
+Log: results/v3/generation/generic-gen-primer-cli-claude-haiku-4-5-20251001-2026-06-26.log

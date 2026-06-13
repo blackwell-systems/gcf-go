@@ -1,0 +1,43 @@
+=== Generic-Profile Generation Eval ===
+Backend: google (gemini-2.5-pro)
+Primer: primer
+Sizes: [3 5 10 20 50] orders
+Formats: gcf-v3, json, toon, ploon
+
+Generating 3 orders as gcf-v3...
+  VALID  633 bytes, 982 bytes JSON ref, 36% savings, round-trip=true
+Generating 3 orders as json...
+  VALID  985 bytes, 982 bytes JSON ref, -0% savings, round-trip=true
+Generating 3 orders as toon...
+  INVALID: line 1: tabular length mismatch; expected 3 rows
+  Output (first 500): orders[3]{orderId,status,subtotal,tax,total,customer_id,customer_name,customer_email,customer_tier,items}:
+ORD-0001,shipped,29.99,2.40,32.39,1,"Alice Chen",alice.chen@example.com,standard,"[{sku:SKU-WM01,name:'Wireless Mouse',quantity:1,price:29.99}]"
+ORD-0002,pending,169.97,13.60,183.57,2,"Bob Martinez",bob.martinez@example.com,premium,"[{sku:SKU-MK04,name:'Mechanical Keyboard',quantity:1,price:89.99},{sku:SKU-MA05,name:'Monitor Arm',quantity:2,price:39.99}]"
+ORD-0003,processing,234.94,18.80,25
+Generating 3 orders as ploon...
+  VALID  578 bytes, 982 bytes JSON ref, 41% savings, round-trip=n/a
+Generating 5 orders as gcf-v3...
+  VALID  1042 bytes, 1702 bytes JSON ref, 39% savings, round-trip=true
+Generating 5 orders as json...
+  VALID  1708 bytes, 1702 bytes JSON ref, -0% savings, round-trip=true
+Generating 5 orders as toon...
+  VALID  1202 bytes, 1702 bytes JSON ref, 29% savings, round-trip=n/a
+Generating 5 orders as ploon...
+  VALID  933 bytes, 1702 bytes JSON ref, 45% savings, round-trip=n/a
+Generating 10 orders as gcf-v3...
+  INVALID: row_width_mismatch: expected 7 fields, got 1
+  Output (first 500): GCF profile=generic
+## orders [10]{orderId,customer,items,subtotal,tax,total,status}
+@0 ORD-0001|^{id,name,email,tier}|.items [1]{sku,name,quantity,price}|29.99|2.40|32.39|shipped
+1|"Alice Chen"|alice.chen@example.com|standard
+.items
+    SKU-WM01|"Wireless Mouse"|1|29.99
+@1 ORD-0002|^|.items [2]|169.97|13.60|183.57|pending
+2|"Bob Martinez"|bob.martinez@example.com|premium
+.items
+    SKU-MK04|"Mechanical Keyboard"|1|89.99
+    SKU-MA05|"Monitor Arm"|2|39.99
+@2 ORD-0003|^|.items [3]|234.94|18.80|25
+Generating 10 orders as json...
+  VALID  3473 bytes, 3463 bytes JSON ref, -0% savings, round-trip=true
+Generating 10 orders as toon...

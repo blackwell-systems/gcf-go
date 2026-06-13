@@ -1,0 +1,12 @@
+Generic-Profile Comprehension Eval
+Backend: google (gemini-3.5-flash)
+Orders: 500, Questions: 13, Formats: gcf-v3, gcf-v2, json, toon, ploon
+gcf-v3    94613 bytes, ~23653 tokens
+gcf-v2   133068 bytes, ~33267 tokens
+json     322612 bytes, ~80653 tokens
+toon     168604 bytes, ~42151 tokens
+ploon     89094 bytes, ~22273 tokens
+
+  PASS order_count               gcf-v3   [exact] expected="500" got="500"
+  PASS order_count               gcf-v2   [exact] expected="500" got="500"
+  PASS order_count               json     [exact] expected="500" got="500"

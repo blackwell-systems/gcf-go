@@ -1,0 +1,161 @@
+Generic-Profile Comprehension Eval
+Backend: google (gemini-2.5-flash)
+Orders: 500, Questions: 13, Formats: gcf-v3, gcf-v2, json, toon, ploon
+gcf-v3    94613 bytes, ~23653 tokens
+gcf-v2   133068 bytes, ~33267 tokens
+json     322612 bytes, ~80653 tokens
+toon     168604 bytes, ~42151 tokens
+ploon     89094 bytes, ~22273 tokens
+
+  PASS order_count               gcf-v3   [exact] expected="500" got="500"
+  PASS order_count               gcf-v2   [exact] expected="500" got="500"
+  PASS order_count               json     [exact] expected="500" got="500"
+  PASS order_count               toon     [exact] expected="500" got="500"
+  PASS order_count               ploon    [exact] expected="500" got="500"
+  PASS first_customer_name       gcf-v3   [exact] expected="Alice Chen" got="Alice Chen"
+  PASS first_customer_name       gcf-v2   [exact] expected="Alice Chen" got="Alice Chen"
+  PASS first_customer_name       json     [exact] expected="Alice Chen" got="Alice Chen"
+  SKIP first_customer_name       toon     error: Google API 503: {
+  "error": {
+    "code": 503,
+    "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.",
+    "status": "UNAVAILABLE"
+  }
+}
+
+  PASS first_customer_name       ploon    [exact] expected="Alice Chen" got="Alice Chen"
+  PASS last_order_status         gcf-v3   [exact] expected="cancelled" got="cancelled"
+  SKIP last_order_status         gcf-v2   error: Google API 503: {
+  "error": {
+    "code": 503,
+    "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.",
+    "status": "UNAVAILABLE"
+  }
+}
+
+  PASS last_order_status         json     [exact] expected="cancelled" got="cancelled"
+  PASS last_order_status         toon     [exact] expected="cancelled" got="cancelled"
+  PASS last_order_status         ploon    [exact] expected="cancelled" got="cancelled"
+  PASS total_items_first_order   gcf-v3   [exact] expected="1" got="1"
+  PASS total_items_first_order   gcf-v2   [exact] expected="1" got="1"
+  PASS total_items_first_order   json     [exact] expected="1" got="1"
+  PASS total_items_first_order   toon     [exact] expected="1" got="1"
+  PASS total_items_first_order   ploon    [exact] expected="1" got="1"
+  PASS customer_email_order5     gcf-v3   [exact] expected="eva.johansson@example.com" got="eva.johansson@example.com"
+  PASS customer_email_order5     gcf-v2   [exact] expected="eva.johansson@example.com" got="eva.johansson@example.com"
+  PASS customer_email_order5     json     [exact] expected="eva.johansson@example.com" got="eva.johansson@example.com"
+  PASS customer_email_order5     toon     [exact] expected="eva.johansson@example.com" got="eva.johansson@example.com"
+  PASS customer_email_order5     ploon    [exact] expected="eva.johansson@example.com" got="eva.johansson@example.com"
+  PASS count_shipped             gcf-v3   [exact] expected="100" got="100"
+  PASS count_shipped             gcf-v2   [exact] expected="100" got="100"
+  PASS count_shipped             json     [exact] expected="100" got="100"
+  FAIL count_shipped             toon     [got "83"] expected="100" got="83"
+  PASS count_shipped             ploon    [exact] expected="100" got="100"
+  PASS count_premium_customers   gcf-v3   [exact] expected="200" got="200"
+  FAIL count_premium_customers   gcf-v2   [got "150"] expected="200" got="150"
+  FAIL count_premium_customers   json     [got "150"] expected="200" got="150"
+  FAIL count_premium_customers   toon     [got "250"] expected="200" got="250"
+  PASS count_premium_customers   ploon    [exact] expected="200" got="200"
+  PASS highest_total             gcf-v3   [exact] expected="464.32" got="464.32"
+  PASS highest_total             gcf-v2   [exact] expected="464.32" got="464.32"
+  PASS highest_total             json     [exact] expected="464.32" got="464.32"
+  PASS highest_total             toon     [exact] expected="464.32" got="464.32"
+  PASS highest_total             ploon    [exact] expected="464.32" got="464.32"
+  PASS sku_first_item_order3     gcf-v3   [exact] expected="SKU-HP07" got="SKU-HP07"
+  PASS sku_first_item_order3     gcf-v2   [exact] expected="SKU-HP07" got="SKU-HP07"
+  PASS sku_first_item_order3     json     [exact] expected="SKU-HP07" got="SKU-HP07"
+  PASS sku_first_item_order3     toon     [exact] expected="SKU-HP07" got="SKU-HP07"
+  PASS sku_first_item_order3     ploon    [exact] expected="SKU-HP07" got="SKU-HP07"
+  PASS total_revenue_shipped     gcf-v3   [exact] expected="21325.50" got="21325.50"
+  PASS total_revenue_shipped     gcf-v2   [exact] expected="21325.50" got="21325.50"
+  FAIL total_revenue_shipped     json     [got "7524.39"] expected="21325.50" got="7524.39"
+  PASS total_revenue_shipped     toon     [exact] expected="21325.50" got="21325.50"
+  PASS total_revenue_shipped     ploon    [exact] expected="21325.50" got="21325.50"
+  SKIP unique_statuses           gcf-v3   error: Google API 503: {
+  "error": {
+    "code": 503,
+    "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.",
+    "status": "UNAVAILABLE"
+  }
+}
+
+  PASS unique_statuses           gcf-v2   [exact] expected="cancelled, delivered, pending, processing, shipped" got="cancelled,delivered,pending,processing,shipped"
+  SKIP unique_statuses           json     error: Google API 503: {
+  "error": {
+    "code": 503,
+    "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.",
+    "status": "UNAVAILABLE"
+  }
+}
+
+  PASS unique_statuses           toon     [exact] expected="cancelled, delivered, pending, processing, shipped" got="cancelled, delivered, pending, processing, shipped"
+  SKIP unique_statuses           ploon    error: Google API 503: {
+  "error": {
+    "code": 503,
+    "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.",
+    "status": "UNAVAILABLE"
+  }
+}
+
+  SKIP count_orders_with_3plus_items gcf-v3   error: Google API 503: {
+  "error": {
+    "code": 503,
+    "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.",
+    "status": "UNAVAILABLE"
+  }
+}
+
+  SKIP count_orders_with_3plus_items gcf-v2   error: Google API 503: {
+  "error": {
+    "code": 503,
+    "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.",
+    "status": "UNAVAILABLE"
+  }
+}
+
+  FAIL count_orders_with_3plus_items json     [got "170"] expected="250" got="170"
+  PASS count_orders_with_3plus_items toon     [exact] expected="250" got="250"
+  PASS count_orders_with_3plus_items ploon    [contains] expected="250" got="To determine the number of orders with 3 or more line items, we need to parse the PLOON data and count the `items` for each order.\n\nAn order begins with a line starting `1:OrderID` and includes subsequent lines related to the customer (`2 |...`) and items (`2:ItemNumber|...`) until the next line starting `1:`. We are interested in counting the `2:ItemNumber|...` lines for each order.\n\nLet's analyze the first 20 orders to find the pattern:\n\n1.  **ORD-0001**: Has `2:1|...` (1 item).\n2.  **ORD-0002**: Has `2:1|...`, `2:2|...` (2 items).\n3.  **ORD-0003**: Has `2:1|...`, `2:2|...`, `2:3|...` (3 items). **Count = 1**\n4.  **ORD-0004**: Has `2:1|...`, `2:2|...`, `2:3|...`, `2:4|...` (4 items). **Count = 2**\n5.  **ORD-0005**: Has `2:1|...` (1 item).\n6.  **ORD-0006**: Has `2:1|...`, `2:2|...` (2 items).\n7.  **ORD-0007**: Has `2:1|...`, `2:2|...`, `2:3|...` (3 items). **Count = 3**\n8.  **ORD-0008**: Has `2:1|...`, `2:2|...`, `2:3|...`, `2:4|...` (4 items). **Count = 4**\n9.  **ORD-0009**: Has `2:1|...` (1 item).\n10. **ORD-0010**: Has `2:1|...`, `2:2|...` (2 items).\n11. **ORD-0011**: Has `2:1|...`, `2:2|...`, `2:3|...` (3 items). **Count = 5**\n12. **ORD-0012**: Has `2:1|...`, `2:2|...`, `2:3|...`, `2:4|...` (4 items). **Count = 6**\n13. **ORD-0013**: Has `2:1|...` (1 item).\n14. **ORD-0014**: Has `2:1|...`, `2:2|...` (2 items).\n15. **ORD-0015**: Has `2:1|...`, `2:2|...`, `2:3|...` (3 items). **Count = 7**\n16. **ORD-0016**: Has `2:1|...`, `2:2|...`, `2:3|...`, `2:4|...` (4 items). **Count = 8**\n17. **ORD-0017**: Has `2:1|...` (1 item).\n18. **ORD-0018**: Has `2:1|...`, `2:2|...` (2 items).\n19. **ORD-0019**: Has `2:1|...`, `2:2|...`, `2:3|...` (3 items). **Count = 9**\n20. **ORD-0020**: Has `2:1|...`, `2:2|...`, `2:3|...`, `2:4|...` (4 items). **Count = 10**\n\nIn the first block of 20 orders (ORD-0001 to ORD-0020), there are 10 orders that have 3 or more line items.\n\nObserving the data, the pattern of orders repeats every 20 entries (e.g., ORD-0001, ORD-0021, ORD-0041, etc., are identical in structure).\nThe total number of orders is 500.\nNumber of repeating blocks = Total orders / Orders per block = 500 / 20 = 25 blocks.\n\nSince there are 10 orders with 3 or more line items in each block, the total count will be:\nTotal orders with 3+ items = Orders with 3+ items per block * Number of blocks\nTotal orders with 3+ items = 10 * 25 = 250.\n\n250"
+  SKIP customer_tier_last_order  gcf-v3   error: Google API 503: {
+  "error": {
+    "code": 503,
+    "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.",
+    "status": "UNAVAILABLE"
+  }
+}
+
+  SKIP customer_tier_last_order  gcf-v2   error: Google API 503: {
+  "error": {
+    "code": 503,
+    "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.",
+    "status": "UNAVAILABLE"
+  }
+}
+
+  PASS customer_tier_last_order  json     [exact] expected="premium" got="premium"
+  SKIP customer_tier_last_order  toon     error: Google API 503: {
+  "error": {
+    "code": 503,
+    "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.",
+    "status": "UNAVAILABLE"
+  }
+}
+
+  SKIP customer_tier_last_order  ploon    error: Google API 503: {
+  "error": {
+    "code": 503,
+    "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.",
+    "status": "UNAVAILABLE"
+  }
+}
+
+
+=== Summary ===
+Format     Accuracy   Pass/Total
+gcf-v3       100.0%     10/10
+gcf-v2        90.0%      9/10
+json          75.0%      9/12
+toon          81.8%      9/11
+ploon        100.0%     11/11
+
+Log: results/v3/comprehension/generic-500orders-google-gemini-2.5-flash-2026-06-26.log

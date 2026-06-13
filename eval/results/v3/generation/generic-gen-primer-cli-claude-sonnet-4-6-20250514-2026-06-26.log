@@ -1,0 +1,96 @@
+=== Generic-Profile Generation Eval ===
+Backend: cli (claude -p --model claude-sonnet-4-6-20250514)
+Primer: primer
+Sizes: [3 5 10 20 50] orders
+Formats: gcf-v3, json, toon, ploon
+
+Generating 3 orders as gcf-v3...
+  ERROR: claude -p failed: exit status 1
+stderr: 
+Generating 3 orders as json...
+  ERROR: claude -p failed: exit status 1
+stderr: 
+Generating 3 orders as toon...
+  ERROR: claude -p failed: exit status 1
+stderr: 
+Generating 3 orders as ploon...
+  ERROR: claude -p failed: exit status 1
+stderr: 
+Generating 5 orders as gcf-v3...
+  ERROR: claude -p failed: exit status 1
+stderr: 
+Generating 5 orders as json...
+  ERROR: claude -p failed: exit status 1
+stderr: 
+Generating 5 orders as toon...
+  ERROR: claude -p failed: exit status 1
+stderr: 
+Generating 5 orders as ploon...
+  ERROR: claude -p failed: exit status 1
+stderr: 
+Generating 10 orders as gcf-v3...
+  ERROR: claude -p failed: exit status 1
+stderr: 
+Generating 10 orders as json...
+  ERROR: claude -p failed: exit status 1
+stderr: 
+Generating 10 orders as toon...
+  ERROR: claude -p failed: exit status 1
+stderr: 
+Generating 10 orders as ploon...
+  ERROR: claude -p failed: exit status 1
+stderr: 
+Generating 20 orders as gcf-v3...
+  ERROR: claude -p failed: exit status 1
+stderr: 
+Generating 20 orders as json...
+  ERROR: claude -p failed: exit status 1
+stderr: 
+Generating 20 orders as toon...
+  ERROR: claude -p failed: exit status 1
+stderr: 
+Generating 20 orders as ploon...
+  ERROR: claude -p failed: exit status 1
+stderr: 
+Generating 50 orders as gcf-v3...
+  ERROR: claude -p failed: exit status 1
+stderr: 
+Generating 50 orders as json...
+  ERROR: claude -p failed: exit status 1
+stderr: 
+Generating 50 orders as toon...
+  ERROR: claude -p failed: exit status 1
+stderr: 
+Generating 50 orders as ploon...
+  ERROR: claude -p failed: exit status 1
+stderr: 
+
+=== Summary ===
+Format   Orders   Valid  RoundTrip  Out bytes  JSON ref   Savings 
+gcf-v3   3        NO     NO         0          0          0       %
+json     3        NO     NO         0          0          0       %
+toon     3        NO     n/a        0          0          0       %
+ploon    3        NO     n/a        0          0          0       %
+gcf-v3   5        NO     NO         0          0          0       %
+json     5        NO     NO         0          0          0       %
+toon     5        NO     n/a        0          0          0       %
+ploon    5        NO     n/a        0          0          0       %
+gcf-v3   10       NO     NO         0          0          0       %
+json     10       NO     NO         0          0          0       %
+toon     10       NO     n/a        0          0          0       %
+ploon    10       NO     n/a        0          0          0       %
+gcf-v3   20       NO     NO         0          0          0       %
+json     20       NO     NO         0          0          0       %
+toon     20       NO     n/a        0          0          0       %
+ploon    20       NO     n/a        0          0          0       %
+gcf-v3   50       NO     NO         0          0          0       %
+json     50       NO     NO         0          0          0       %
+toon     50       NO     n/a        0          0          0       %
+ploon    50       NO     n/a        0          0          0       %
+
+gcf-v3: 0/5 valid
+json: 0/5 valid
+toon: 0/5 valid
+ploon: 0/5 valid
+
+Log: results/v3/generation/generic-gen-primer-cli-claude-sonnet-4-6-20250514-2026-06-26.log

@@ -1,0 +1,30 @@
+=== Generic-Profile Generation Eval ===
+Backend: cli (claude -p --model claude-haiku-4-5-20251001)
+Primer: cold
+Sizes: [3 5 10 20 50] orders
+Formats: gcf-v3, json, toon, ploon
+
+Generating 3 orders as gcf-v3...
+  INVALID: count_mismatch: declared 1, got 0
+  Output (first 500): GCF profile=generic
+## orders [3]{id,status,subtotal,tax,total,customer,items}
+@0 ORD-0001|shipped|29.99|2.40|32.39|^{id,name,email,tier}|^
+1|Alice Chen|alice.chen@example.com|standard
+.items [1]{name,sku,quantity,price}
+Wireless Mouse|SKU-WM01|1|29.99
+@1 ORD-0002|pending|169.97|13.60|183.57|^|^
+2|Bob Martinez|bob.martinez@example.com|premium
+.items [2]
+Mechanical Keyboard|SKU-MK04|1|89.99
+Monitor Arm|SKU-MA05|2|39.99
+@2 ORD-0003|processing|234.94|18.80|253.74|^|^
+3|Carol Kim|carol.kim@example.c
+Generating 3 orders as json...
+  VALID  1734 bytes, 982 bytes JSON ref, -77% savings, round-trip=true
+Generating 3 orders as toon...
+  VALID  652 bytes, 982 bytes JSON ref, 34% savings, round-trip=n/a
+Generating 3 orders as ploon...
+  VALID  577 bytes, 982 bytes JSON ref, 41% savings, round-trip=n/a
+Generating 5 orders as gcf-v3...
+  VALID  994 bytes, 1702 bytes JSON ref, 42% savings, round-trip=true
+Generating 5 orders as json...

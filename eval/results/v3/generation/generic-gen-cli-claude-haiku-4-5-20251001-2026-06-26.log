@@ -1,0 +1,27 @@
+=== Generic-Profile Generation Eval ===
+Backend: cli (claude -p --model claude-haiku-4-5-20251001)
+Sizes: [3 5 10 20 50] orders
+Formats: gcf-v3
+
+Generating 3 orders as gcf-v3...
+  VALID  633 bytes GCF, 982 bytes JSON, 36% savings, round-trip=true
+Generating 5 orders as gcf-v3...
+  VALID  1010 bytes GCF, 1702 bytes JSON, 41% savings, round-trip=true
+Generating 10 orders as gcf-v3...
+  VALID  1928 bytes GCF, 3463 bytes JSON, 44% savings, round-trip=true
+Generating 20 orders as gcf-v3...
+  VALID  3879 bytes GCF, 7191 bytes JSON, 46% savings, round-trip=true
+Generating 50 orders as gcf-v3...
+  VALID  9466 bytes GCF, 17839 bytes JSON, 47% savings, round-trip=true
+
+=== Summary ===
+Format   Orders   Valid  RoundTrip  GCF bytes  JSON bytes Savings 
+gcf-v3   3        YES    YES        633        982        36      %
+gcf-v3   5        YES    YES        1010       1702       41      %
+gcf-v3   10       YES    YES        1928       3463       44      %
+gcf-v3   20       YES    YES        3879       7191       46      %
+gcf-v3   50       YES    YES        9466       17839      47      %
+
+5/5 valid.
+
+Log: results/v3/generation/generic-gen-cli-claude-haiku-4-5-20251001-2026-06-26.log

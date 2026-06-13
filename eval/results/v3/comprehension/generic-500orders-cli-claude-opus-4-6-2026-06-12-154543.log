@@ -1,0 +1,125 @@
+Generic-Profile Comprehension Eval
+Backend: cli (claude -p --model claude-opus-4-6)
+Orders: 500, Questions: 13, Formats: gcf-v3, gcf-v2, json, toon, ploon
+gcf-v3    94613 bytes, ~23653 tokens
+gcf-v2   133068 bytes, ~33267 tokens
+json     322612 bytes, ~80653 tokens
+toon     168604 bytes, ~42151 tokens
+ploon     89094 bytes, ~22273 tokens
+
+  PASS order_count               gcf-v3   [exact] expected="500" got="500"
+  PASS order_count               gcf-v2   [exact] expected="500" got="500"
+  PASS order_count               json     [exact] expected="500" got="500"
+  PASS order_count               toon     [exact] expected="500" got="500"
+  PASS order_count               ploon    [exact] expected="500" got="500"
+  PASS first_customer_name       gcf-v3   [exact] expected="Alice Chen" got="Alice Chen"
+  PASS first_customer_name       gcf-v2   [exact] expected="Alice Chen" got="Alice Chen"
+  PASS first_customer_name       json     [exact] expected="Alice Chen" got="Alice Chen"
+  PASS first_customer_name       toon     [exact] expected="Alice Chen" got="Alice Chen"
+  PASS first_customer_name       ploon    [exact] expected="Alice Chen" got="Alice Chen"
+  PASS last_order_status         gcf-v3   [exact] expected="cancelled" got="cancelled"
+  PASS last_order_status         gcf-v2   [exact] expected="cancelled" got="cancelled"
+  PASS last_order_status         json     [exact] expected="cancelled" got="cancelled"
+  PASS last_order_status         toon     [exact] expected="cancelled" got="cancelled"
+  PASS last_order_status         ploon    [exact] expected="cancelled" got="cancelled"
+  PASS total_items_first_order   gcf-v3   [exact] expected="1" got="1"
+  PASS total_items_first_order   gcf-v2   [exact] expected="1" got="1"
+  PASS total_items_first_order   json     [exact] expected="1" got="1"
+  PASS total_items_first_order   toon     [exact] expected="1" got="1"
+  PASS total_items_first_order   ploon    [exact] expected="1" got="1"
+  PASS customer_email_order5     gcf-v3   [exact] expected="eva.johansson@example.com" got="eva.johansson@example.com"
+  PASS customer_email_order5     gcf-v2   [exact] expected="eva.johansson@example.com" got="eva.johansson@example.com"
+  PASS customer_email_order5     json     [exact] expected="eva.johansson@example.com" got="eva.johansson@example.com"
+  PASS customer_email_order5     toon     [exact] expected="eva.johansson@example.com" got="eva.johansson@example.com"
+  SKIP customer_email_order5     ploon    error: claude -p failed: exit status 1
+stderr: 
+  SKIP count_shipped             gcf-v3   error: claude -p failed: exit status 1
+stderr: 
+  SKIP count_shipped             gcf-v2   error: claude -p failed: exit status 1
+stderr: 
+  SKIP count_shipped             json     error: claude -p failed: exit status 1
+stderr: 
+  SKIP count_shipped             toon     error: claude -p failed: exit status 1
+stderr: 
+  SKIP count_shipped             ploon    error: claude -p failed: exit status 1
+stderr: 
+  SKIP count_premium_customers   gcf-v3   error: claude -p failed: exit status 1
+stderr: 
+  SKIP count_premium_customers   gcf-v2   error: claude -p failed: exit status 1
+stderr: 
+  SKIP count_premium_customers   json     error: claude -p failed: exit status 1
+stderr: 
+  SKIP count_premium_customers   toon     error: claude -p failed: exit status 1
+stderr: 
+  SKIP count_premium_customers   ploon    error: claude -p failed: exit status 1
+stderr: 
+  SKIP highest_total             gcf-v3   error: claude -p failed: exit status 1
+stderr: 
+  SKIP highest_total             gcf-v2   error: claude -p failed: exit status 1
+stderr: 
+  SKIP highest_total             json     error: claude -p failed: exit status 1
+stderr: 
+  SKIP highest_total             toon     error: claude -p failed: exit status 1
+stderr: 
+  SKIP highest_total             ploon    error: claude -p failed: exit status 1
+stderr: 
+  SKIP sku_first_item_order3     gcf-v3   error: claude -p failed: exit status 1
+stderr: 
+  SKIP sku_first_item_order3     gcf-v2   error: claude -p failed: exit status 1
+stderr: 
+  SKIP sku_first_item_order3     json     error: claude -p failed: exit status 1
+stderr: 
+  SKIP sku_first_item_order3     toon     error: claude -p failed: exit status 1
+stderr: 
+  SKIP sku_first_item_order3     ploon    error: claude -p failed: exit status 1
+stderr: 
+  SKIP total_revenue_shipped     gcf-v3   error: claude -p failed: exit status 1
+stderr: 
+  SKIP total_revenue_shipped     gcf-v2   error: claude -p failed: exit status 1
+stderr: 
+  SKIP total_revenue_shipped     json     error: claude -p failed: exit status 1
+stderr: 
+  SKIP total_revenue_shipped     toon     error: claude -p failed: exit status 1
+stderr: 
+  SKIP total_revenue_shipped     ploon    error: claude -p failed: exit status 1
+stderr: 
+  SKIP unique_statuses           gcf-v3   error: claude -p failed: exit status 1
+stderr: 
+  SKIP unique_statuses           gcf-v2   error: claude -p failed: exit status 1
+stderr: 
+  SKIP unique_statuses           json     error: claude -p failed: exit status 1
+stderr: 
+  SKIP unique_statuses           toon     error: claude -p failed: exit status 1
+stderr: 
+  SKIP unique_statuses           ploon    error: claude -p failed: exit status 1
+stderr: 
+  SKIP count_orders_with_3plus_items gcf-v3   error: claude -p failed: exit status 1
+stderr: 
+  SKIP count_orders_with_3plus_items gcf-v2   error: claude -p failed: exit status 1
+stderr: 
+  SKIP count_orders_with_3plus_items json     error: claude -p failed: exit status 1
+stderr: 
+  SKIP count_orders_with_3plus_items toon     error: claude -p failed: exit status 1
+stderr: 
+  SKIP count_orders_with_3plus_items ploon    error: claude -p failed: exit status 1
+stderr: 
+  SKIP customer_tier_last_order  gcf-v3   error: claude -p failed: exit status 1
+stderr: 
+  SKIP customer_tier_last_order  gcf-v2   error: claude -p failed: exit status 1
+stderr: 
+  SKIP customer_tier_last_order  json     error: claude -p failed: exit status 1
+stderr: 
+  SKIP customer_tier_last_order  toon     error: claude -p failed: exit status 1
+stderr: 
+  SKIP customer_tier_last_order  ploon    error: claude -p failed: exit status 1
+stderr: 
+
+=== Summary ===
+Format     Accuracy   Pass/Total
+gcf-v3       100.0%      5/5
+gcf-v2       100.0%      5/5
+json         100.0%      5/5
+toon         100.0%      5/5
+ploon        100.0%      4/4
+
+Log: results/v3/comprehension/generic-500orders-cli-claude-opus-4-6-2026-06-12-154543.log
