@@ -23,9 +23,7 @@ func Decode(input string) (*Payload, error) {
 	if err := parseHeader(header[4:], p); err != nil {
 		return nil, err
 	}
-	if p.Tool == "" {
-		return nil, fmt.Errorf("missing_tool: header missing required 'tool' field")
-	}
+	// tool is optional since v3.1 (SHOULD for MCP, not required)
 
 	// Detect delta mode.
 	isDelta := false
