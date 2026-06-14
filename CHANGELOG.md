@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.2.0 (2026-06-14)
+
+### Spec v3.1
+
+- `tool` field in graph profile header is now optional (SHOULD be present for MCP, not required)
+
+### Bug Fixes
+
+- Quote strings containing commas (conformance: `inline-schema/006_inline_with_quoted_values`)
+- Decode v2-format indented attachments in tabular rows (conformance: `decode/002_attachment`)
+- Full v3 conformance: 157/157 fixtures passing, 200M+ round-trips verified
+
 ## v1.1.0 (2026-06-12)
 
 ### Breaking Changes

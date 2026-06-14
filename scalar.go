@@ -38,7 +38,7 @@ func needsQuote(s string) bool {
 		return true
 	}
 	for _, c := range s {
-		if c == '"' || c == '\\' || c == '|' || c < 0x20 || c == '\n' || c == '\r' {
+		if c == '"' || c == '\\' || c == '|' || c == ',' || c < 0x20 || c == '\n' || c == '\r' {
 			return true
 		}
 		// C1 controls (U+0080-U+009F).

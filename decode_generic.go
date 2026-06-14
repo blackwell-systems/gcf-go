@@ -539,6 +539,11 @@ func parseTabularBody(lines []string, start, depth int, fields []string, expecte
 					break
 				}
 
+				// Handle v2 indented attachments: strip one extra indent level.
+				if !strings.HasPrefix(aContent, ".") && strings.HasPrefix(aContent, "  .") {
+					aContent = aContent[2:]
+				}
+
 				// Line starts with ".": traditional or prefixed inline attachment.
 				if strings.HasPrefix(aContent, ".") {
 					rest := aContent[1:]
