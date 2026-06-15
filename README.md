@@ -226,22 +226,26 @@ GCF wins 13/15 datasets on the expanded [token efficiency benchmark](https://git
 
 - [Documentation](https://gcformat.com/)
 - [Playground](https://gcformat.com/playground.html)
-- [Specification](https://github.com/blackwell-systems/gcf)
-- [TypeScript library](https://github.com/blackwell-systems/gcf-typescript)
-- [Python library](https://github.com/blackwell-systems/gcf-python)
-- [MCP Proxy](https://github.com/blackwell-systems/gcf-proxy) (zero-code adoption)
+- [Cost Calculator](https://gcformat.com/calculator.html)
+- [Specification](https://github.com/blackwell-systems/gcf) (v3.1 Stable)
 - [GCF vs TOON](https://gcformat.com/guide/vs-toon.html)
-- [TOON benchmark fork](https://github.com/blackwell-systems/toon/tree/gcf-comparison)
+- [Benchmarks](https://gcformat.com/guide/benchmarks.html) (1,700+ evaluations)
 
+### Ecosystem
 
-<details>
-<summary>More links</summary>
-
-- [betterthanjson.com](https://betterthanjson.com)
-- [jsonalternative.com](https://jsonalternative.com)
-- [betterthantoon.com](https://betterthantoon.com)
-
-</details>
+| | |
+|---|---|
+| **Go** | [gcf-go](https://github.com/blackwell-systems/gcf-go) |
+| **TypeScript** | [gcf-typescript](https://github.com/blackwell-systems/gcf-typescript) |
+| **Python** | [gcf-python](https://github.com/blackwell-systems/gcf-python) |
+| **Rust** | [gcf-rust](https://github.com/blackwell-systems/gcf-rust) |
+| **Swift** | [gcf-swift](https://github.com/blackwell-systems/gcf-swift) |
+| **Kotlin** | [gcf-kotlin](https://github.com/blackwell-systems/gcf-kotlin) |
+| **MCP Proxy** | [gcf-proxy](https://github.com/blackwell-systems/gcf-proxy) |
+| **VS Code** | [Marketplace](https://marketplace.visualstudio.com/items?itemName=blackwell-systems.gcf-vscode) |
+| **Claude Code** | [gcf-claude-plugin](https://github.com/blackwell-systems/gcf-claude-plugin) |
+| **Codex CLI** | [gcf-codex-plugin](https://github.com/blackwell-systems/gcf-codex-plugin) |
+| **Tree-sitter** | [tree-sitter-gcf](https://github.com/blackwell-systems/tree-sitter-gcf) |
 
 ## License
 
