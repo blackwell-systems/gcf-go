@@ -222,30 +222,25 @@ Works on maps, slices, structs, and primitives. Arrays of uniform objects get ta
 
 GCF wins 13/15 datasets on the expanded [token efficiency benchmark](https://github.com/blackwell-systems/toon/tree/gcf-comparison). Full results: [gcformat.com/guide/benchmarks](https://gcformat.com/guide/benchmarks.html)
 
-## Links
+## Implementations
 
-- [Documentation](https://gcformat.com/)
-- [Playground](https://gcformat.com/playground.html)
-- [Cost Calculator](https://gcformat.com/calculator.html)
-- [Specification](https://github.com/blackwell-systems/gcf) (v3.1 Stable)
-- [GCF vs TOON](https://gcformat.com/guide/vs-toon.html)
-- [Benchmarks](https://gcformat.com/guide/benchmarks.html) (1,700+ evaluations)
+| Language | Package | Repository |
+|----------|---------|-----------|
+| Go | `go get github.com/blackwell-systems/gcf-go` | [gcf-go](https://github.com/blackwell-systems/gcf-go) |
+| TypeScript | `npm install @blackwell-systems/gcf` | [gcf-typescript](https://github.com/blackwell-systems/gcf-typescript) |
+| Python | `pip install gcf-python` | [gcf-python](https://github.com/blackwell-systems/gcf-python) |
+| Rust | `cargo add gcf` | [gcf-rust](https://github.com/blackwell-systems/gcf-rust) |
+| Swift | Swift Package Manager | [gcf-swift](https://github.com/blackwell-systems/gcf-swift) |
+| Kotlin | JitPack | [gcf-kotlin](https://github.com/blackwell-systems/gcf-kotlin) |
+| MCP Proxy | `pip install gcf-proxy` | [gcf-proxy](https://github.com/blackwell-systems/gcf-proxy) (bidirectional, session dedup, HTTP frontend) |
+| Claude Code Plugin | `/plugin install` | [gcf-claude-plugin](https://github.com/blackwell-systems/gcf-claude-plugin) (one-command install, session stats hook) |
+| Codex Plugin | `codex plugin add` | [gcf-codex-plugin](https://github.com/blackwell-systems/gcf-codex-plugin) (one-command install, session stats hook) |
+| VS Code | `ext install blackwell-systems.gcf-vscode` | [gcf-vscode](https://marketplace.visualstudio.com/items?itemName=blackwell-systems.gcf-vscode) (syntax highlighting) |
+| Tree-sitter | `npm install tree-sitter-gcf` | [tree-sitter-gcf](https://github.com/blackwell-systems/tree-sitter-gcf) |
 
-### Ecosystem
+Zero runtime dependencies. MIT licensed. All implementations support both generic profile (`encodeGeneric`) and graph profile (`encode`). CLI included in all 6 languages.
 
-| | |
-|---|---|
-| **Go** | [gcf-go](https://github.com/blackwell-systems/gcf-go) |
-| **TypeScript** | [gcf-typescript](https://github.com/blackwell-systems/gcf-typescript) |
-| **Python** | [gcf-python](https://github.com/blackwell-systems/gcf-python) |
-| **Rust** | [gcf-rust](https://github.com/blackwell-systems/gcf-rust) |
-| **Swift** | [gcf-swift](https://github.com/blackwell-systems/gcf-swift) |
-| **Kotlin** | [gcf-kotlin](https://github.com/blackwell-systems/gcf-kotlin) |
-| **MCP Proxy** | [gcf-proxy](https://github.com/blackwell-systems/gcf-proxy) |
-| **VS Code** | [Marketplace](https://marketplace.visualstudio.com/items?itemName=blackwell-systems.gcf-vscode) |
-| **Claude Code** | [gcf-claude-plugin](https://github.com/blackwell-systems/gcf-claude-plugin) |
-| **Codex CLI** | [gcf-codex-plugin](https://github.com/blackwell-systems/gcf-codex-plugin) |
-| **Tree-sitter** | [tree-sitter-gcf](https://github.com/blackwell-systems/tree-sitter-gcf) |
+**Specification:** [SPEC v3.1 Stable](https://github.com/blackwell-systems/gcf/blob/main/SPEC.md) with 157 conformance fixtures, 33,000,000,000+ lossless round-trips verified across 5 formats and 6 languages. All implementations at v2.1.0+ (Go v1.2.0). Cross-language 6x6 matrix verified.
 
 ## License
 
