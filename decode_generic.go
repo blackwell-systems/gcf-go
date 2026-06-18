@@ -185,22 +185,8 @@ func parseObjectBody(lines []string, start, depth int, out map[string]any) (int,
 			}
 		}
 
-		if bracketIdx := findInlineArrayBracket(content); bracketIdx > 0 {
-			key, err := parseKeyFromHeaderContent(content[:bracketIdx])
-			if err != nil {
-				return 0, err
-			}
-			rest := content[bracketIdx:]
-			arr, _, err := parseArrayFromHeader(lines, i, depth, rest)
-			if err != nil {
-				return 0, err
-			}
-			out[key] = arr
-			i++
-			continue
-		}
-
-		// Fallback key=value for bare keys not caught above.
+		// Key=value. Check before inline array so bracket patterns in quoted
+		// values (e.g. text="ERR[404]: Not Found") are not misinterpreted.
 		if eqIdx := findKeyValueSplit(content); eqIdx > 0 {
 			keyRaw := content[:eqIdx]
 			if keyRaw[0] != '"' && !isBareKey(keyRaw) {
@@ -217,6 +203,22 @@ func parseObjectBody(lines []string, start, depth int, out map[string]any) (int,
 				return 0, err
 			}
 			out[key] = val
+			i++
+			continue
+		}
+
+		// Inline array (e.g. items[3]: a,b,c). Only reached if no = found.
+		if bracketIdx := findInlineArrayBracket(content); bracketIdx > 0 {
+			key, err := parseKeyFromHeaderContent(content[:bracketIdx])
+			if err != nil {
+				return 0, err
+			}
+			rest := content[bracketIdx:]
+			arr, _, err := parseArrayFromHeader(lines, i, depth, rest)
+			if err != nil {
+				return 0, err
+			}
+			out[key] = arr
 			i++
 			continue
 		}

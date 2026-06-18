@@ -69,6 +69,8 @@ func TestConformance(t *testing.T) {
 				runErrorTest(t, fix)
 			case "session":
 				runSessionTest(t, data)
+			case "roundtrip":
+				runRoundtripTest(t, fix)
 			case "delta":
 				t.Skipf("delta operation not yet implemented")
 			default:
@@ -191,6 +193,34 @@ func runDecodeTest(t *testing.T, fix conformanceFixture) {
 
 	if !jsonSubset(expected, got) {
 		t.Errorf("decode mismatch:\n  got:      %v\n  expected: %v", got, expected)
+	}
+}
+
+func runRoundtripTest(t *testing.T, fix conformanceFixture) {
+	t.Helper()
+
+	input, err := ParseJSONOrdered(fix.Input)
+	if err != nil {
+		t.Fatalf("parsing input: %v", err)
+	}
+
+	encoded := EncodeGeneric(input)
+
+	// If expected is a string, verify encoded output matches.
+	var expectedStr string
+	if err := json.Unmarshal(fix.Expected, &expectedStr); err == nil {
+		if encoded != expectedStr {
+			t.Errorf("encode mismatch:\n  got:      %s\n  expected: %s", quote(encoded), quote(expectedStr))
+		}
+	}
+
+	// Verify round-trip.
+	decoded, err := DecodeGeneric(encoded)
+	if err != nil {
+		t.Fatalf("decode error: %v\n  encoded: %s", err, quote(encoded))
+	}
+	if !jsonEqual(input, decoded) {
+		t.Errorf("round-trip mismatch:\n  input:   %v\n  decoded: %v", input, decoded)
 	}
 }
 

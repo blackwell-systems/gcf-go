@@ -119,7 +119,15 @@ func findKeyValueSplit(s string) int {
 		}
 		return -1
 	}
-	return strings.Index(s, "=")
+	eqIdx := strings.Index(s, "=")
+	if eqIdx < 0 {
+		return -1
+	}
+	bracketIdx := strings.Index(s, "[")
+	if bracketIdx >= 0 && bracketIdx < eqIdx {
+		return -1
+	}
+	return eqIdx
 }
 
 func parseCount(s string) (int, error) {
