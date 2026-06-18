@@ -16,6 +16,7 @@ var jsonNumberRe = regexp.MustCompile(`^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d
 // numericLikeRe matches tokens that are numeric-like per Section 2.4:
 // after an optional leading + or -, begins with a digit, or begins with . followed by a digit.
 var numericLikeRe = regexp.MustCompile(`^[+-]\.?\d|^\.\d|^0\d`)
+var inlineArrayRe = regexp.MustCompile(`\[[^\]]*\]\s*:`)
 
 // needsQuote returns true if a string value must be quoted per Section 2.4.
 func needsQuote(s string) bool {
@@ -35,6 +36,9 @@ func needsQuote(s string) bool {
 		return true
 	}
 	if s[0] == '#' || s[0] == '@' || s[0] == '.' {
+		return true
+	}
+	if inlineArrayRe.MatchString(s) {
 		return true
 	}
 	for _, c := range s {
