@@ -1,5 +1,5 @@
 module github.com/blackwell-systems/gcf-go
 
-go 1.26.1
+go 1.21
 
 require gopkg.in/yaml.v3 v3.0.1 // indirect
