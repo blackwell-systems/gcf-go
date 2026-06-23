@@ -8,7 +8,7 @@
 
 Go implementation of [GCF](https://gcformat.com/) — the most token-efficient wire format for LLMs. A drop-in alternative to JSON and TOON for any structured data.
 
-**100% comprehension on every frontier model tested. 25.5% fewer tokens than TOON, 53% fewer than JSON across 15 datasets. 91.2% on structurally complex code graphs (vs TOON 68.2%, JSON 53.4%). 1,700+ LLM evaluations. Zero training.**
+**100% comprehension on every frontier model tested. 29% fewer tokens than TOON, 56% fewer than JSON across 16 datasets. 91.2% on structurally complex code graphs (vs TOON 68.2%, JSON 53.4%). 2,400+ LLM evaluations. Zero training.**
 
 Docs: [gcformat.com](https://gcformat.com/) · [Playground](https://gcformat.com/playground.html) · [GCF vs TOON](https://gcformat.com/guide/vs-toon.html)
 
@@ -211,7 +211,7 @@ Works on maps, slices, structs, and primitives. Arrays of uniform objects get ta
 
 ## Benchmarks
 
-1,700+ LLM evaluations across 10 models, 3 providers, and 51 independent test runs.
+2,400+ LLM evaluations across 10 models, 3 providers, and 51 independent test runs.
 
 | | GCF | TOON | JSON |
 |---|---|---|---|
@@ -220,7 +220,7 @@ Works on maps, slices, structs, and primitives. Arrays of uniform objects get ta
 | **Input tokens** (500 symbols) | **11,090** | 16,378 | 53,341 |
 | **Output tokens** (100 symbols) | **5,976** | 8,937 | 16,121 |
 
-GCF wins 13/15 datasets on the expanded [token efficiency benchmark](https://github.com/blackwell-systems/toon/tree/gcf-comparison). Full results: [gcformat.com/guide/benchmarks](https://gcformat.com/guide/benchmarks.html)
+GCF wins 15/16 datasets on the expanded [token efficiency benchmark](https://github.com/blackwell-systems/toon/tree/gcf-comparison). Full results: [gcformat.com/guide/benchmarks](https://gcformat.com/guide/benchmarks.html)
 
 ## Implementations
 
@@ -241,7 +241,7 @@ GCF wins 13/15 datasets on the expanded [token efficiency benchmark](https://git
 
 **Zero runtime dependencies. Permanently.** All six implementations depend only on their language's standard library. No transitive dependencies. No supply chain risk. This is a permanent commitment: GCF will never take on external runtime dependencies. MIT licensed. All implementations support both generic profile (`encodeGeneric`) and graph profile (`encode`). CLI included in all 6 languages.
 
-**Specification:** [SPEC v3.1 Stable](https://github.com/blackwell-systems/gcf/blob/main/SPEC.md) with 157 conformance fixtures, 33,000,000,000+ lossless round-trips verified across 5 formats and 6 languages. All implementations at v2.1.0+ (Go v1.2.0). Cross-language 6x6 matrix verified.
+**Specification:** [SPEC v3.2 Stable](https://github.com/blackwell-systems/gcf/blob/main/SPEC.md) with 173 conformance fixtures, 43,000,000,000+ lossless round-trips verified across 5 formats and 6 languages. All implementations at v2.2.0+ (Go v1.3.0). Cross-language 6x6 matrix verified.
 
 ## License
 
