@@ -9,7 +9,11 @@
 - Backward compatible: `EncodeGeneric(data)` behavior unchanged (flatten on by default)
 - CLI: `gcf encode-generic --no-flatten` flag
 - Fuzz testing covers both flatten-on and flatten-off paths
-- Fixed: decoder no longer treats literal `>` in key names as a path separator (e.g. key `">"` no longer incorrectly unflattened)
+- Fixed: field names containing `>` no longer appear as tabular columns (spec rule 7.4.6.1.4)
+- Fixed: field names containing `>` no longer eligible for flattening analysis
+- Fixed: decoder no longer treats literal `>` in key names as a path separator
+- Fixed: decoder accepts orphan attachments (fields excluded from column list)
+- Fuzz key generator now includes `>` for adversarial testing
 
 ## v1.3.0 (2026-06-22)
 

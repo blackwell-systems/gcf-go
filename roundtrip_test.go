@@ -147,7 +147,7 @@ func genString(rng *rand.Rand) string {
 	n := rng.Intn(20)
 	var b strings.Builder
 	for i := 0; i < n; i++ {
-		switch rng.Intn(15) {
+		switch rng.Intn(16) {
 		case 0:
 			b.WriteByte(' ')
 		case 1:
@@ -177,6 +177,8 @@ func genString(rng *rand.Rand) string {
 			b.WriteByte('#')
 		case 13:
 			b.WriteByte('@')
+		case 14:
+			b.WriteByte('>')
 		default:
 			b.WriteRune(rune('a' + rng.Intn(26)))
 		}
@@ -514,4 +516,93 @@ func TestFlattenOptOutRoundTrip(t *testing.T) {
 		}
 	}
 	t.Logf("PASS: %d random values round-tripped with flatten=false", iterations)
+}
+
+// TestGtFieldEdgeCases covers all edge cases for field names containing ">".
+func TestGtFieldEdgeCases(t *testing.T) {
+	cases := []struct {
+		name string
+		data any
+	}{
+		{
+			name: "literal > key",
+			data: []any{map[string]any{">": 1}, map[string]any{">": 2}},
+		},
+		{
+			name: "> at start",
+			data: []any{map[string]any{">foo": "a", "id": 1}, map[string]any{">foo": "b", "id": 2}},
+		},
+		{
+			name: "> at end",
+			data: []any{map[string]any{"foo>": "a", "id": 1}, map[string]any{"foo>": "b", "id": 2}},
+		},
+		{
+			name: "double >>",
+			data: []any{map[string]any{"a>>b": "x"}, map[string]any{"a>>b": "y"}},
+		},
+		{
+			name: "multiple > in key",
+			data: []any{map[string]any{"a>b>c": "x"}, map[string]any{"a>b>c": "y"}},
+		},
+		{
+			name: "> field with null value",
+			data: []any{map[string]any{"a>b": nil, "id": 1}, map[string]any{"a>b": "hello", "id": 2}},
+		},
+		{
+			name: "> field with object value",
+			data: []any{
+				map[string]any{"a>b": map[string]any{"x": 1}, "id": 1},
+				map[string]any{"a>b": map[string]any{"x": 2}, "id": 2},
+			},
+		},
+		{
+			name: "> field with array value",
+			data: []any{
+				map[string]any{"a>b": []any{1, 2}, "id": 1},
+				map[string]any{"a>b": []any{3}, "id": 2},
+			},
+		},
+		{
+			name: "all fields have >",
+			data: []any{map[string]any{">": 1, "a>b": 2}, map[string]any{">": 3, "a>b": 4}},
+		},
+		{
+			name: "mix of > literal and flattened",
+			data: []any{
+				map[string]any{"id": 1, "x>y": "lit", "nested": map[string]any{"a": "v1", "b": "v2"}},
+				map[string]any{"id": 2, "x>y": "lit2", "nested": map[string]any{"a": "v3", "b": "v4"}},
+			},
+		},
+		{
+			name: "> field absent in some rows",
+			data: []any{
+				map[string]any{"id": 1, "a>b": "present"},
+				map[string]any{"id": 2},
+			},
+		},
+		{
+			name: "key looks like flattened path but is literal",
+			data: []any{
+				map[string]any{"id": 1, "customer>name": "Alice"},
+				map[string]any{"id": 2, "customer>name": "Bob"},
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Test both flatten modes.
+			for _, noFlatten := range []bool{false, true} {
+				encoded := EncodeGeneric(tc.data, GenericOptions{NoFlatten: noFlatten})
+				decoded, err := DecodeGeneric(encoded)
+				if err != nil {
+					t.Fatalf("noFlatten=%v: decode failed: %v\n  gcf: %q", noFlatten, err, encoded)
+				}
+				if !jsonDeepEqual(tc.data, decoded) {
+					t.Fatalf("noFlatten=%v: round-trip mismatch\n  input:   %s\n  gcf:     %q\n  decoded: %s",
+						noFlatten, jsonStr(tc.data), encoded, jsonStr(decoded))
+				}
+			}
+		})
+	}
 }

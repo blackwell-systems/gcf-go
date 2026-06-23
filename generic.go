@@ -352,6 +352,10 @@ type flatLeaf struct {
 // nested object that can be flattened into path columns. Returns leaf descriptors
 // if flattenable, nil otherwise. Recurses into nested objects.
 func analyzeFlattenable(arr []any, fieldName string, parentPath string) []flatLeaf {
+	// Field names containing ">" cannot be flattened (would create ambiguous paths).
+	if strings.Contains(fieldName, ">") {
+		return nil
+	}
 	type shapeEntry struct {
 		kind string // "scalar" or "nested"
 	}
@@ -546,9 +550,22 @@ func encodeTabular(b *strings.Builder, headerPrefix string, arr []any, fields []
 		}
 	}
 
+	// Fields whose names contain ">" must not appear as tabular columns
+	// because the decoder would interpret them as flattened path columns.
+	// Track them for per-row attachment emission (spec rule 7.4.6.1.4).
+	gtFields := make(map[string]bool)
+	for _, f := range fields {
+		if _, flattened := flattenMap[f]; !flattened && strings.Contains(f, ">") {
+			gtFields[f] = true
+		}
+	}
+
 	// Build expanded column list.
 	var columns []flatColumn
 	for _, f := range fields {
+		if gtFields[f] {
+			continue
+		}
 		if leaves, ok := flattenMap[f]; ok {
 			for _, leaf := range leaves {
 				columns = append(columns, flatColumn{
@@ -565,6 +582,12 @@ func encodeTabular(b *strings.Builder, headerPrefix string, arr []any, fields []
 				field:      f,
 			})
 		}
+	}
+
+	// If all fields were excluded (all contain ">"), fall back to expanded.
+	if len(columns) == 0 {
+		encodeExpanded(b, headerPrefix, arr, depth, opts)
+		return
 	}
 
 	// Compute inline schemas and shared array schemas for non-flattened fields only.
@@ -678,6 +701,19 @@ func encodeTabular(b *strings.Builder, headerPrefix string, arr []any, fields []
 			}
 		}
 
+		// Emit fields with ">" in their names as per-row attachments.
+		for _, f := range fields {
+			if !gtFields[f] {
+				continue
+			}
+			v, exists := objectItemGet(item, f)
+			if !exists {
+				continue
+			}
+			rowHasAttachment = true
+			attachments = append(attachments, fieldAttachment{name: f, value: v})
+		}
+
 		row := strings.Join(cells, "|")
 		if rowHasAttachment {
 			fmt.Fprintf(b, "%s@%d %s\n", prefix, i, row)
@@ -722,6 +758,13 @@ func encodeTabular(b *strings.Builder, headerPrefix string, arr []any, fields []
 						encodeAttachmentArrayShared(b, attIndent, fk, av, depth+2, opts, sas)
 					} else {
 						encodeAttachmentArray(b, attIndent, fk, av, depth+2, opts)
+					}
+				default:
+					// Scalar attachment (e.g. field names containing ">").
+					if att.value == nil {
+						fmt.Fprintf(b, "%s.%s =-\n", attIndent, fk)
+					} else {
+						fmt.Fprintf(b, "%s.%s =%s\n", attIndent, fk, formatScalar(att.value, '\x00'))
 					}
 				}
 			}

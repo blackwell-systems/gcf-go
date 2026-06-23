@@ -641,26 +641,11 @@ func parseTabularBody(lines []string, start, depth int, fields []string, expecte
 			}
 		}
 
-		// Check for orphan attachments when row has ID but no ^ cells.
-		if rowHasID && len(allAttFields) == 0 {
-			if i < len(lines) {
-				peekLine := lines[i]
-				peekContent := ""
-				if strings.HasPrefix(peekLine, indent) {
-					peekContent = peekLine[len(indent):]
-				}
-				if strings.HasPrefix(peekContent, ".") {
-					orphanName, _ := parseAttachmentName(peekContent[1:])
-					return nil, 0, fmt.Errorf("orphan_attachment: .%s without matching ^ cell", orphanName)
-				}
-			}
-		}
-
-		if rowHasID && len(allAttFields) > 0 {
+		if rowHasID {
 			resolvedAttachments := make(map[string]struct{})
 			inlineIdx := 0 // tracks position in inlineAttOrder for no-prefix lines
 
-			for i < len(lines) && len(resolvedAttachments) < len(allAttFields) {
+			for i < len(lines) {
 				aLine := lines[i]
 				aContent := ""
 				if strings.HasPrefix(aLine, indent) {
@@ -680,17 +665,6 @@ func parseTabularBody(lines []string, start, depth int, fields []string, expecte
 					attName, afterName := parseAttachmentName(rest)
 					afterName = strings.TrimLeft(afterName, " ")
 
-					// Check orphan: attachment for field not in allAttFields.
-					isExpected := false
-					for _, af := range allAttFields {
-						if af == attName {
-							isExpected = true
-							break
-						}
-					}
-					if !isExpected {
-						return nil, 0, fmt.Errorf("orphan_attachment: %s without matching ^ cell", attName)
-					}
 					// Check duplicate.
 					if _, already := resolvedAttachments[attName]; already {
 						return nil, 0, fmt.Errorf("duplicate_attachment: %s", attName)
@@ -940,6 +914,21 @@ func parseAttachment(lines []string, lineIdx int, rest string, depth int, shared
 			return "", nil, 0, nil, err
 		}
 		return name, arr, consumed, nil, nil
+	}
+
+	// Scalar: =value (field names containing ">" excluded from tabular columns).
+	if strings.HasPrefix(afterName, "=") {
+		valStr := afterName[1:]
+		parsed, err := parseScalar(valStr, true)
+		if err != nil {
+			return "", nil, 0, nil, err
+		}
+		switch parsed.(type) {
+		case missingMarker:
+			return name, nil, 1, nil, nil // absent treated as nil
+		default:
+			return name, parsed, 1, nil, nil
+		}
 	}
 
 	return "", nil, 0, nil, fmt.Errorf("invalid attachment form: %s", afterName)
