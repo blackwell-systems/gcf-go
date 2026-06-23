@@ -9,8 +9,8 @@ import (
 type GenericOptions struct {
 	// NoFlatten disables promotion of fixed-shape nested objects to path
 	// columns (e.g. "customer>name") in tabular sections. When true, nested
-	// objects use attachment syntax instead. Set when targeting open-weight
-	// models that show lower comprehension on flattened encoding.
+	// objects use attachment syntax instead. Open-weight models currently
+	// comprehend the expanded form better; this gap is expected to close.
 	NoFlatten bool
 }
 
