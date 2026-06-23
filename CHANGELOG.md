@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.3.0 (2026-06-22)
+
+### Spec v3.2: Nested Object Flattening
+
+- Encoder automatically flattens fixed-shape nested objects into `>` path column names (e.g., `"customer>name"` instead of `^` + `.customer {}` attachment)
+- Decoder reconstructs nested objects from `>` path columns
+- 20-48% fewer tokens on deeply nested API data (Jira, Stripe, K8s, calendar events)
+- 100% comprehension on every frontier model (validated across 9 models, 7 providers)
+- Zero regression on lossless round-trips (200K random + 100K adversarial + 10M bracket-colon)
+- Falls back to attachment mechanism for: variable-length arrays, objects with different keys across rows, objects with `>` in key names, empty nested objects
+- All-absent leaves (`~`) omit the parent key; all-null leaves (`-`) set parent to null
+
 ## v1.2.0 (2026-06-14)
 
 ### Spec v3.1

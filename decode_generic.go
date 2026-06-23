@@ -384,15 +384,104 @@ func parseExpandedBody(lines []string, start, depth int) ([]any, int, error) {
 	return items, i - start, nil
 }
 
+// unflattenPaths takes a flat map with ">" path keys and reconstructs nested objects.
+// It also handles the group-level absent/null semantics:
+// if all leaves in a top-level group are absent (~), the parent key is omitted;
+// if all leaves are null (-), the parent key is set to nil.
+func unflattenPaths(pathColumns map[string][]string, flatValues map[string]any, flatAbsent map[string]bool) map[string]any {
+	// Group path columns by their top-level parent.
+	type groupInfo struct {
+		paths []string // all path column names in this group
+	}
+	groups := make(map[string]*groupInfo)
+	var groupOrder []string
+	for _, paths := range pathColumns {
+		if len(paths) == 0 {
+			continue
+		}
+		topLevel := paths[0]
+		if _, ok := groups[topLevel]; !ok {
+			groups[topLevel] = &groupInfo{}
+			groupOrder = append(groupOrder, topLevel)
+		}
+	}
+	// Assign each path column to its top-level group.
+	for fieldName, paths := range pathColumns {
+		topLevel := paths[0]
+		groups[topLevel].paths = append(groups[topLevel].paths, fieldName)
+	}
+
+	result := make(map[string]any)
+
+	for _, topLevel := range groupOrder {
+		grp := groups[topLevel]
+		allAbsent := true
+		allNull := true
+		for _, fieldName := range grp.paths {
+			if !flatAbsent[fieldName] {
+				allAbsent = false
+			}
+			val, hasVal := flatValues[fieldName]
+			if hasVal && val != nil {
+				allNull = false
+			}
+			if flatAbsent[fieldName] {
+				allNull = false // absent is not null
+			}
+		}
+		if allAbsent {
+			continue // omit the parent key entirely
+		}
+		if allNull {
+			result[topLevel] = nil
+			continue
+		}
+
+		// Build nested structure.
+		for _, fieldName := range grp.paths {
+			if flatAbsent[fieldName] {
+				continue // omit this leaf
+			}
+			paths := pathColumns[fieldName]
+			val := flatValues[fieldName]
+
+			// Set nested value: paths[0] > paths[1] > ... = val
+			current := result
+			for i := 0; i < len(paths)-1; i++ {
+				k := paths[i]
+				next, ok := current[k]
+				if !ok {
+					next = make(map[string]any)
+					current[k] = next
+				}
+				current = next.(map[string]any)
+			}
+			current[paths[len(paths)-1]] = val
+		}
+	}
+
+	return result
+}
+
 // parseTabularBody parses tabular rows with v3 extensions:
 // - ^{fields} inline schema
 // - No-indent attachments (same depth as row)
 // - No-prefix inline attachments (positional)
 // - Shared array schemas ([N] without {fields} uses stored schema)
+// - Path columns with ">" separator (v3.2 flattened nested objects)
 func parseTabularBody(lines []string, start, depth int, fields []string, expectedCount int, parentSharedSchemas map[string][]string) ([]any, int, error) {
 	indent := strings.Repeat("  ", depth)
 	var rows []any
 	i := start
+
+	// Detect path columns: fields containing ">".
+	// pathColumnMap maps field name -> split path segments.
+	pathColumnMap := make(map[string][]string)
+	for _, f := range fields {
+		if strings.Contains(f, ">") {
+			pathColumnMap[f] = strings.Split(f, ">")
+		}
+	}
 
 	// Track inline schemas declared by ^{fields}.
 	inlineSchemas := make(map[string][]string)
@@ -457,8 +546,27 @@ func parseTabularBody(lines []string, start, depth int, fields []string, expecte
 		var inlineAttFields []string      // fields with inline schema (positional data)
 		var inlineAttOrder []string       // ordered list for positional decoding
 
+		// Collect path column values for unflattening.
+		flatValues := make(map[string]any)
+		flatAbsent := make(map[string]bool)
+
 		for j, f := range fields {
 			cellVal := vals[j]
+
+			// Path columns: store values for later unflattening.
+			if _, isPath := pathColumnMap[f]; isPath {
+				parsed, err := parseScalar(cellVal, true)
+				if err != nil {
+					return nil, 0, err
+				}
+				switch parsed.(type) {
+				case missingMarker:
+					flatAbsent[f] = true
+				default:
+					flatValues[f] = parsed
+				}
+				continue
+			}
 
 			// Check for ^{fields} inline schema declaration.
 			if strings.HasPrefix(cellVal, "^{") && strings.HasSuffix(cellVal, "}") {
@@ -490,6 +598,14 @@ func parseTabularBody(lines []string, start, depth int, fields []string, expecte
 				}
 			default:
 				row[f] = parsed
+			}
+		}
+
+		// Unflatten path columns into nested objects.
+		if len(pathColumnMap) > 0 {
+			nested := unflattenPaths(pathColumnMap, flatValues, flatAbsent)
+			for k, v := range nested {
+				row[k] = v
 			}
 		}
 
