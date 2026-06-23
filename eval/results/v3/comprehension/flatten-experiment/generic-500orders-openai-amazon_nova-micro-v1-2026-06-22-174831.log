@@ -1,0 +1,39 @@
+Generic-Profile Comprehension Eval
+Backend: openai (amazon/nova-micro-v1)
+Orders: 500, Questions: 13, Formats: gcf-flat, gcf-flat-primer
+gcf-flat  93647 bytes, ~23411 tokens
+gcf-flat-primer  93647 bytes, ~23411 tokens
+
+  PASS order_count               gcf-flat [exact] expected="500" got="500"
+  PASS order_count               gcf-flat-primer [contains] expected="500" got="[500]{... }\n\nAnswer: 500"
+  PASS first_customer_name       gcf-flat [exact] expected="Alice Chen" got="Alice Chen"
+  PASS first_customer_name       gcf-flat-primer [exact] expected="Alice Chen" got="Alice Chen"
+  FAIL last_order_status         gcf-flat [got "delivered"] expected="cancelled" got="delivered"
+  PASS last_order_status         gcf-flat-primer [exact] expected="cancelled" got="cancelled"
+  PASS total_items_first_order   gcf-flat [exact] expected="1" got="1"
+  PASS total_items_first_order   gcf-flat-primer [exact] expected="1" got="1"
+  PASS customer_email_order5     gcf-flat [exact] expected="eva.johansson@example.com" got="eva.johansson@example.com"
+  PASS customer_email_order5     gcf-flat-primer [exact] expected="eva.johansson@example.com" got="eva.johansson@example.com"
+  FAIL count_shipped             gcf-flat [got "29"] expected="100" got="29"
+  FAIL count_shipped             gcf-flat-primer [got "17"] expected="100" got="17"
+  FAIL count_premium_customers   gcf-flat [got "18"] expected="200" got="18"
+  FAIL count_premium_customers   gcf-flat-primer [got "6"] expected="200" got="6"
+  PASS highest_total             gcf-flat [exact] expected="464.32" got="464.32"
+  FAIL highest_total             gcf-flat-primer [got "458.92"] expected="464.32" got="458.92"
+  FAIL sku_first_item_order3     gcf-flat [got "SKU-DP08"] expected="SKU-HP07" got="SKU-DP08"
+  FAIL sku_first_item_order3     gcf-flat-primer [got "SKU-DP08"] expected="SKU-HP07" got="SKU-DP08"
+  FAIL total_revenue_shipped     gcf-flat [got "745.48"] expected="21325.50" got="745.48"
+  FAIL total_revenue_shipped     gcf-flat-primer [got "756.32"] expected="21325.50" got="756.32"
+  FAIL unique_statuses           gcf-flat [missing "shipped"] expected="cancelled, delivered, pending, processing, shipped" got="cancelled,delivered,pending,processing"
+  PASS unique_statuses           gcf-flat-primer [exact] expected="cancelled, delivered, pending, processing, shipped" got="cancelled,delivered,pending,processing,shipped"
+  FAIL count_orders_with_3plus_items gcf-flat [got "24"] expected="250" got="24"
+  FAIL count_orders_with_3plus_items gcf-flat-primer [got "34"] expected="250" got="34"
+  FAIL customer_tier_last_order  gcf-flat [got "standard"] expected="premium" got="standard"
+  FAIL customer_tier_last_order  gcf-flat-primer [got "12. standard"] expected="premium" got="12. standard"
+
+=== Summary ===
+Format     Accuracy   Pass/Total
+gcf-flat      38.5%      5/13
+gcf-flat-primer    46.2%      6/13
+
+Log: results/v3/comprehension/generic-500orders-openai-amazon_nova-micro-v1-2026-06-22-174831.log

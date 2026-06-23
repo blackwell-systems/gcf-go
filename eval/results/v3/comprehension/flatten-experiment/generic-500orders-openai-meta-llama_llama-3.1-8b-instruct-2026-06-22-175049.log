@@ -1,0 +1,39 @@
+Generic-Profile Comprehension Eval
+Backend: openai (meta-llama/llama-3.1-8b-instruct)
+Orders: 500, Questions: 13, Formats: gcf-flat, gcf-flat-primer
+gcf-flat  93647 bytes, ~23411 tokens
+gcf-flat-primer  93647 bytes, ~23411 tokens
+
+  PASS order_count               gcf-flat [exact] expected="500" got="500"
+  PASS order_count               gcf-flat-primer [exact] expected="500" got="500"
+  PASS first_customer_name       gcf-flat [exact] expected="Alice Chen" got="Alice Chen"
+  PASS first_customer_name       gcf-flat-primer [exact] expected="Alice Chen" got="Alice Chen"
+  PASS last_order_status         gcf-flat [exact] expected="cancelled" got="cancelled"
+  PASS last_order_status         gcf-flat-primer [exact] expected="cancelled" got="cancelled"
+  FAIL total_items_first_order   gcf-flat [got "2"] expected="1" got="2"
+  PASS total_items_first_order   gcf-flat-primer [exact] expected="1" got="1"
+  PASS customer_email_order5     gcf-flat [exact] expected="eva.johansson@example.com" got="eva.johansson@example.com"
+  PASS customer_email_order5     gcf-flat-primer [exact] expected="eva.johansson@example.com" got="eva.johansson@example.com"
+  FAIL count_shipped             gcf-flat [got "146"] expected="100" got="146"
+  PASS count_shipped             gcf-flat-primer [exact] expected="100" got="100"
+  FAIL count_premium_customers   gcf-flat [got "60"] expected="200" got="60"
+  FAIL count_premium_customers   gcf-flat-primer [got "59"] expected="200" got="59"
+  FAIL highest_total             gcf-flat [got "460.32"] expected="464.32" got="460.32"
+  FAIL highest_total             gcf-flat-primer [got "458.92"] expected="464.32" got="458.92"
+  FAIL sku_first_item_order3     gcf-flat [got ""] expected="SKU-HP07" got=""
+  FAIL sku_first_item_order3     gcf-flat-primer [got "HP07"] expected="SKU-HP07" got="HP07"
+  FAIL total_revenue_shipped     gcf-flat [got "10200.12"] expected="21325.50" got="10200.12"
+  FAIL total_revenue_shipped     gcf-flat-primer [got "To solve this problem we need to filter the orders where the status is 'shipped' and then calculate the sum of their totals.\n\nHere are the steps:\n\n1. Filter the orders where the status is 'shipped':\n```python\n# Define the data\ndata =...\n\n# Filter the orders where the status is 'shipped'\nshipped_orders = [row for row in data if row[7] == 'shipped']\n```\n\n2. Extract the total column and convert it to a numerical format:\n```python\n# Extract the total column and convert it to a numerical format\ntotals = [float(row[8]) for row in shipped_orders]\n```\n\n3. Calculate the sum of the totals:\n```python\n# Calculate the sum of the totals\nsum_of_totals = sum(totals)\n```\n\nHere's the combined code:\n\n```python\ndata =...\nshipped_orders = [row for row in data if row[7] == 'shipped']"] expected="21325.50" got="To solve this problem, we need to filter the orders where the status is 'shipped', and then calculate the sum of their totals.\n\nHere are the steps:\n\n1. Filter the orders where the status is 'shipped':\n```python\n# Define the data\ndata =...\n\n# Filter the orders where the status is 'shipped'\nshipped_orders = [row for row in data if row[7] == 'shipped']\n```\n\n2. Extract the total column and convert it to a numerical format:\n```python\n# Extract the total column and convert it to a numerical format\ntotals = [float(row[8]) for row in shipped_orders]\n```\n\n3. Calculate the sum of the totals:\n```python\n# Calculate the sum of the totals\nsum_of_totals = sum(totals)\n```\n\nHere's the combined code:\n\n```python\ndata =...\nshipped_orders = [row for row in data if row[7] == 'shipped']"
+  PASS unique_statuses           gcf-flat [exact] expected="cancelled, delivered, pending, processing, shipped" got="cancelled, delivered, pending, processing, shipped"
+  PASS unique_statuses           gcf-flat-primer [exact] expected="cancelled, delivered, pending, processing, shipped" got="cancelled, delivered, pending, processing, shipped"
+  PASS count_orders_with_3plus_items gcf-flat [exact] expected="250" got="250"
+  FAIL count_orders_with_3plus_items gcf-flat-primer [got "58"] expected="250" got="58"
+  FAIL customer_tier_last_order  gcf-flat [got "standard"] expected="premium" got="standard"
+  FAIL customer_tier_last_order  gcf-flat-primer [got "standard"] expected="premium" got="standard"
+
+=== Summary ===
+Format     Accuracy   Pass/Total
+gcf-flat      46.2%      6/13
+gcf-flat-primer    53.8%      7/13
+
+Log: results/v3/comprehension/generic-500orders-openai-meta-llama_llama-3.1-8b-instruct-2026-06-22-175049.log

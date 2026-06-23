@@ -1,0 +1,114 @@
+=== Generic-Profile Generation Eval ===
+Backend: openai (mistral-medium-latest)
+Primer: primer
+Sizes: [3 5 10 20 50] orders
+Formats: gcf, gcf-flat, gcf-flat-semi
+
+Generating 3 orders as gcf...
+  INVALID: count_mismatch: declared 3, got 2
+  Output (first 500): GCF profile=generic
+## orders [3]{orderId,status,subtotal,tax,total,customer,items}
+@0 ORD-0001|shipped|29.99|2.40|32.39|^{id,name,email,tier}|^
+1|Alice Chen|alice.chen@example.com|standard
+.items [1]{sku,name,quantity,price}
+    SKU-WM01|Wireless Mouse|1|29.99
+@1 ORD-0002|pending|169.97|13.60|183.57|^|^
+2|Bob Martinez|bob.martinez@example.com|premium
+.items [2]
+    SKU-MK04|Mechanical Keyboard|1|89.99
+    SKU-MA05|Monitor Arm|2|
+Generating 3 orders as gcf-flat...
+  VALID  453 bytes, 982 bytes JSON ref, 54% savings, round-trip=n/a
+Generating 3 orders as gcf-flat-semi...
+  VALID  460 bytes, 982 bytes JSON ref, 53% savings, round-trip=n/a
+Generating 5 orders as gcf...
+  INVALID: row_width_mismatch: expected 7 fields, got 8
+  Output (first 500): GCF profile=generic
+## orders [5]{orderId,status,subtotal,tax,total,customer,items}
+@0 ORD-0001|shipped|29.99|2.40|32.39|^{id,name,email,tier}|^|1
+1|Alice Chen|alice.chen@example.com|standard
+.items [1]{sku,name,quantity,price}
+    SKU-WM01|Wireless Mouse|1|29.99
+@1 ORD-0002|pending|169.97|13.60|183.57|^|^|2
+2|Bob Martinez|bob.martinez@example.com|premium
+.items [2]
+    SKU-MK04|Mechanical Keyboard|1|89.99
+    SKU-MA05|Monitor
+Generating 5 orders as gcf-flat...
+  VALID  448 bytes, 1702 bytes JSON ref, 74% savings, round-trip=n/a
+Generating 5 orders as gcf-flat-semi...
+  VALID  448 bytes, 1702 bytes JSON ref, 74% savings, round-trip=n/a
+Generating 10 orders as gcf...
+  INVALID: row_width_mismatch: expected 7 fields, got 1
+  Output (first 500): GCF profile=generic
+## orders [10]{orderId,status,subtotal,tax,total,customer,items}
+@0 ORD-0001|shipped|29.99|2.40|32.39|^{id,name,email,tier}|^ [1]{sku,name,quantity,price}
+1|Alice Chen|alice.chen@example.com|standard
+.items
+SKU-WM01|Wireless Mouse|1|29.99
+@1 ORD-0002|pending|169.97|13.60|183.57|^|^ [2]
+2|Bob Martinez|bob.martinez@example.com|premium
+.items
+SKU-MK04|Mechanical Keyboard|1|89.99
+SKU-MA05|Monitor Arm|2|39
+Generating 10 orders as gcf-flat...
+  VALID  448 bytes, 3463 bytes JSON ref, 87% savings, round-trip=n/a
+Generating 10 orders as gcf-flat-semi...
+  VALID  448 bytes, 3463 bytes JSON ref, 87% savings, round-trip=n/a
+Generating 20 orders as gcf...
+  INVALID: row_width_mismatch: expected 7 fields, got 1
+  Output (first 500): GCF profile=generic
+## orders [20]{orderId,status,subtotal,tax,total,customer,items}
+@0 ORD-0001|shipped|29.99|2.40|32.39|^{id,name,email,tier}|^ [1]{sku,name,quantity,price}
+1|Alice Chen|alice.chen@example.com|standard
+.items
+SKU-WM01|Wireless Mouse|1|29.99
+@1 ORD-0002|pending|169.97|13.60|183.57|^|^ [2]
+2|Bob Martinez|bob.martinez@example.com|premium
+.items
+SKU-MK04|Mechanical Keyboard|1|89.99
+SKU-MA05|Monitor Arm|2|39
+Generating 20 orders as gcf-flat...
+  VALID  448 bytes, 7191 bytes JSON ref, 94% savings, round-trip=n/a
+Generating 20 orders as gcf-flat-semi...
+  VALID  448 bytes, 7191 bytes JSON ref, 94% savings, round-trip=n/a
+Generating 50 orders as gcf...
+  INVALID: count_mismatch: declared 50, got 1
+  Output (first 500): GCF profile=generic
+## orders [50]{orderId,status,subtotal,tax,total,customer,items}
+@0 ORD-0001|shipped|29.99|2.40|32.39|^{id,name,email,tier}|^ [1]{sku,name,quantity,price}
+1|Alice Chen|alice.chen@example.com|standard
+    SKU-WM01|Wireless Mouse|1|29.99
+@1 ORD-0002|pending|169.97|13.60|183.57|^
+2|Bob Martinez|bob.martinez@example.com|premium
+.items [2]
+    SKU-MK04|Mechanical Keyboard|1|89.99
+    SKU-MA05|Monitor Arm|2|39.
+Generating 50 orders as gcf-flat...
+  VALID  448 bytes, 17839 bytes JSON ref, 97% savings, round-trip=n/a
+Generating 50 orders as gcf-flat-semi...
+  VALID  462 bytes, 17839 bytes JSON ref, 97% savings, round-trip=n/a
+
+=== Summary ===
+Format   Orders   Valid  RoundTrip  Out bytes  JSON ref   Savings 
+gcf      3        NO     NO         433        0          0       %
+gcf-flat 3        YES    n/a        453        982        54      %
+gcf-flat-semi 3        YES    n/a        460        982        53      %
+gcf      5        NO     NO         430        0          0       %
+gcf-flat 5        YES    n/a        448        1702       74      %
+gcf-flat-semi 5        YES    n/a        448        1702       74      %
+gcf      10       NO     NO         424        0          0       %
+gcf-flat 10       YES    n/a        448        3463       87      %
+gcf-flat-semi 10       YES    n/a        448        3463       87      %
+gcf      20       NO     NO         424        0          0       %
+gcf-flat 20       YES    n/a        448        7191       94      %
+gcf-flat-semi 20       YES    n/a        448        7191       94      %
+gcf      50       NO     NO         428        0          0       %
+gcf-flat 50       YES    n/a        448        17839      97      %
+gcf-flat-semi 50       YES    n/a        462        17839      97      %
+
+gcf: 0/5 valid
+gcf-flat: 5/5 valid
+gcf-flat-semi: 5/5 valid
+
+Log: results/v3/generation/generic-gen-primer-openai-mistral-medium-latest-2026-06-22-115800.log

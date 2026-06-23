@@ -1,0 +1,68 @@
+Generic-Profile Comprehension Eval
+Backend: openai (mistral-medium-latest)
+Orders: 500, Questions: 13, Formats: gcf, json, toon
+gcf       94613 bytes, ~23653 tokens
+json     322612 bytes, ~80653 tokens
+toon     168604 bytes, ~42151 tokens
+
+  PASS order_count               gcf      [exact] expected="500" got="500"
+  PASS order_count               json     [exact] expected="500" got="500"
+  SKIP order_count               toon     error: Post "https://api.mistral.ai/v1/chat/completions": remote error: tls: bad record MAC
+  PASS first_customer_name       gcf      [exact] expected="Alice Chen" got="Alice Chen"
+  PASS first_customer_name       json     [exact] expected="Alice Chen" got="Alice Chen"
+  PASS first_customer_name       toon     [exact] expected="Alice Chen" got="Alice Chen"
+  PASS last_order_status         gcf      [exact] expected="cancelled" got="cancelled"
+  PASS last_order_status         json     [exact] expected="cancelled" got="cancelled"
+  PASS last_order_status         toon     [exact] expected="cancelled" got="cancelled"
+  PASS total_items_first_order   gcf      [exact] expected="1" got="1"
+  PASS total_items_first_order   json     [exact] expected="1" got="1"
+  PASS total_items_first_order   toon     [exact] expected="1" got="1"
+  PASS customer_email_order5     gcf      [exact] expected="eva.johansson@example.com" got="eva.johansson@example.com"
+  PASS customer_email_order5     json     [exact] expected="eva.johansson@example.com" got="eva.johansson@example.com"
+  PASS customer_email_order5     toon     [exact] expected="eva.johansson@example.com" got="eva.johansson@example.com"
+  PASS count_shipped             gcf      [exact] expected="100" got="100"
+  PASS count_shipped             json     [exact] expected="100" got="100"
+  FAIL count_shipped             toon     [got "125"] expected="100" got="125"
+  FAIL count_premium_customers   gcf      [got "150"] expected="200" got="150"
+  PASS count_premium_customers   json     [exact] expected="200" got="200"
+  PASS count_premium_customers   toon     [exact] expected="200" got="200"
+  PASS highest_total             gcf      [exact] expected="464.32" got="464.32"
+  PASS highest_total             json     [exact] expected="464.32" got="464.32"
+  PASS highest_total             toon     [exact] expected="464.32" got="464.32"
+  PASS sku_first_item_order3     gcf      [exact] expected="SKU-HP07" got="SKU-HP07"
+  SKIP sku_first_item_order3     json     error: OpenAI API 401: {"detail":"Unauthorized"}
+
+  SKIP sku_first_item_order3     toon     error: OpenAI API 401: {"detail":"Unauthorized"}
+
+  SKIP total_revenue_shipped     gcf      error: OpenAI API 401: {"detail":"Unauthorized"}
+
+  SKIP total_revenue_shipped     json     error: OpenAI API 401: {"detail":"Unauthorized"}
+
+  SKIP total_revenue_shipped     toon     error: OpenAI API 401: {"detail":"Unauthorized"}
+
+  SKIP unique_statuses           gcf      error: OpenAI API 401: {"detail":"Unauthorized"}
+
+  SKIP unique_statuses           json     error: OpenAI API 401: {"detail":"Unauthorized"}
+
+  SKIP unique_statuses           toon     error: OpenAI API 401: {"detail":"Unauthorized"}
+
+  SKIP count_orders_with_3plus_items gcf      error: OpenAI API 401: {"detail":"Unauthorized"}
+
+  SKIP count_orders_with_3plus_items json     error: OpenAI API 401: {"detail":"Unauthorized"}
+
+  SKIP count_orders_with_3plus_items toon     error: OpenAI API 401: {"detail":"Unauthorized"}
+
+  SKIP customer_tier_last_order  gcf      error: OpenAI API 401: {"detail":"Unauthorized"}
+
+  SKIP customer_tier_last_order  json     error: OpenAI API 401: {"detail":"Unauthorized"}
+
+  SKIP customer_tier_last_order  toon     error: OpenAI API 401: {"detail":"Unauthorized"}
+
+
+=== Summary ===
+Format     Accuracy   Pass/Total
+gcf           88.9%      8/9
+json         100.0%      8/8
+toon          85.7%      6/7
+
+Log: results/v3/comprehension/generic-500orders-openai-mistral-medium-latest-2026-06-20-123541.log

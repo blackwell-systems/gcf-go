@@ -5,17 +5,31 @@ import (
 	"strings"
 )
 
+// GenericOptions controls optional behavior of EncodeGeneric.
+type GenericOptions struct {
+	// NoFlatten disables promotion of fixed-shape nested objects to path
+	// columns (e.g. "customer>name") in tabular sections. When true, nested
+	// objects use attachment syntax instead. Set when targeting open-weight
+	// models that show lower comprehension on flattened encoding.
+	NoFlatten bool
+}
+
 // EncodeGeneric encodes with all v3 optimizations:
 // inline object schemas, no attachment indentation, no field prefix on inline
 // attachments, shared array schemas. MinInlineFields = 3.
-func EncodeGeneric(data any) string {
+// Pass GenericOptions to customize behavior (e.g. disable flattening).
+func EncodeGeneric(data any, optsList ...GenericOptions) string {
+	var gopts GenericOptions
+	if len(optsList) > 0 {
+		gopts = optsList[0]
+	}
 	opts := encodeOpts{
 		InlineObjectSchema: true,
 		DropAttachIndent:   true,
 		DropFieldPrefix:    true,
 		SharedArraySchema:  true,
 		MinInlineFields:    3,
-		FlattenNested:      true,
+		FlattenNested:      !gopts.NoFlatten,
 	}
 	return encodeGenericImpl(data, opts)
 }

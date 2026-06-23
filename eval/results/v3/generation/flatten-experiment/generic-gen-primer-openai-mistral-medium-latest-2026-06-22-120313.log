@@ -1,0 +1,33 @@
+=== Generic-Profile Generation Eval ===
+Backend: openai (mistral-medium-latest)
+Primer: primer
+Sizes: [3 5 10 20 50] orders
+Formats: json
+
+Generating 3 orders as json...
+  INVALID: unexpected end of JSON input
+  Output (first 500): {"orders": [{"orderId": "ORD-0001", "customer": {"id": 1, "name": "Alice Chen", "email": "alice.chen@example.com", "tier": "standard"}, "items": [{"sku": "SKU-WM01", "name": "Wireless Mouse", "quantity": 1, "price": 29.99}], "subtotal": 29.99, "tax": 2.4, "total": 32.39, "status": "shipped"}, {"orderId": "ORD-0002", "customer": {"id": 2, "name": "Bob Martinez", "email": "bob.martinez@example.com", "tier": "premium"}, "items": [{"sku": "SKU-MK04", "name": "Mechanical Keyboard", "quantity":
+Generating 5 orders as json...
+  INVALID: unexpected end of JSON input
+  Output (first 500): {"orders": [{"orderId": "ORD-0001", "customer": {"id": 1, "name": "Alice Chen", "email": "alice.chen@example.com", "tier": "standard"}, "items": [{"sku": "SKU-WM01", "name": "Wireless Mouse", "quantity": 1, "price": 29.99}], "subtotal": 29.99, "tax": 2.4, "total": 32.39, "status": "shipped"}, {"orderId": "ORD-0002", "customer": {"id": 2, "name": "Bob Martinez", "email": "bob.martinez@example.com", "tier": "premium"}, "items": [{"sku": "SKU-MK04", "name": "Mechanical Keyboard", "quantity":
+Generating 10 orders as json...
+  INVALID: unexpected end of JSON input
+  Output (first 500): {"orders": [{"orderId": "ORD-0001", "customer": {"id": 1, "name": "Alice Chen", "email": "alice.chen@example.com", "tier": "standard"}, "items": [{"sku": "SKU-WM01", "name": "Wireless Mouse", "quantity": 1, "price": 29.99}], "subtotal": 29.99, "tax": 2.4, "total": 32.39, "status": "shipped"}, {"orderId": "ORD-0002", "customer": {"id": 2, "name": "Bob Martinez", "email": "bob.martinez@example.com", "tier": "premium"}, "items": [{"sku": "SKU-MK04", "name": "Mechanical Keyboard", "quantity":
+Generating 20 orders as json...
+  INVALID: unexpected end of JSON input
+  Output (first 500): {"orders": [{"orderId": "ORD-0001", "customer": {"id": 1, "name": "Alice Chen", "email": "alice.chen@example.com", "tier": "standard"}, "items": [{"sku": "SKU-WM01", "name": "Wireless Mouse", "quantity": 1, "price": 29.99}], "subtotal": 29.99, "tax": 2.4, "total": 32.39, "status": "shipped"}, {"orderId": "ORD-0002", "customer": {"id": 2, "name": "Bob Martinez", "email": "bob.martinez@example.com", "tier": "premium"}, "items": [{"sku": "SKU-MK04", "name": "Mechanical Keyboard", "quantity":
+Generating 50 orders as json...
+  INVALID: unexpected end of JSON input
+  Output (first 500): {"orders": [{"orderId": "ORD-0001", "customer": {"id": 1, "name": "Alice Chen", "email": "alice.chen@example.com", "tier": "standard"}, "items": [{"sku": "SKU-WM01", "name": "Wireless Mouse", "quantity": 1, "price": 29.99}], "subtotal": 29.99, "tax": 2.4, "total": 32.39, "status": "shipped"}, {"orderId": "ORD-0002", "customer": {"id": 2, "name": "Bob Martinez", "email": "bob.martinez@example.com", "tier": "premium"}, "items": [{"sku": "SKU-MK04", "name": "Mechanical Keyboard", "quantity":
+
+=== Summary ===
+Format   Orders   Valid  RoundTrip  Out bytes  JSON ref   Savings 
+json     3        NO     NO         493        0          0       %
+json     5        NO     NO         493        0          0       %
+json     10       NO     NO         493        0          0       %
+json     20       NO     NO         493        0          0       %
+json     50       NO     NO         493        0          0       %
+
+json: 0/5 valid
+
+Log: results/v3/generation/generic-gen-primer-openai-mistral-medium-latest-2026-06-22-120313.log

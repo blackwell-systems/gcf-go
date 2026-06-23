@@ -1,0 +1,6 @@
+Generic-Profile Comprehension Eval
+Backend: openai (mistral-small-latest)
+Orders: 500, Questions: 13, Formats: gcf
+gcf       94613 bytes, ~23653 tokens
+
+  PASS order_count               gcf      [exact] expected="500" got="500"

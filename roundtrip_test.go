@@ -436,3 +436,82 @@ func truncate(s string, n int) string {
 	}
 	return s[:n] + fmt.Sprintf("... (%d bytes total)", len(s))
 }
+
+// TestFlattenOptOut verifies that flatten=false produces attachment syntax
+// instead of path columns, and still round-trips correctly.
+func TestFlattenOptOut(t *testing.T) {
+	data := map[string]any{
+		"orders": []any{
+			map[string]any{
+				"id":       "ORD-1",
+				"customer": map[string]any{"name": "Alice", "email": "alice@co.com"},
+				"total":    99.99,
+			},
+			map[string]any{
+				"id":       "ORD-2",
+				"customer": map[string]any{"name": "Bob", "email": "bob@co.com"},
+				"total":    49.99,
+			},
+		},
+	}
+
+	// Default (flatten on): should have path columns.
+	withFlatten := EncodeGeneric(data)
+	t.Logf("=== FLATTEN ON (default) ===\n%s", withFlatten)
+	if !strings.Contains(withFlatten, "customer>") {
+		t.Fatalf("expected path columns with default flatten=true, got:\n%s", withFlatten)
+	}
+
+	// Flatten off: should have attachment syntax, no path columns.
+	noFlatten := EncodeGeneric(data, GenericOptions{NoFlatten: true})
+	t.Logf("=== FLATTEN OFF ===\n%s", noFlatten)
+	if strings.Contains(noFlatten, "customer>") {
+		t.Fatalf("expected no path columns with flatten=false, got:\n%s", noFlatten)
+	}
+	if !strings.Contains(noFlatten, ".customer") {
+		t.Fatalf("expected attachment syntax with flatten=false, got:\n%s", noFlatten)
+	}
+
+	// Both must round-trip.
+	for _, tc := range []struct {
+		name string
+		gcf  string
+	}{
+		{"flatten-on", withFlatten},
+		{"flatten-off", noFlatten},
+	} {
+		decoded, err := DecodeGeneric(tc.gcf)
+		if err != nil {
+			t.Fatalf("%s: decode failed: %v\n  gcf: %q", tc.name, err, tc.gcf)
+		}
+		if !jsonDeepEqual(data, decoded) {
+			t.Fatalf("%s: round-trip mismatch\n  input:   %s\n  gcf:     %q\n  decoded: %s",
+				tc.name, jsonStr(data), tc.gcf, jsonStr(decoded))
+		}
+	}
+}
+
+// TestFlattenOptOutRoundTrip runs the property round-trip with flatten disabled.
+func TestFlattenOptOutRoundTrip(t *testing.T) {
+	iterations := getIterations(10_000)
+	rng := rand.New(rand.NewSource(77))
+
+	opts := GenericOptions{NoFlatten: true}
+	for i := 0; i < iterations; i++ {
+		val := genValue(rng, 0, 4)
+
+		gcfText := EncodeGeneric(val, opts)
+
+		decoded, err := DecodeGeneric(gcfText)
+		if err != nil {
+			t.Fatalf("iteration %d: decode failed: %v\n  input:  %s\n  gcf:    %q",
+				i, err, jsonStr(val), truncate(gcfText, 500))
+		}
+
+		if !jsonDeepEqual(val, decoded) {
+			t.Fatalf("iteration %d: round-trip mismatch\n  input:   %s\n  gcf:     %q\n  decoded: %s",
+				i, jsonStr(val), truncate(gcfText, 500), jsonStr(decoded))
+		}
+	}
+	t.Logf("PASS: %d random values round-tripped with flatten=false", iterations)
+}

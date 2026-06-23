@@ -1,0 +1,54 @@
+Generic-Profile Comprehension Eval
+Backend: openai (mistral-small-latest)
+Orders: 500, Questions: 13, Formats: gcf, json, toon
+gcf       94613 bytes, ~23653 tokens
+json     322612 bytes, ~80653 tokens
+toon     168604 bytes, ~42151 tokens
+
+  PASS order_count               gcf      [exact] expected="500" got="500"
+  PASS order_count               json     [exact] expected="500" got="500"
+  PASS order_count               toon     [exact] expected="500" got="500"
+  PASS first_customer_name       gcf      [exact] expected="Alice Chen" got="Alice Chen"
+  SKIP first_customer_name       json     error: Post "https://api.mistral.ai/v1/chat/completions": read tcp [2600:8800:219a:300:f871:cca0:ae0e:76b9]:56768->[2a06:98c1:58::2c3]:443: read: connection reset by peer
+  PASS first_customer_name       toon     [exact] expected="Alice Chen" got="Alice Chen"
+  PASS last_order_status         gcf      [exact] expected="cancelled" got="cancelled"
+  PASS last_order_status         json     [exact] expected="cancelled" got="cancelled"
+  PASS last_order_status         toon     [exact] expected="cancelled" got="cancelled"
+  FAIL total_items_first_order   gcf      [got "5"] expected="1" got="5"
+  PASS total_items_first_order   json     [exact] expected="1" got="1"
+  PASS total_items_first_order   toon     [exact] expected="1" got="1"
+  PASS customer_email_order5     gcf      [exact] expected="eva.johansson@example.com" got="eva.johansson@example.com"
+  PASS customer_email_order5     json     [exact] expected="eva.johansson@example.com" got="eva.johansson@example.com"
+  PASS customer_email_order5     toon     [exact] expected="eva.johansson@example.com" got="eva.johansson@example.com"
+  FAIL count_shipped             gcf      [got "250"] expected="100" got="250"
+  FAIL count_shipped             json     [got "25"] expected="100" got="25"
+  FAIL count_shipped             toon     [got "500"] expected="100" got="500"
+  FAIL count_premium_customers   gcf      [got "100"] expected="200" got="100"
+  FAIL count_premium_customers   json     [got "250"] expected="200" got="250"
+  PASS count_premium_customers   toon     [exact] expected="200" got="200"
+  PASS highest_total             gcf      [exact] expected="464.32" got="464.32"
+  FAIL highest_total             json     [got "506.31"] expected="464.32" got="506.31"
+  FAIL highest_total             toon     [got "539.94"] expected="464.32" got="539.94"
+  PASS sku_first_item_order3     gcf      [exact] expected="SKU-HP07" got="SKU-HP07"
+  SKIP sku_first_item_order3     json     error: Post "https://api.mistral.ai/v1/chat/completions": remote error: tls: bad record MAC
+  PASS sku_first_item_order3     toon     [exact] expected="SKU-HP07" got="SKU-HP07"
+  FAIL total_revenue_shipped     gcf      [got "11878.5"] expected="21325.50" got="11878.5"
+  FAIL total_revenue_shipped     json     [got "10689.7"] expected="21325.50" got="10689.7"
+  FAIL total_revenue_shipped     toon     [got "24734.2"] expected="21325.50" got="24734.2"
+  PASS unique_statuses           gcf      [exact] expected="cancelled, delivered, pending, processing, shipped" got="cancelled,delivered,pending,processing,shipped"
+  PASS unique_statuses           json     [exact] expected="cancelled, delivered, pending, processing, shipped" got="cancelled,delivered,pending,processing,shipped"
+  PASS unique_statuses           toon     [exact] expected="cancelled, delivered, pending, processing, shipped" got="cancelled,delivered,pending,processing,shipped"
+  FAIL count_orders_with_3plus_items gcf      [got "334"] expected="250" got="334"
+  FAIL count_orders_with_3plus_items json     [got "500"] expected="250" got="500"
+  FAIL count_orders_with_3plus_items toon     [got "500"] expected="250" got="500"
+  PASS customer_tier_last_order  gcf      [exact] expected="premium" got="premium"
+  PASS customer_tier_last_order  json     [exact] expected="premium" got="premium"
+  PASS customer_tier_last_order  toon     [exact] expected="premium" got="premium"
+
+=== Summary ===
+Format     Accuracy   Pass/Total
+gcf           61.5%      8/13
+json          54.5%      6/11
+toon          69.2%      9/13
+
+Log: results/v3/comprehension/generic-500orders-openai-mistral-small-latest-2026-06-20-093115.log

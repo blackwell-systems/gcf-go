@@ -1,0 +1,54 @@
+Generic-Profile Comprehension Eval
+Backend: openai (meta-llama/llama-3.1-8b-instruct)
+Orders: 500, Questions: 13, Formats: gcf, gcf-flat, gcf-flat-semi
+gcf       94613 bytes, ~23653 tokens
+gcf-flat  93647 bytes, ~23411 tokens
+gcf-flat-semi  93647 bytes, ~23411 tokens
+
+  PASS order_count               gcf      [exact] expected="500" got="500"
+  PASS order_count               gcf-flat [exact] expected="500" got="500"
+  FAIL order_count               gcf-flat-semi [got "200"] expected="500" got="200"
+  PASS first_customer_name       gcf      [exact] expected="Alice Chen" got="Alice Chen"
+  PASS first_customer_name       gcf-flat [exact] expected="Alice Chen" got="Alice Chen"
+  PASS first_customer_name       gcf-flat-semi [exact] expected="Alice Chen" got="Alice Chen"
+  PASS last_order_status         gcf      [exact] expected="cancelled" got="cancelled"
+  PASS last_order_status         gcf-flat [exact] expected="cancelled" got="cancelled"
+  PASS last_order_status         gcf-flat-semi [exact] expected="cancelled" got="cancelled"
+  PASS total_items_first_order   gcf      [exact] expected="1" got="1"
+  FAIL total_items_first_order   gcf-flat [got "2"] expected="1" got="2"
+  PASS total_items_first_order   gcf-flat-semi [exact] expected="1" got="1"
+  PASS customer_email_order5     gcf      [exact] expected="eva.johansson@example.com" got="eva.johansson@example.com"
+  PASS customer_email_order5     gcf-flat [exact] expected="eva.johansson@example.com" got="eva.johansson@example.com"
+  PASS customer_email_order5     gcf-flat-semi [exact] expected="eva.johansson@example.com" got="eva.johansson@example.com"
+  FAIL count_shipped             gcf      [got "362"] expected="100" got="362"
+  FAIL count_shipped             gcf-flat [got "221"] expected="100" got="221"
+  FAIL count_shipped             gcf-flat-semi [got "62"] expected="100" got="62"
+  FAIL count_premium_customers   gcf      [got "36"] expected="200" got="36"
+  FAIL count_premium_customers   gcf-flat [got "44"] expected="200" got="44"
+  FAIL count_premium_customers   gcf-flat-semi [got "120"] expected="200" got="120"
+  PASS highest_total             gcf      [exact] expected="464.32" got="464.32"
+  PASS highest_total             gcf-flat [exact] expected="464.32" got="464.32"
+  FAIL highest_total             gcf-flat-semi [got "460.32"] expected="464.32" got="460.32"
+  PASS sku_first_item_order3     gcf      [exact] expected="SKU-HP07" got="SKU-HP07"
+  FAIL sku_first_item_order3     gcf-flat [got "HP07"] expected="SKU-HP07" got="HP07"
+  FAIL sku_first_item_order3     gcf-flat-semi [got "HP07"] expected="SKU-HP07" got="HP07"
+  FAIL total_revenue_shipped     gcf      [got "@0 ^{emailidnametier}|^|ORD-0001|shipped|29.99|2.4|32.39\n@5 ^|^|ORD-0005|cancelled|49.99|4|53.99\n@26 ^|^|ORD-0026|shipped|219.97|17.6|237.57\n@35 ^|^|ORD-0035|cancelled|349.94|28|377.94\n@46 ^|^|ORD-0046|shipped|219.97|17.6|237.57\n@66 ^|^|ORD-0066|shipped|219.97|17.6|237.57\n@91 ^|^|ORD-0091|shipped|209.94|16.8|226.74\n@111 ^|^|ORD-0111|shipped|209.94|16.8|226.74"] expected="21325.50" got="@0 ^{email,id,name,tier}|^|ORD-0001|shipped|29.99|2.4|32.39\n@5 ^|^|ORD-0005|cancelled|49.99|4|53.99\n@26 ^|^|ORD-0026|shipped|219.97|17.6|237.57\n@35 ^|^|ORD-0035|cancelled|349.94|28|377.94\n@46 ^|^|ORD-0046|shipped|219.97|17.6|237.57\n@66 ^|^|ORD-0066|shipped|219.97|17.6|237.57\n@91 ^|^|ORD-0091|shipped|209.94|16.8|226.74\n@111 ^|^|ORD-0111|shipped|209.94|16.8|226.74"
+  FAIL total_revenue_shipped     gcf-flat [got "To calculate the sum of all order totals where status is 'shipped' I'll extract the relevant lines and compute the sum. Here are the relevant lines:\n\n```\n@3 david.patel@example.com|4|David Patel|standard|^|ORD-0004|delivered|164.93|13.19|178.12\n@11 leo.fernandez@example.com|12|Leo Fernandez|premium|^|ORD-0012|pending|429.93|34.39|464.32\n@15 peter.chang@example.com|16|Peter Chang|standard|^|ORD-0016|shipped|329.93|26.39|356.32\n@30 karen.singh@example.com|31|Karen Singh|standard|^|ORD-0031|shipped|209.94|16.8|226.74\n@45 frank.okafor@example.com|46|Frank Okafor|standard|^|ORD"] expected="21325.50" got="To calculate the sum of all order totals where status is 'shipped', I'll extract the relevant lines and compute the sum. Here are the relevant lines:\n\n```\n@3 david.patel@example.com|4|David Patel|standard|^|ORD-0004|delivered|164.93|13.19|178.12\n@11 leo.fernandez@example.com|12|Leo Fernandez|premium|^|ORD-0012|pending|429.93|34.39|464.32\n@15 peter.chang@example.com|16|Peter Chang|standard|^|ORD-0016|shipped|329.93|26.39|356.32\n@30 karen.singh@example.com|31|Karen Singh|standard|^|ORD-0031|shipped|209.94|16.8|226.74\n@45 frank.okafor@example.com|46|Frank Okafor|standard|^|ORD"
+  FAIL total_revenue_shipped     gcf-flat-semi [got "6218.69"] expected="21325.50" got="6218.69"
+  PASS unique_statuses           gcf      [exact] expected="cancelled, delivered, pending, processing, shipped" got="cancelled, delivered, pending, processing, shipped"
+  FAIL unique_statuses           gcf-flat [missing "cancelled"] expected="cancelled, delivered, pending, processing, shipped" got=""
+  PASS unique_statuses           gcf-flat-semi [exact] expected="cancelled, delivered, pending, processing, shipped" got="cancelled, delivered, pending, processing, shipped"
+  FAIL count_orders_with_3plus_items gcf      [got "241"] expected="250" got="241"
+  FAIL count_orders_with_3plus_items gcf-flat [got "35"] expected="250" got="35"
+  FAIL count_orders_with_3plus_items gcf-flat-semi [got "60"] expected="250" got="60"
+  PASS customer_tier_last_order  gcf      [exact] expected="premium" got="premium"
+  PASS customer_tier_last_order  gcf-flat [exact] expected="premium" got="premium"
+  FAIL customer_tier_last_order  gcf-flat-semi [got "standard"] expected="premium" got="standard"
+
+=== Summary ===
+Format     Accuracy   Pass/Total
+gcf           69.2%      9/13
+gcf-flat      46.2%      6/13
+gcf-flat-semi    38.5%      5/13
+
+Log: results/v3/comprehension/generic-500orders-openai-meta-llama_llama-3.1-8b-instruct-2026-06-22-132331.log

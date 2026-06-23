@@ -1,0 +1,84 @@
+Generic-Profile Comprehension Eval
+Backend: openai (meta-llama/llama-3.1-8b-instruct)
+Orders: 500, Questions: 13, Formats: gcf, gcf-flat, gcf-flat-semi, json, toon
+gcf       94613 bytes, ~23653 tokens
+gcf-flat  93647 bytes, ~23411 tokens
+gcf-flat-semi  93647 bytes, ~23411 tokens
+json     322612 bytes, ~80653 tokens
+toon     168604 bytes, ~42151 tokens
+
+  PASS order_count               gcf      [exact] expected="500" got="500"
+  PASS order_count               gcf-flat [exact] expected="500" got="500"
+  PASS order_count               gcf-flat-semi [exact] expected="500" got="500"
+  PASS order_count               json     [exact] expected="500" got="500"
+  PASS order_count               toon     [exact] expected="500" got="500"
+  PASS first_customer_name       gcf      [exact] expected="Alice Chen" got="Alice Chen"
+  PASS first_customer_name       gcf-flat [exact] expected="Alice Chen" got="Alice Chen"
+  PASS first_customer_name       gcf-flat-semi [exact] expected="Alice Chen" got="Alice Chen"
+  PASS first_customer_name       json     [exact] expected="Alice Chen" got="Alice Chen"
+  FAIL first_customer_name       toon     [got "Alice Chang"] expected="Alice Chen" got="Alice Chang"
+  PASS last_order_status         gcf      [exact] expected="cancelled" got="cancelled"
+  PASS last_order_status         gcf-flat [exact] expected="cancelled" got="cancelled"
+  PASS last_order_status         gcf-flat-semi [exact] expected="cancelled" got="cancelled"
+  PASS last_order_status         json     [exact] expected="cancelled" got="\"cancelled\""
+  PASS last_order_status         toon     [exact] expected="cancelled" got="cancelled"
+  PASS total_items_first_order   gcf      [exact] expected="1" got="1"
+  FAIL total_items_first_order   gcf-flat [got "2"] expected="1" got="2"
+  FAIL total_items_first_order   gcf-flat-semi [got "2"] expected="1" got="2"
+  PASS total_items_first_order   json     [exact] expected="1" got="1"
+  PASS total_items_first_order   toon     [exact] expected="1" got="1"
+  PASS customer_email_order5     gcf      [exact] expected="eva.johansson@example.com" got="eva.johansson@example.com"
+  PASS customer_email_order5     gcf-flat [exact] expected="eva.johansson@example.com" got="eva.johansson@example.com"
+  PASS customer_email_order5     gcf-flat-semi [exact] expected="eva.johansson@example.com" got="eva.johansson@example.com"
+  PASS customer_email_order5     json     [exact] expected="eva.johansson@example.com" got="eva.johansson@example.com"
+  PASS customer_email_order5     toon     [exact] expected="eva.johansson@example.com" got="eva.johansson@example.com"
+  FAIL count_shipped             gcf      [got "187"] expected="100" got="187"
+  FAIL count_shipped             gcf-flat [got "161"] expected="100" got="161"
+  FAIL count_shipped             gcf-flat-semi [got "84"] expected="100" got="84"
+  FAIL count_shipped             json     [got "299"] expected="100" got="299"
+  FAIL count_shipped             toon     [got "245"] expected="100" got="245"
+  FAIL count_premium_customers   gcf      [got "120"] expected="200" got="120"
+  FAIL count_premium_customers   gcf-flat [got "51"] expected="200" got="51"
+  FAIL count_premium_customers   gcf-flat-semi [got "6"] expected="200" got="6"
+  FAIL count_premium_customers   json     [got "98"] expected="200" got="98"
+  FAIL count_premium_customers   toon     [got "183"] expected="200" got="183"
+  PASS highest_total             gcf      [exact] expected="464.32" got="464.32"
+  PASS highest_total             gcf-flat [exact] expected="464.32" got="464.32"
+  PASS highest_total             gcf-flat-semi [exact] expected="464.32" got="464.32"
+  PASS highest_total             json     [exact] expected="464.32" got="464.32"
+  PASS highest_total             toon     [exact] expected="464.32" got="464.32"
+  FAIL sku_first_item_order3     gcf      [got "HP07"] expected="SKU-HP07" got="HP07"
+  FAIL sku_first_item_order3     gcf-flat [got "HP07"] expected="SKU-HP07" got="HP07"
+  FAIL sku_first_item_order3     gcf-flat-semi [got "HP07"] expected="SKU-HP07" got="HP07"
+  FAIL sku_first_item_order3     json     [got "MONITOR-ARM"] expected="SKU-HP07" got="\"MONITOR-ARM\""
+  FAIL sku_first_item_order3     toon     [got "HP07"] expected="SKU-HP07" got="HP07"
+  FAIL total_revenue_shipped     gcf      [got "1232.99"] expected="21325.50" got="1232.99"
+  FAIL total_revenue_shipped     gcf-flat [got "To calculate the sum of all order totals where status is 'shipped' we need to look at the 'total' field for each order with status 'shipped'. \n\nHere is the sum of all order totals where status is 'shipped':\n\n29.99 + 32.39 + 237.57 + 32.39 + 356.32 + 37.79 + 431.94 + 32.39 + 356.32 + 37.79 + 431.94 + 32.39 + 356.32 + 37.79 + 431.94 + 32.39 + 356.32 + 37.79 + 431.94 + 32.39 + 356.32 + 37.79 + 431.94 + 32.39 + 356.32 + 37.79 + 431.94 + 32.39 + 356.32 + 37.79 +"] expected="21325.50" got="To calculate the sum of all order totals where status is 'shipped', we need to look at the 'total' field for each order with status 'shipped'. \n\nHere is the sum of all order totals where status is 'shipped':\n\n29.99 + 32.39 + 237.57 + 32.39 + 356.32 + 37.79 + 431.94 + 32.39 + 356.32 + 37.79 + 431.94 + 32.39 + 356.32 + 37.79 + 431.94 + 32.39 + 356.32 + 37.79 + 431.94 + 32.39 + 356.32 + 37.79 + 431.94 + 32.39 + 356.32 + 37.79 + 431.94 + 32.39 + 356.32 + 37.79 +"
+  FAIL total_revenue_shipped     gcf-flat-semi [got "1. Extract the order totals for orders with status 'shipped'.\n\n   @0 shipped\n   @1 shipped\n   @2 shipped\n   @3 shipped\n   @4 shipped\n   @5 shipped\n   @6 shipped\n   @7 shipped\n   @8 shipped\n   @9 shipped\n   @10 shipped\n   @11 shipped\n   @12 shipped\n   @13 shipped\n   @14 shipped\n   @15 shipped\n   @16 shipped\n   @17 shipped\n   @18 shipped\n   @19 shipped\n   @20 shipped\n   @21 shipped\n   @22 shipped\n   @23 shipped\n   @24 shipped\n   @25 shipped\n   @26 shipped\n   @27 shipped\n   @28 shipped\n   @29 shipped\n   @30 shipped\n   @31 shipped\n   @32 shipped\n   @33 shipped\n   @34 shipped\n   @35 shipped\n   @36 shipped"] expected="21325.50" got="1. Extract the order totals for orders with status 'shipped'.\n\n   @0 shipped\n   @1 shipped\n   @2 shipped\n   @3 shipped\n   @4 shipped\n   @5 shipped\n   @6 shipped\n   @7 shipped\n   @8 shipped\n   @9 shipped\n   @10 shipped\n   @11 shipped\n   @12 shipped\n   @13 shipped\n   @14 shipped\n   @15 shipped\n   @16 shipped\n   @17 shipped\n   @18 shipped\n   @19 shipped\n   @20 shipped\n   @21 shipped\n   @22 shipped\n   @23 shipped\n   @24 shipped\n   @25 shipped\n   @26 shipped\n   @27 shipped\n   @28 shipped\n   @29 shipped\n   @30 shipped\n   @31 shipped\n   @32 shipped\n   @33 shipped\n   @34 shipped\n   @35 shipped\n   @36 shipped"
+  FAIL total_revenue_shipped     json     [got "IMPACT CALCULATIONS TO ANSWER THE QUESTION:\n\n\nLet's consolidate the items under `orders` array to calculate the total sum of order totals for each order status:\n\n```javascript\nvar totalShipped = 0;\n\norders customers.forEach(function(customer i) {\n  var order = orders.orders[i];\n  if (order.status === 'shipped') {\n    totalShipped += order.total;\n  }\n});\n\nconsole.log(totalShipped.toFixed(2));\n```\n\n\nThe sum of all order totals where status is 'shipped' is 3739.74."] expected="21325.50" got="IMPACT CALCULATIONS TO ANSWER THE QUESTION:\n\n\nLet's consolidate the items under `orders` array to calculate the total sum of order totals for each order status:\n\n```javascript\nvar totalShipped = 0;\n\norders customers.forEach(function(customer, i) {\n  var order = orders.orders[i];\n  if (order.status === 'shipped') {\n    totalShipped += order.total;\n  }\n});\n\nconsole.log(totalShipped.toFixed(2));\n```\n\n\nThe sum of all order totals where status is 'shipped' is 3739.74."
+  FAIL total_revenue_shipped     toon     [got "Here is a Python solution using the given order data:\n\n```python\norders = [\n    # your orders data...\n]\n\ntotal = 0\nfor order in orders:\n    if 'status' in order and order['status'] == 'shipped':\n        items = order['items']\n        status = order['status']\n        subtotal = 0\n        for item in items.values():\n            price = item['price']\n            subtotal += price * item['quantity']\n        tax = subtotal * 0.0825  # assuming 8.25% tax rate\n        total += subtotal + tax\n\nprint(round(total 2))\n```\n\nIn this code:\n\n*   We iterate over each order in the `orders` data.\n*   We check if the order has a status of 'shipped'.\n*   For each shipped order we calculate the subtotal by summing the prices of all items times their quantities.\n*   We calculate the tax as a percentage of the subtotal ("] expected="21325.50" got="Here is a Python solution using the given order data:\n\n```python\norders = [\n    # your orders data...\n]\n\ntotal = 0\nfor order in orders:\n    if 'status' in order and order['status'] == 'shipped':\n        items = order['items']\n        status = order['status']\n        subtotal = 0\n        for item in items.values():\n            price = item['price']\n            subtotal += price * item['quantity']\n        tax = subtotal * 0.0825  # assuming 8.25% tax rate\n        total += subtotal + tax\n\nprint(round(total, 2))\n```\n\nIn this code:\n\n*   We iterate over each order in the `orders` data.\n*   We check if the order has a status of 'shipped'.\n*   For each shipped order, we calculate the subtotal by summing the prices of all items times their quantities.\n*   We calculate the tax as a percentage of the subtotal ("
+  PASS unique_statuses           gcf      [exact] expected="cancelled, delivered, pending, processing, shipped" got="cancelled, delivered, pending, processing, shipped"
+  PASS unique_statuses           gcf-flat [all present] expected="cancelled, delivered, pending, processing, shipped" got="cancelled,delivered,processing,pending,shipped"
+  PASS unique_statuses           gcf-flat-semi [exact] expected="cancelled, delivered, pending, processing, shipped" got="cancelled, delivered, pending, processing, shipped"
+  PASS unique_statuses           json     [all present] expected="cancelled, delivered, pending, processing, shipped" got="cancelled, delievered, delievered, delievered, delievered, delievered, delivered, delivered, delivered, delivered, delivered, delivered, delivered, delivered, delivedered, pending, pending, pending, pending, pending, pending, pending, processing, processing, processing, processing, processing, processing, processing, shipped, shipped, shipped, shipped, shipped, shipped, shipped, shipped, shipped, shipped"
+  PASS unique_statuses           toon     [exact] expected="cancelled, delivered, pending, processing, shipped" got="cancelled, delivered, pending, processing, shipped"
+  FAIL count_orders_with_3plus_items gcf      [got "78"] expected="250" got="78"
+  FAIL count_orders_with_3plus_items gcf-flat [got "252"] expected="250" got="252"
+  FAIL count_orders_with_3plus_items gcf-flat-semi [got "78"] expected="250" got="78"
+  FAIL count_orders_with_3plus_items json     [got "8"] expected="250" got="8"
+  FAIL count_orders_with_3plus_items toon     [got "20"] expected="250" got="20"
+  PASS customer_tier_last_order  gcf      [exact] expected="premium" got="premium"
+  FAIL customer_tier_last_order  gcf-flat [got "standard"] expected="premium" got="standard"
+  FAIL customer_tier_last_order  gcf-flat-semi [got "standard"] expected="premium" got="standard"
+  SKIP customer_tier_last_order  json     error: Post "https://openrouter.ai/api/v1/chat/completions": remote error: tls: bad record MAC
+  PASS customer_tier_last_order  toon     [exact] expected="premium" got="premium"
+
+=== Summary ===
+Format     Accuracy   Pass/Total
+gcf           61.5%      8/13
+gcf-flat      46.2%      6/13
+gcf-flat-semi    46.2%      6/13
+json          58.3%      7/12
+toon          53.8%      7/13
+
+Log: results/v3/comprehension/generic-500orders-openai-meta-llama_llama-3.1-8b-instruct-2026-06-22-150524.log

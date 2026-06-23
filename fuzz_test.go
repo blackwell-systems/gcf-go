@@ -41,20 +41,21 @@ func FuzzDecodeGeneric(f *testing.F) {
 			return // invalid input rejected: expected
 		}
 
-		// If it decoded, re-encode and re-decode must match.
-		reencoded := EncodeGeneric(result)
-		redecoded, err := DecodeGeneric(reencoded)
-		if err != nil {
-			t.Fatalf("re-decode failed: %v\n  original input: %q\n  decoded: %v\n  re-encoded: %q",
-				err, truncate(string(data), 200), result, truncate(reencoded, 200))
-		}
+		// If it decoded, re-encode and re-decode must match (both flatten modes).
+		for _, noFlatten := range []bool{false, true} {
+			reencoded := EncodeGeneric(result, GenericOptions{NoFlatten: noFlatten})
+			redecoded, err := DecodeGeneric(reencoded)
+			if err != nil {
+				t.Fatalf("re-decode failed (noFlatten=%v): %v\n  original input: %q\n  decoded: %v\n  re-encoded: %q",
+					noFlatten, err, truncate(string(data), 200), result, truncate(reencoded, 200))
+			}
 
-		// Normalize through JSON for comparison.
-		a, _ := json.Marshal(result)
-		b, _ := json.Marshal(redecoded)
-		if string(a) != string(b) {
-			t.Fatalf("re-decode mismatch\n  original: %q\n  re-decoded: %q",
-				string(a), string(b))
+			a, _ := json.Marshal(result)
+			b, _ := json.Marshal(redecoded)
+			if string(a) != string(b) {
+				t.Fatalf("re-decode mismatch (noFlatten=%v)\n  original: %q\n  re-decoded: %q",
+					noFlatten, string(a), string(b))
+			}
 		}
 	})
 }
@@ -93,19 +94,22 @@ func FuzzEncodeGeneric(f *testing.F) {
 			return // not valid JSON: skip
 		}
 
-		gcfText := EncodeGeneric(input)
+		// Test both flatten-on and flatten-off.
+		for _, noFlatten := range []bool{false, true} {
+			gcfText := EncodeGeneric(input, GenericOptions{NoFlatten: noFlatten})
 
-		decoded, err := DecodeGeneric(gcfText)
-		if err != nil {
-			t.Fatalf("decode failed: %v\n  input JSON: %s\n  gcf: %q",
-				err, truncate(string(data), 200), truncate(gcfText, 200))
-		}
+			decoded, err := DecodeGeneric(gcfText)
+			if err != nil {
+				t.Fatalf("decode failed (noFlatten=%v): %v\n  input JSON: %s\n  gcf: %q",
+					noFlatten, err, truncate(string(data), 200), truncate(gcfText, 200))
+			}
 
-		a, _ := json.Marshal(input)
-		b, _ := json.Marshal(decoded)
-		if string(a) != string(b) {
-			t.Fatalf("round-trip mismatch\n  input: %s\n  decoded: %s\n  gcf: %q",
-				string(a), string(b), truncate(gcfText, 500))
+			a, _ := json.Marshal(input)
+			b, _ := json.Marshal(decoded)
+			if string(a) != string(b) {
+				t.Fatalf("round-trip mismatch (noFlatten=%v)\n  input: %s\n  decoded: %s\n  gcf: %q",
+					noFlatten, string(a), string(b), truncate(gcfText, 500))
+			}
 		}
 	})
 }

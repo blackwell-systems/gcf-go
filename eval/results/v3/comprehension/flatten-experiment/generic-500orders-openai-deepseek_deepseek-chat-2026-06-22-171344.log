@@ -1,0 +1,69 @@
+Generic-Profile Comprehension Eval
+Backend: openai (deepseek/deepseek-chat)
+Orders: 500, Questions: 13, Formats: gcf, gcf-flat, gcf-flat-semi, json
+gcf       94613 bytes, ~23653 tokens
+gcf-flat  93647 bytes, ~23411 tokens
+gcf-flat-semi  93647 bytes, ~23411 tokens
+json     322612 bytes, ~80653 tokens
+
+  PASS order_count               gcf      [exact] expected="500" got="500"
+  PASS order_count               gcf-flat [exact] expected="500" got="500"
+  PASS order_count               gcf-flat-semi [exact] expected="500" got="500"
+  SKIP order_count               json     error: empty response
+  PASS first_customer_name       gcf      [exact] expected="Alice Chen" got="Alice Chen"
+  PASS first_customer_name       gcf-flat [exact] expected="Alice Chen" got="Alice Chen"
+  PASS first_customer_name       gcf-flat-semi [exact] expected="Alice Chen" got="Alice Chen"
+  SKIP first_customer_name       json     error: empty response
+  PASS last_order_status         gcf      [exact] expected="cancelled" got="cancelled"
+  PASS last_order_status         gcf-flat [exact] expected="cancelled" got="cancelled"
+  PASS last_order_status         gcf-flat-semi [exact] expected="cancelled" got="cancelled"
+  SKIP last_order_status         json     error: empty response
+  PASS total_items_first_order   gcf      [exact] expected="1" got="1"
+  PASS total_items_first_order   gcf-flat [exact] expected="1" got="1"
+  PASS total_items_first_order   gcf-flat-semi [exact] expected="1" got="1"
+  SKIP total_items_first_order   json     error: empty response
+  PASS customer_email_order5     gcf      [exact] expected="eva.johansson@example.com" got="eva.johansson@example.com"
+  PASS customer_email_order5     gcf-flat [exact] expected="eva.johansson@example.com" got="eva.johansson@example.com"
+  PASS customer_email_order5     gcf-flat-semi [exact] expected="eva.johansson@example.com" got="eva.johansson@example.com"
+  SKIP customer_email_order5     json     error: Post "https://openrouter.ai/api/v1/chat/completions": remote error: tls: bad record MAC
+  FAIL count_shipped             gcf      [got "250"] expected="100" got="250"
+  PASS count_shipped             gcf-flat [contains] expected="100" got="To determine how many orders have the status 'shipped', I'll count the occurrences where the status field is 'shipped' in the provided data.\n\nAfter reviewing the data, the number of orders with status 'shipped' is:\n\n100"
+  PASS count_shipped             gcf-flat-semi [exact] expected="100" got="100"
+  SKIP count_shipped             json     error: empty response
+  PASS count_premium_customers   gcf      [contains] expected="200" got="To determine how many orders have a customer with tier 'premium', I'll count the occurrences where the customer's tier is 'premium' in the order data.\n\nAfter analyzing the data, the number of orders with a customer tier 'premium' is: \n\n200"
+  FAIL count_premium_customers   gcf-flat [got "To determine how many orders have a customer with tier 'premium' I'll count the number of orders where the customer's tier is listed as 'premium'.\n\nLooking through the data each order entry includes the customer's tier in the format `customer>tier`. For example:\n- `@1 bob.martinez@example.com|2|Bob Martinez|premium|...` has tier 'premium'\n- `@0 alice.chen@example.com|1|Alice Chen|standard|...` has tier 'standard'\n\nCounting all orders with 'premium' tier in the customer information:\n\nAfter counting there are **125** orders with customers having 'premium' tier."] expected="200" got="To determine how many orders have a customer with tier 'premium', I'll count the number of orders where the customer's tier is listed as 'premium'.\n\nLooking through the data, each order entry includes the customer's tier in the format `customer>tier`. For example:\n- `@1 bob.martinez@example.com|2|Bob Martinez|premium|...` has tier 'premium'\n- `@0 alice.chen@example.com|1|Alice Chen|standard|...` has tier 'standard'\n\nCounting all orders with 'premium' tier in the customer information:\n\nAfter counting, there are **125** orders with customers having 'premium' tier."
+  FAIL count_premium_customers   gcf-flat-semi [got "To determine how many orders have a customer with the tier 'premium' I'll analyze the data:\n\n1. The data shows 500 orders (@0 to @499)\n2. Each order has a customer tier field (\"customer;tier\")\n3. The tier values are either 'standard' 'premium' or 'enterprise'\n\nLooking through the data I can see that every 5th order starting from @1 (ORD-0002) is a premium customer with this pattern repeating consistently throughout the dataset. \n\nCalculation:\nTotal orders = 500\nPremium orders = 500 / 5 = 100\n\n100"] expected="200" got="To determine how many orders have a customer with the tier 'premium', I'll analyze the data:\n\n1. The data shows 500 orders (@0 to @499)\n2. Each order has a customer tier field (\"customer;tier\")\n3. The tier values are either 'standard', 'premium', or 'enterprise'\n\nLooking through the data, I can see that every 5th order starting from @1 (ORD-0002) is a premium customer, with this pattern repeating consistently throughout the dataset. \n\nCalculation:\nTotal orders = 500\nPremium orders = 500 / 5 = 100\n\n100"
+  FAIL count_premium_customers   json     [got "To determine how many orders have a customer with the tier 'premium' we can count the number of orders where the customer's `tier` is 'premium'.\n\nHere is the count:\n\n150"] expected="200" got="To determine how many orders have a customer with the tier 'premium', we can count the number of orders where the customer's `tier` is 'premium'.\n\nHere is the count:\n\n150"
+  FAIL highest_total             gcf      [got "458.92"] expected="464.32" got="458.92"
+  FAIL highest_total             gcf-flat [got "The highest order total is 458.92."] expected="464.32" got="The highest order total is 458.92."
+  FAIL highest_total             gcf-flat-semi [got "The highest order total is **458.92**."] expected="464.32" got="The highest order total is **458.92**."
+  SKIP highest_total             json     error: empty response
+  PASS sku_first_item_order3     gcf      [exact] expected="SKU-HP07" got="SKU-HP07"
+  PASS sku_first_item_order3     gcf-flat [contains] expected="SKU-HP07" got="The SKU of the first item in order ORD-0003 is:\n\nSKU-HP07"
+  PASS sku_first_item_order3     gcf-flat-semi [contains] expected="SKU-HP07" got="The SKU of the first item in order ORD-0003 is:\n\nSKU-HP07"
+  SKIP sku_first_item_order3     json     error: empty response
+  FAIL total_revenue_shipped     gcf      [got "To calculate the sum of all order totals where the status is 'shipped' I'll follow these steps:\n\n1. Identify all orders with status 'shipped'\n2. Extract their total amounts\n3. Sum all those amounts\n\nHere's the calculation:\n\nAfter processing all 500 orders the sum of totals for 'shipped' orders is:\n\n**102478.65**"] expected="21325.50" got="To calculate the sum of all order totals where the status is 'shipped', I'll follow these steps:\n\n1. Identify all orders with status 'shipped'\n2. Extract their total amounts\n3. Sum all those amounts\n\nHere's the calculation:\n\nAfter processing all 500 orders, the sum of totals for 'shipped' orders is:\n\n**102478.65**"
+  FAIL total_revenue_shipped     gcf-flat [got "To calculate the sum of all order totals where the status is 'shipped' I'll go through the data and add up the `total` values for orders with `status=\"shipped\"`.\n\nAfter processing all 500 orders the sum of all 'shipped' order totals is:\n\n**53725.81**"] expected="21325.50" got="To calculate the sum of all order totals where the status is 'shipped', I'll go through the data and add up the `total` values for orders with `status=\"shipped\"`.\n\nAfter processing all 500 orders, the sum of all 'shipped' order totals is:\n\n**53725.81**"
+  FAIL total_revenue_shipped     gcf-flat-semi [got "I'll calculate the sum of all order totals where the status is 'shipped'. Let me process the data:\n\nAfter scanning all 500 orders the sum of totals for orders with status 'shipped' is:\n\n27394.48"] expected="21325.50" got="I'll calculate the sum of all order totals where the status is 'shipped'. Let me process the data:\n\nAfter scanning all 500 orders, the sum of totals for orders with status 'shipped' is:\n\n27394.48"
+  FAIL total_revenue_shipped     json     [got "To calculate the sum of all order totals where the status is 'shipped' I'll iterate through the orders and sum the `total` values for orders with `status: \"shipped\"`.\n\nHere's the calculation:\n\n```python\nsum_shipped = sum(order[\"total\"] for order in data[\"orders\"] if order[\"status\"] == \"shipped\")\n```\n\nThe result is:\n```\n54020.39\n```"] expected="21325.50" got="To calculate the sum of all order totals where the status is 'shipped', I'll iterate through the orders and sum the `total` values for orders with `status: \"shipped\"`.\n\nHere's the calculation:\n\n```python\nsum_shipped = sum(order[\"total\"] for order in data[\"orders\"] if order[\"status\"] == \"shipped\")\n```\n\nThe result is:\n```\n54020.39\n```"
+  PASS unique_statuses           gcf      [exact] expected="cancelled, delivered, pending, processing, shipped" got="cancelled, delivered, pending, processing, shipped"
+  PASS unique_statuses           gcf-flat [exact] expected="cancelled, delivered, pending, processing, shipped" got="cancelled,delivered,pending,processing,shipped"
+  PASS unique_statuses           gcf-flat-semi [exact] expected="cancelled, delivered, pending, processing, shipped" got="cancelled,delivered,pending,processing,shipped"
+  SKIP unique_statuses           json     error: empty response
+  FAIL count_orders_with_3plus_items gcf      [got "To determine how many orders have 3 or more line items we can count the number of orders where the `.items` array has a length of 3 or more. \n\nLooking at the data the pattern is:\n- `.items [1]` means 1 line item\n- `.items [2]` means 2 line items\n- `.items [3]` means 3 line items\n- `.items [4]` means 4 line items\n\nWe need to count all occurrences where the number in `.items [X]` is 3 or 4. \n\nFrom the data every 10th order (starting from @2) has 3 items and every 20th order (starting from @3) has 4 items. \n\nGiven there are 500 orders:\n- Orders with 3 items: 50 (every 10th order from @2 to @499 e.g. @2 @12 @22"] expected="250" got="To determine how many orders have 3 or more line items, we can count the number of orders where the `.items` array has a length of 3 or more. \n\nLooking at the data, the pattern is:\n- `.items [1]` means 1 line item\n- `.items [2]` means 2 line items\n- `.items [3]` means 3 line items\n- `.items [4]` means 4 line items\n\nWe need to count all occurrences where the number in `.items [X]` is 3 or 4. \n\nFrom the data, every 10th order (starting from @2) has 3 items, and every 20th order (starting from @3) has 4 items. \n\nGiven there are 500 orders:\n- Orders with 3 items: 50 (every 10th order from @2 to @499, e.g., @2, @12, @22,"
+  PASS count_orders_with_3plus_items gcf-flat [contains] expected="250" got="To determine how many orders have 3 or more line items, we can analyze the data provided. Each order has a `.items` section indicating the number of line items it contains. \n\nLooking at the data, we can see that orders with 3 or more line items are marked with `.items [3]` or `.items [4]`. \n\nHere's the count:\n\n- Orders with 3 line items: `.items [3]` (e.g., ORD-0003, ORD-0011, etc.)\n- Orders with 4 line items: `.items [4]` (e.g., ORD-0004, ORD-0008, etc.)\n\nCounting these occurrences in the data, we find that there are **250** orders with 3 or more line items. \n\n250"
+  FAIL count_orders_with_3plus_items gcf-flat-semi [got "To determine how many orders have 3 or more line items we need to count the orders where the number of items (as indicated by the `.items [n]` field) is 3 or greater.\n\nHere's the count:\n\n- Orders with 3 items: 200\n- Orders with 4 items: 200\n\nTotal orders with 3 or more line items: 200 (3 items) + 200 (4 items) = 400\n\n400"] expected="250" got="To determine how many orders have 3 or more line items, we need to count the orders where the number of items (as indicated by the `.items [n]` field) is 3 or greater.\n\nHere's the count:\n\n- Orders with 3 items: 200\n- Orders with 4 items: 200\n\nTotal orders with 3 or more line items: 200 (3 items) + 200 (4 items) = 400\n\n400"
+  SKIP count_orders_with_3plus_items json     error: empty response
+  PASS customer_tier_last_order  gcf      [exact] expected="premium" got="premium"
+  PASS customer_tier_last_order  gcf-flat [exact] expected="premium" got="premium"
+  PASS customer_tier_last_order  gcf-flat-semi [exact] expected="premium" got="premium"
+  SKIP customer_tier_last_order  json     error: empty response
+
+=== Summary ===
+Format     Accuracy   Pass/Total
+gcf           69.2%      9/13
+gcf-flat      76.9%     10/13
+gcf-flat-semi    69.2%      9/13
+json           0.0%      0/2
+
+Log: results/v3/comprehension/generic-500orders-openai-deepseek_deepseek-chat-2026-06-22-171344.log

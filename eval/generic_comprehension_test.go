@@ -348,6 +348,52 @@ func encodeGenericOrders(orders []Order, format string) (string, error) {
 		return string(b), err
 	case "toon":
 		return toon.MarshalString(wrapper)
+	case "gcf-flat", "gcf-flat-primer":
+		jsonBytes, err := json.Marshal(wrapper)
+		if err != nil {
+			return "", err
+		}
+		cmd := exec.Command("/opt/homebrew/bin/node", "--input-type=module", "-e", `
+			import { encodeGenericFlat } from '/Users/dayna.blackwell/code/gcf/eval/encode-flat-prototype.mjs';
+			let input = '';
+			process.stdin.on('data', d => input += d);
+			process.stdin.on('end', () => {
+				const data = JSON.parse(input);
+				process.stdout.write(encodeGenericFlat(data));
+			});
+		`)
+		cmd.Stdin = bytes.NewReader(jsonBytes)
+		var gcfFlatOut bytes.Buffer
+		cmd.Stdout = &gcfFlatOut
+		var gcfFlatErr bytes.Buffer
+		cmd.Stderr = &gcfFlatErr
+		if err := cmd.Run(); err != nil {
+			return "", fmt.Errorf("gcf-flat encode failed: %w\nstderr: %s", err, gcfFlatErr.String())
+		}
+		return gcfFlatOut.String(), nil
+	case "gcf-flat-semi":
+		jsonBytes, err := json.Marshal(wrapper)
+		if err != nil {
+			return "", err
+		}
+		cmd := exec.Command("/opt/homebrew/bin/node", "--input-type=module", "-e", `
+			import { encodeGenericFlatSemicolon } from '/Users/dayna.blackwell/code/gcf/eval/encode-flat-prototype.mjs';
+			let input = '';
+			process.stdin.on('data', d => input += d);
+			process.stdin.on('end', () => {
+				const data = JSON.parse(input);
+				process.stdout.write(encodeGenericFlatSemicolon(data));
+			});
+		`)
+		cmd.Stdin = bytes.NewReader(jsonBytes)
+		var gcfFlatSemiOut bytes.Buffer
+		cmd.Stdout = &gcfFlatSemiOut
+		var gcfFlatSemiErr bytes.Buffer
+		cmd.Stderr = &gcfFlatSemiErr
+		if err := cmd.Run(); err != nil {
+			return "", fmt.Errorf("gcf-flat-semi encode failed: %w\nstderr: %s", err, gcfFlatSemiErr.String())
+		}
+		return gcfFlatSemiOut.String(), nil
 	case "ploon":
 		jsonBytes, err := json.Marshal(wrapper)
 		if err != nil {
@@ -466,8 +512,9 @@ func TestGenericComprehension(t *testing.T) {
 	if model == "" {
 		model = "default"
 	}
+	safeModel := strings.ReplaceAll(model, "/", "_")
 	logName := fmt.Sprintf("generic-%dorders-%s-%s-%s.log",
-		numOrders, backendName, model, time.Now().Format("2006-01-02-150405"))
+		numOrders, backendName, safeModel, time.Now().Format("2006-01-02-150405"))
 	logPath := filepath.Join(resultsDir, logName)
 	logFile, err := os.Create(logPath)
 	if err != nil {
@@ -505,8 +552,15 @@ func TestGenericComprehension(t *testing.T) {
 		expected := q.Expected(orders)
 
 		for _, f := range formats {
-			prompt := fmt.Sprintf("Here is order data in %s format:\n\n%s\n\nQuestion: %s",
-				strings.ToUpper(f.name), f.content, q.Question)
+			var prompt string
+			if strings.HasPrefix(f.name, "gcf-flat") && strings.HasSuffix(f.name, "-primer") {
+				primer := `The following data uses pipe-separated columns. Column names in the header containing > indicate nested fields: "customer>name" means the name field inside customer. To find a value, match the column position in the header to the position in the row.`
+				prompt = fmt.Sprintf("%s\n\nHere is order data in GCF-FLAT format:\n\n%s\n\nQuestion: %s",
+					primer, f.content, q.Question)
+			} else {
+				prompt = fmt.Sprintf("Here is order data in %s format:\n\n%s\n\nQuestion: %s",
+					strings.ToUpper(f.name), f.content, q.Question)
+			}
 
 			resp, err := callLLM(prompt)
 			if err != nil {

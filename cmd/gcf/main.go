@@ -23,7 +23,8 @@ const usage = `gcf - token-optimized wire format for LLM tool responses
 Usage:
   gcf encode [file]           Encode JSON graph payload to GCF (stdin if no file)
   gcf decode [file]           Decode GCF graph text to JSON (stdin if no file)
-  gcf encode-generic [file]   Encode any JSON value to GCF generic profile
+  gcf encode-generic [--no-flatten] [file]
+                              Encode any JSON value to GCF generic profile
   gcf decode-generic [file]   Decode GCF generic profile to JSON
   gcf stats  [file]           Compare token counts: JSON vs GCF (stdin if no file)
   gcf version                 Print version
@@ -53,8 +54,14 @@ func main() {
 		input := readInput(os.Args[2:])
 		doDecode(input)
 	case "encode-generic":
-		input := readInput(os.Args[2:])
-		doEncodeGeneric(input)
+		args := os.Args[2:]
+		noFlatten := false
+		if len(args) > 0 && args[0] == "--no-flatten" {
+			noFlatten = true
+			args = args[1:]
+		}
+		input := readInput(args)
+		doEncodeGeneric(input, noFlatten)
 	case "decode-generic":
 		input := readInput(os.Args[2:])
 		doDecodeGeneric(input)
@@ -190,13 +197,13 @@ func doDecode(input []byte) {
 	fmt.Println(string(out))
 }
 
-func doEncodeGeneric(input []byte) {
+func doEncodeGeneric(input []byte, noFlatten bool) {
 	val, err := gcf.ParseJSONOrdered(input)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error: invalid JSON: %v\n", err)
 		os.Exit(1)
 	}
-	fmt.Print(gcf.EncodeGeneric(val))
+	fmt.Print(gcf.EncodeGeneric(val, gcf.GenericOptions{NoFlatten: noFlatten}))
 }
 
 func doDecodeGeneric(input []byte) {

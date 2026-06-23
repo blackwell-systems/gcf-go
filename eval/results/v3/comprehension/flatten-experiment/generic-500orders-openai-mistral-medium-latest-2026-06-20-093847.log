@@ -1,0 +1,9 @@
+Generic-Profile Comprehension Eval
+Backend: openai (mistral-medium-latest)
+Orders: 500, Questions: 13, Formats: gcf, json, toon
+gcf       94613 bytes, ~23653 tokens
+json     322612 bytes, ~80653 tokens
+toon     168604 bytes, ~42151 tokens
+
+  FAIL order_count               gcf      [got "501"] expected="500" got="501"
+  PASS order_count               json     [exact] expected="500" got="500"

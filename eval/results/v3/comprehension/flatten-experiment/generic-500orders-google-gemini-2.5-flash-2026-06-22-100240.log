@@ -1,0 +1,9 @@
+Generic-Profile Comprehension Eval
+Backend: google (gemini-2.5-flash)
+Orders: 500, Questions: 13, Formats: gcf, gcf-flat, gcf-flat-semi
+gcf       94613 bytes, ~23653 tokens
+gcf-flat  93647 bytes, ~23411 tokens
+gcf-flat-semi  93647 bytes, ~23411 tokens
+
+  FAIL order_count               gcf      [got "501"] expected="500" got="501"
+  PASS order_count               gcf-flat [exact] expected="500" got="500"

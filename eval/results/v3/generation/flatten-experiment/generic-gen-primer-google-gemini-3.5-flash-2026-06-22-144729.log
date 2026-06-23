@@ -1,0 +1,44 @@
+=== Generic-Profile Generation Eval ===
+Backend: google (gemini-3.5-flash)
+Primer: primer
+Sizes: [3 5 10 20 50] orders
+Formats: gcf-flat, gcf-flat-semi
+
+Generating 3 orders as gcf-flat...
+  VALID  661 bytes, 982 bytes JSON ref, 33% savings, round-trip=n/a
+Generating 3 orders as gcf-flat-semi...
+  VALID  661 bytes, 982 bytes JSON ref, 33% savings, round-trip=n/a
+Generating 5 orders as gcf-flat...
+  VALID  1034 bytes, 1702 bytes JSON ref, 39% savings, round-trip=n/a
+Generating 5 orders as gcf-flat-semi...
+  VALID  1034 bytes, 1702 bytes JSON ref, 39% savings, round-trip=n/a
+Generating 10 orders as gcf-flat...
+  VALID  1942 bytes, 3463 bytes JSON ref, 44% savings, round-trip=n/a
+Generating 10 orders as gcf-flat-semi...
+  VALID  1942 bytes, 3463 bytes JSON ref, 44% savings, round-trip=n/a
+Generating 20 orders as gcf-flat...
+  VALID  3873 bytes, 7191 bytes JSON ref, 46% savings, round-trip=n/a
+Generating 20 orders as gcf-flat-semi...
+  VALID  3873 bytes, 7191 bytes JSON ref, 46% savings, round-trip=n/a
+Generating 50 orders as gcf-flat...
+  VALID  9395 bytes, 17839 bytes JSON ref, 47% savings, round-trip=n/a
+Generating 50 orders as gcf-flat-semi...
+  VALID  9400 bytes, 17839 bytes JSON ref, 47% savings, round-trip=n/a
+
+=== Summary ===
+Format   Orders   Valid  RoundTrip  Out bytes  JSON ref   Savings 
+gcf-flat 3        YES    n/a        661        982        33      %
+gcf-flat-semi 3        YES    n/a        661        982        33      %
+gcf-flat 5        YES    n/a        1034       1702       39      %
+gcf-flat-semi 5        YES    n/a        1034       1702       39      %
+gcf-flat 10       YES    n/a        1942       3463       44      %
+gcf-flat-semi 10       YES    n/a        1942       3463       44      %
+gcf-flat 20       YES    n/a        3873       7191       46      %
+gcf-flat-semi 20       YES    n/a        3873       7191       46      %
+gcf-flat 50       YES    n/a        9395       17839      47      %
+gcf-flat-semi 50       YES    n/a        9400       17839      47      %
+
+gcf-flat: 5/5 valid
+gcf-flat-semi: 5/5 valid
+
+Log: results/v3/generation/generic-gen-primer-google-gemini-3.5-flash-2026-06-22-144729.log

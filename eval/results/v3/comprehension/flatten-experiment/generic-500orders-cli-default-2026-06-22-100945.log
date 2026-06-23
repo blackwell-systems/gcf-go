@@ -1,0 +1,39 @@
+Generic-Profile Comprehension Eval
+Backend: cli (claude -p)
+Orders: 500, Questions: 13, Formats: gcf-flat, gcf-flat-semi
+gcf-flat  93647 bytes, ~23411 tokens
+gcf-flat-semi  93647 bytes, ~23411 tokens
+
+  PASS order_count               gcf-flat [exact] expected="500" got="500"
+  PASS order_count               gcf-flat-semi [exact] expected="500" got="500"
+  PASS first_customer_name       gcf-flat [exact] expected="Alice Chen" got="Alice Chen"
+  PASS first_customer_name       gcf-flat-semi [exact] expected="Alice Chen" got="Alice Chen"
+  PASS last_order_status         gcf-flat [exact] expected="cancelled" got="cancelled"
+  PASS last_order_status         gcf-flat-semi [exact] expected="cancelled" got="cancelled"
+  PASS total_items_first_order   gcf-flat [exact] expected="1" got="1"
+  PASS total_items_first_order   gcf-flat-semi [exact] expected="1" got="1"
+  PASS customer_email_order5     gcf-flat [exact] expected="eva.johansson@example.com" got="eva.johansson@example.com"
+  PASS customer_email_order5     gcf-flat-semi [exact] expected="eva.johansson@example.com" got="eva.johansson@example.com"
+  PASS count_shipped             gcf-flat [exact] expected="100" got="100"
+  PASS count_shipped             gcf-flat-semi [exact] expected="100" got="100"
+  PASS count_premium_customers   gcf-flat [contains] expected="200" got="Looking at the GCF-FLAT data, I need to count orders where the customer tier field (4th field) is 'premium'.\n\nThe data shows a repeating pattern of 20 customers cycling through 500 orders. The premium tier customers are:\n- Bob Martinez (positions 1, 21, 41, 61...)\n- Eva Johansson (positions 4, 24, 44, 64...)\n- Grace Liu (positions 6, 26, 46, 66...)\n- James Kowalski (positions 9, 29, 49, 69...)\n- Leo Fernandez (positions 11, 31, 51, 71...)\n- Olivia Reyes (positions 14, 34, 54, 74...)\n- Quinn Murphy (positions 16, 36, 56, 76...)\n- Tanya Volkov (positions 19, 39, 59, 79...)\n\nThat's 8 premium customers out of every 20 orders.\n500 orders ÷ 20 = 25 complete cycles\n8 premium customers × 25 cycles = 200\n\n200"
+  PASS count_premium_customers   gcf-flat-semi [contains] expected="200" got="Looking at the data, I need to count orders where the customer tier is 'premium'.\n\nThe customer tier is the 4th field in each order record. I can see there's a repeating pattern of 20 customers cycling through the 500 orders.\n\nLooking at the pattern:\n- Customer ID positions that have tier 'premium': 2, 5, 7, 10, 12, 15, 17, 20 (in each cycle of 20)\n\nThat's 8 premium customers per 20-order cycle.\n\nWith 500 total orders:\n500 ÷ 20 = 25 complete cycles\n25 × 8 = 200\n\n200"
+  PASS highest_total             gcf-flat [exact] expected="464.32" got="464.32"
+  PASS highest_total             gcf-flat-semi [exact] expected="464.32" got="464.32"
+  PASS sku_first_item_order3     gcf-flat [exact] expected="SKU-HP07" got="SKU-HP07"
+  PASS sku_first_item_order3     gcf-flat-semi [exact] expected="SKU-HP07" got="SKU-HP07"
+  PASS total_revenue_shipped     gcf-flat [contains] expected="21325.50" got="Looking at the GCF-FLAT data, I need to find all orders with status='shipped' and sum their totals.\n\nThe data shows a repeating pattern every 20 orders. In each cycle, orders at positions 0, 5, 10, and 15 have status='shipped' with totals:\n- Position 0: 32.39\n- Position 5: 237.57\n- Position 10: 226.74\n- Position 15: 356.32\n\nWith 500 orders total, there are 25 complete cycles (500 ÷ 20 = 25).\n\nSum = 25 × (32.39 + 237.57 + 226.74 + 356.32)\nSum = 25 × 853.02\nSum = 21325.50\n\n21325.50"
+  PASS total_revenue_shipped     gcf-flat-semi [contains] expected="21325.50" got="Looking at the data, I need to identify all orders with status \"shipped\" and sum their totals.\n\nThe orders follow a repeating pattern where every 5th order (positions 0, 5, 10, 15, ...) has status \"shipped\".\n\nFor 500 orders (positions 0-499), that's 100 shipped orders.\n\nThe totals for shipped orders follow a repeating pattern:\n- Position 0: 32.39\n- Position 5: 237.57\n- Position 10: 226.74\n- Position 15: 356.32\n\nThis 4-value pattern (32.39, 237.57, 226.74, 356.32) repeats 25 times across the 100 shipped orders.\n\nSum of one pattern cycle: 32.39 + 237.57 + 226.74 + 356.32 = 853.02\n\nTotal: 853.02 × 25 = 21325.50\n\n21325.50"
+  PASS unique_statuses           gcf-flat [exact] expected="cancelled, delivered, pending, processing, shipped" got="cancelled, delivered, pending, processing, shipped"
+  PASS unique_statuses           gcf-flat-semi [exact] expected="cancelled, delivered, pending, processing, shipped" got="cancelled, delivered, pending, processing, shipped"
+  PASS count_orders_with_3plus_items gcf-flat [exact] expected="250" got="250"
+  PASS count_orders_with_3plus_items gcf-flat-semi [exact] expected="250" got="250"
+  PASS customer_tier_last_order  gcf-flat [exact] expected="premium" got="premium"
+  PASS customer_tier_last_order  gcf-flat-semi [exact] expected="premium" got="premium"
+
+=== Summary ===
+Format     Accuracy   Pass/Total
+gcf-flat     100.0%     13/13
+gcf-flat-semi   100.0%     13/13
+
+Log: results/v3/comprehension/generic-500orders-cli-default-2026-06-22-100945.log

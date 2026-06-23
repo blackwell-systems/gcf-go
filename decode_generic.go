@@ -479,7 +479,19 @@ func parseTabularBody(lines []string, start, depth int, fields []string, expecte
 	pathColumnMap := make(map[string][]string)
 	for _, f := range fields {
 		if strings.Contains(f, ">") {
-			pathColumnMap[f] = strings.Split(f, ">")
+			parts := strings.Split(f, ">")
+			// Only treat as a path column if all segments are non-empty.
+			// A literal key like ">" would split into ["", ""].
+			valid := true
+			for _, p := range parts {
+				if p == "" {
+					valid = false
+					break
+				}
+			}
+			if valid {
+				pathColumnMap[f] = parts
+			}
 		}
 	}
 

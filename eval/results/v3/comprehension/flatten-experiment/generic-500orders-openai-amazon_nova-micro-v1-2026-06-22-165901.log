@@ -1,0 +1,69 @@
+Generic-Profile Comprehension Eval
+Backend: openai (amazon/nova-micro-v1)
+Orders: 500, Questions: 13, Formats: gcf, gcf-flat, gcf-flat-semi, json
+gcf       94613 bytes, ~23653 tokens
+gcf-flat  93647 bytes, ~23411 tokens
+gcf-flat-semi  93647 bytes, ~23411 tokens
+json     322612 bytes, ~80653 tokens
+
+  PASS order_count               gcf      [contains] expected="500" got="[500']\n\n500"
+  PASS order_count               gcf-flat [exact] expected="500" got="500"
+  PASS order_count               gcf-flat-semi [exact] expected="500" got="500"
+  PASS order_count               json     [exact] expected="500" got="500"
+  PASS first_customer_name       gcf      [exact] expected="Alice Chen" got="Alice Chen"
+  PASS first_customer_name       gcf-flat [exact] expected="Alice Chen" got="Alice Chen"
+  PASS first_customer_name       gcf-flat-semi [exact] expected="Alice Chen" got="Alice Chen"
+  PASS first_customer_name       json     [exact] expected="Alice Chen" got="Alice Chen"
+  PASS last_order_status         gcf      [exact] expected="cancelled" got="cancelled"
+  PASS last_order_status         gcf-flat [exact] expected="cancelled" got="cancelled"
+  PASS last_order_status         gcf-flat-semi [exact] expected="cancelled" got="cancelled"
+  PASS last_order_status         json     [exact] expected="cancelled" got="cancelled"
+  PASS total_items_first_order   gcf      [exact] expected="1" got="1"
+  PASS total_items_first_order   gcf-flat [exact] expected="1" got="1"
+  PASS total_items_first_order   gcf-flat-semi [exact] expected="1" got="1"
+  PASS total_items_first_order   json     [exact] expected="1" got="1"
+  PASS customer_email_order5     gcf      [exact] expected="eva.johansson@example.com" got="eva.johansson@example.com"
+  PASS customer_email_order5     gcf-flat [exact] expected="eva.johansson@example.com" got="eva.johansson@example.com"
+  PASS customer_email_order5     gcf-flat-semi [exact] expected="eva.johansson@example.com" got="eva.johansson@example.com"
+  SKIP customer_email_order5     json     error: Post "https://openrouter.ai/api/v1/chat/completions": remote error: tls: bad record MAC
+  FAIL count_shipped             gcf      [got "62"] expected="100" got="62"
+  FAIL count_shipped             gcf-flat [got "26"] expected="100" got="26"
+  FAIL count_shipped             gcf-flat-semi [got "16"] expected="100" got="16"
+  FAIL count_shipped             json     [got "8"] expected="100" got="8"
+  FAIL count_premium_customers   gcf      [got "32"] expected="200" got="32"
+  FAIL count_premium_customers   gcf-flat [got "40"] expected="200" got="40"
+  FAIL count_premium_customers   gcf-flat-semi [got "17"] expected="200" got="17"
+  FAIL count_premium_customers   json     [got "30"] expected="200" got="30"
+  FAIL highest_total             gcf      [got "458.92"] expected="464.32" got="458.92"
+  PASS highest_total             gcf-flat [exact] expected="464.32" got="464.32"
+  PASS highest_total             gcf-flat-semi [exact] expected="464.32" got="464.32"
+  PASS highest_total             json     [exact] expected="464.32" got="464.32"
+  PASS sku_first_item_order3     gcf      [exact] expected="SKU-HP07" got="SKU-HP07"
+  FAIL sku_first_item_order3     gcf-flat [got "SKU-DP08"] expected="SKU-HP07" got="SKU-DP08"
+  PASS sku_first_item_order3     gcf-flat-semi [exact] expected="SKU-HP07" got="SKU-HP07"
+  FAIL sku_first_item_order3     json     [got "SKU-DP08"] expected="SKU-HP07" got="SKU-DP08"
+  FAIL total_revenue_shipped     gcf      [got "822.11"] expected="21325.50" got="822.11"
+  FAIL total_revenue_shipped     gcf-flat [got "678.93"] expected="21325.50" got="678.93"
+  FAIL total_revenue_shipped     gcf-flat-semi [got "934.11"] expected="21325.50" got="934.11"
+  FAIL total_revenue_shipped     json     [got "778.14"] expected="21325.50" got="778.14"
+  FAIL unique_statuses           gcf      [missing "shipped"] expected="cancelled, delivered, pending, processing, shipped" got="cancelled,delivered,pending,processing"
+  FAIL unique_statuses           gcf-flat [missing "shipped"] expected="cancelled, delivered, pending, processing, shipped" got="cancelled,delivered,pending,processing"
+  FAIL unique_statuses           gcf-flat-semi [missing "shipped"] expected="cancelled, delivered, pending, processing, shipped" got="cancelled,delivered,pending,processing"
+  FAIL unique_statuses           json     [missing "shipped"] expected="cancelled, delivered, pending, processing, shipped" got="cancelled,delivered,pending,processing"
+  FAIL count_orders_with_3plus_items gcf      [got "30"] expected="250" got="30"
+  FAIL count_orders_with_3plus_items gcf-flat [got "24"] expected="250" got="24"
+  FAIL count_orders_with_3plus_items gcf-flat-semi [got "28"] expected="250" got="28"
+  FAIL count_orders_with_3plus_items json     [got "8"] expected="250" got="8"
+  PASS customer_tier_last_order  gcf      [exact] expected="premium" got="premium"
+  FAIL customer_tier_last_order  gcf-flat [got "standard"] expected="premium" got="standard"
+  FAIL customer_tier_last_order  gcf-flat-semi [got "standard"] expected="premium" got="standard"
+  FAIL customer_tier_last_order  json     [got "standard"] expected="premium" got="standard"
+
+=== Summary ===
+Format     Accuracy   Pass/Total
+gcf           53.8%      7/13
+gcf-flat      46.2%      6/13
+gcf-flat-semi    53.8%      7/13
+json          41.7%      5/12
+
+Log: results/v3/comprehension/generic-500orders-openai-amazon_nova-micro-v1-2026-06-22-165901.log

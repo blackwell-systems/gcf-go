@@ -1,0 +1,39 @@
+Generic-Profile Comprehension Eval
+Backend: google (gemini-2.5-flash)
+Orders: 500, Questions: 13, Formats: gcf-flat, gcf-flat-semi
+gcf-flat  93647 bytes, ~23411 tokens
+gcf-flat-semi  93647 bytes, ~23411 tokens
+
+  PASS order_count               gcf-flat [exact] expected="500" got="500"
+  PASS order_count               gcf-flat-semi [exact] expected="500" got="500"
+  PASS first_customer_name       gcf-flat [exact] expected="Alice Chen" got="Alice Chen"
+  PASS first_customer_name       gcf-flat-semi [exact] expected="Alice Chen" got="Alice Chen"
+  PASS last_order_status         gcf-flat [exact] expected="cancelled" got="cancelled"
+  PASS last_order_status         gcf-flat-semi [exact] expected="cancelled" got="cancelled"
+  PASS total_items_first_order   gcf-flat [exact] expected="1" got="1"
+  PASS total_items_first_order   gcf-flat-semi [exact] expected="1" got="1"
+  PASS customer_email_order5     gcf-flat [exact] expected="eva.johansson@example.com" got="eva.johansson@example.com"
+  PASS customer_email_order5     gcf-flat-semi [exact] expected="eva.johansson@example.com" got="eva.johansson@example.com"
+  PASS count_shipped             gcf-flat [exact] expected="100" got="100"
+  PASS count_shipped             gcf-flat-semi [exact] expected="100" got="100"
+  PASS count_premium_customers   gcf-flat [exact] expected="200" got="200"
+  FAIL count_premium_customers   gcf-flat-semi [got "150"] expected="200" got="150"
+  PASS highest_total             gcf-flat [exact] expected="464.32" got="464.32"
+  PASS highest_total             gcf-flat-semi [exact] expected="464.32" got="464.32"
+  PASS sku_first_item_order3     gcf-flat [exact] expected="SKU-HP07" got="SKU-HP07"
+  PASS sku_first_item_order3     gcf-flat-semi [exact] expected="SKU-HP07" got="SKU-HP07"
+  PASS total_revenue_shipped     gcf-flat [exact] expected="21325.50" got="21325.50"
+  PASS total_revenue_shipped     gcf-flat-semi [exact] expected="21325.50" got="21325.50"
+  PASS unique_statuses           gcf-flat [exact] expected="cancelled, delivered, pending, processing, shipped" got="cancelled,delivered,pending,processing,shipped"
+  PASS unique_statuses           gcf-flat-semi [exact] expected="cancelled, delivered, pending, processing, shipped" got="cancelled, delivered, pending, processing, shipped"
+  PASS count_orders_with_3plus_items gcf-flat [exact] expected="250" got="250"
+  PASS count_orders_with_3plus_items gcf-flat-semi [exact] expected="250" got="250"
+  PASS customer_tier_last_order  gcf-flat [exact] expected="premium" got="premium"
+  PASS customer_tier_last_order  gcf-flat-semi [exact] expected="premium" got="premium"
+
+=== Summary ===
+Format     Accuracy   Pass/Total
+gcf-flat     100.0%     13/13
+gcf-flat-semi    92.3%     12/13
+
+Log: results/v3/comprehension/generic-500orders-google-gemini-2.5-flash-2026-06-22-100708.log

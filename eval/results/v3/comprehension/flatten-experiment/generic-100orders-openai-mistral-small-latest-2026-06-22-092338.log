@@ -1,0 +1,15 @@
+Generic-Profile Comprehension Eval
+Backend: openai (mistral-small-latest)
+Orders: 100, Questions: 13, Formats: gcf-flat, gcf-flat-semi
+gcf-flat  18687 bytes, ~4671 tokens
+gcf-flat-semi  18687 bytes, ~4671 tokens
+
+  SKIP order_count               gcf-flat error: OpenAI API 401: {
+    "error": {
+        "message": "Incorrect API key provided: uqTAbn4b********************9pkM. You can find your API key at https://platform.openai.com/account/api-keys.",
+        "type": "invalid_request_error",
+        "param": null,
+        "code": "invalid_api_key"
+    }
+}
+

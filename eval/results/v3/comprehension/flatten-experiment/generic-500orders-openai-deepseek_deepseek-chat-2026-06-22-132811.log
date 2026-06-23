@@ -1,0 +1,24 @@
+Generic-Profile Comprehension Eval
+Backend: openai (deepseek/deepseek-chat)
+Orders: 500, Questions: 13, Formats: json
+json     322612 bytes, ~80653 tokens
+
+  SKIP order_count               json     error: empty response
+  SKIP first_customer_name       json     error: empty response
+  SKIP last_order_status         json     error: empty response
+  SKIP total_items_first_order   json     error: empty response
+  PASS customer_email_order5     json     [exact] expected="eva.johansson@example.com" got="eva.johansson@example.com"
+  SKIP count_shipped             json     error: empty response
+  SKIP count_premium_customers   json     error: empty response
+  SKIP highest_total             json     error: empty response
+  SKIP sku_first_item_order3     json     error: empty response
+  SKIP total_revenue_shipped     json     error: empty response
+  SKIP unique_statuses           json     error: empty response
+  SKIP count_orders_with_3plus_items json     error: empty response
+  SKIP customer_tier_last_order  json     error: empty response
+
+=== Summary ===
+Format     Accuracy   Pass/Total
+json         100.0%      1/1
+
+Log: results/v3/comprehension/generic-500orders-openai-deepseek_deepseek-chat-2026-06-22-132811.log

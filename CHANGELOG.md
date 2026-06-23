@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.3.1 (2026-06-23)
+
+### Flatten Opt-Out
+
+- Added `GenericOptions` struct with `NoFlatten` field to disable nested object flattening
+- `EncodeGeneric(data, gcf.GenericOptions{NoFlatten: true})` produces attachment syntax instead of path columns
+- Backward compatible: `EncodeGeneric(data)` behavior unchanged (flatten on by default)
+- CLI: `gcf encode-generic --no-flatten` flag
+- Fuzz testing covers both flatten-on and flatten-off paths
+- Fixed: decoder no longer treats literal `>` in key names as a path separator (e.g. key `">"` no longer incorrectly unflattened)
+
 ## v1.3.0 (2026-06-22)
 
 ### Spec v3.2: Nested Object Flattening

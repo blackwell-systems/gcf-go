@@ -1,0 +1,69 @@
+Generic-Profile Comprehension Eval
+Backend: openai (meta-llama/llama-4-maverick)
+Orders: 500, Questions: 13, Formats: gcf, gcf-flat, gcf-flat-semi, json
+gcf       94613 bytes, ~23653 tokens
+gcf-flat  93647 bytes, ~23411 tokens
+gcf-flat-semi  93647 bytes, ~23411 tokens
+json     322612 bytes, ~80653 tokens
+
+  PASS order_count               gcf      [exact] expected="500" got="500"
+  PASS order_count               gcf-flat [exact] expected="500" got="500"
+  PASS order_count               gcf-flat-semi [exact] expected="500" got="500"
+  PASS order_count               json     [exact] expected="500" got="500"
+  PASS first_customer_name       gcf      [exact] expected="Alice Chen" got="Alice Chen"
+  PASS first_customer_name       gcf-flat [exact] expected="Alice Chen" got="Alice Chen"
+  PASS first_customer_name       gcf-flat-semi [exact] expected="Alice Chen" got="Alice Chen"
+  PASS first_customer_name       json     [exact] expected="Alice Chen" got="Alice Chen"
+  PASS last_order_status         gcf      [exact] expected="cancelled" got="cancelled"
+  PASS last_order_status         gcf-flat [exact] expected="cancelled" got="cancelled"
+  PASS last_order_status         gcf-flat-semi [exact] expected="cancelled" got="cancelled"
+  PASS last_order_status         json     [exact] expected="cancelled" got="cancelled"
+  PASS total_items_first_order   gcf      [exact] expected="1" got="1"
+  PASS total_items_first_order   gcf-flat [exact] expected="1" got="1"
+  PASS total_items_first_order   gcf-flat-semi [exact] expected="1" got="1"
+  PASS total_items_first_order   json     [exact] expected="1" got="1"
+  PASS customer_email_order5     gcf      [exact] expected="eva.johansson@example.com" got="eva.johansson@example.com"
+  PASS customer_email_order5     gcf-flat [exact] expected="eva.johansson@example.com" got="eva.johansson@example.com"
+  PASS customer_email_order5     gcf-flat-semi [exact] expected="eva.johansson@example.com" got="eva.johansson@example.com"
+  PASS customer_email_order5     json     [exact] expected="eva.johansson@example.com" got="eva.johansson@example.com"
+  PASS count_shipped             gcf      [exact] expected="100" got="100"
+  FAIL count_shipped             gcf-flat [got "150"] expected="100" got="150"
+  FAIL count_shipped             gcf-flat-semi [got "150"] expected="100" got="150"
+  FAIL count_shipped             json     [got "125"] expected="100" got="125"
+  FAIL count_premium_customers   gcf      [got "250"] expected="200" got="250"
+  FAIL count_premium_customers   gcf-flat [got "125"] expected="200" got="125"
+  FAIL count_premium_customers   gcf-flat-semi [got "125"] expected="200" got="125"
+  FAIL count_premium_customers   json     [got "125"] expected="200" got="125"
+  PASS highest_total             gcf      [contains] expected="464.32" got="To find the highest order total, we need to examine the 'total' field in the given GCF format data.\n\nUpon reviewing the data, we notice that the 'total' field is the last field in each order record. We can scan through the data to find the highest 'total' value.\n\nAfter scanning the data, the highest 'total' value is 464.32.\n\nThe final answer is: 464.32"
+  PASS highest_total             gcf-flat [exact] expected="464.32" got="464.32"
+  PASS highest_total             gcf-flat-semi [contains] expected="464.32" got="To find the highest order total, we need to examine the 'total' column in the provided order data.\n\nUpon reviewing the data, we see that the total for each order is listed. To determine the highest total, we will scan through the totals.\n\nThe highest total is 464.32, which appears multiple times.\n\nThe answer is: 464.32"
+  FAIL highest_total             json     [got "458.92"] expected="464.32" got="458.92"
+  PASS sku_first_item_order3     gcf      [exact] expected="SKU-HP07" got="SKU-HP07"
+  PASS sku_first_item_order3     gcf-flat [exact] expected="SKU-HP07" got="SKU-HP07"
+  PASS sku_first_item_order3     gcf-flat-semi [exact] expected="SKU-HP07" got="SKU-HP07"
+  PASS sku_first_item_order3     json     [exact] expected="SKU-HP07" got="SKU-HP07"
+  FAIL total_revenue_shipped     gcf      [got "To find the sum of all order totals where the status is 'shipped' we need to go through the provided data identify orders with the status 'shipped' and sum their totals.\n\nThe data is in GCF format which is a specific text-based format for representing structured data. We will parse this data to extract the required information.\n\nHere's how we can do it:\n\n1. **Identify 'shipped' orders**: We look for lines that contain '^|^|ORD-' followed by any characters and then '|shipped|'. \n2. **Extract the total**: For each 'shipped' order found we extract the total which is the value after '|shipped|' and two other values (subtotal and tax) so it's the fourth value in the order details line.\n\nLet's directly compute the sum:\n\nUpon examining the data the order totals for 'shipped' orders are extracted and summed.\n\nAfter checking all 500 orders the sum of the totals of 'sh"] expected="21325.50" got="To find the sum of all order totals where the status is 'shipped', we need to go through the provided data, identify orders with the status 'shipped', and sum their totals.\n\nThe data is in GCF format, which is a specific text-based format for representing structured data. We will parse this data to extract the required information.\n\nHere's how we can do it:\n\n1. **Identify 'shipped' orders**: We look for lines that contain '^|^|ORD-' followed by any characters and then '|shipped|'. \n2. **Extract the total**: For each 'shipped' order found, we extract the total, which is the value after '|shipped|' and two other values (subtotal and tax), so it's the fourth value in the order details line.\n\nLet's directly compute the sum:\n\nUpon examining the data, the order totals for 'shipped' orders are extracted and summed.\n\nAfter checking all 500 orders, the sum of the totals of 'sh"
+  FAIL total_revenue_shipped     gcf-flat [got "11877.12"] expected="21325.50" got="11877.12"
+  FAIL total_revenue_shipped     gcf-flat-semi [got "To find the sum of all order totals where the status is 'shipped' we need to parse through the provided data and sum up the 'total' field for each order that has a 'status' of 'shipped'.\n\nThe data is in GCF-FLAT-SEMI format. Here's a step-by-step breakdown of how to calculate the sum:\n\n1. **Identify Orders with 'shipped' Status**: Go through each order record and check if the status is 'shipped'.\n\n2. **Extract Total for 'shipped' Orders**: For each order identified as 'shipped' extract the 'total' value.\n\n3. **Sum the Totals**: Sum up all the 'total' values extracted from 'shipped' orders.\n\nLet's directly compute this from the given data:\n\nOrders with 'shipped' status and their totals are as follows:\n- @0: total = 32.39\n- @6: total = 237.57\n- @10: total ="] expected="21325.50" got="To find the sum of all order totals where the status is 'shipped', we need to parse through the provided data and sum up the 'total' field for each order that has a 'status' of 'shipped'.\n\nThe data is in GCF-FLAT-SEMI format. Here's a step-by-step breakdown of how to calculate the sum:\n\n1. **Identify Orders with 'shipped' Status**: Go through each order record and check if the status is 'shipped'.\n\n2. **Extract Total for 'shipped' Orders**: For each order identified as 'shipped', extract the 'total' value.\n\n3. **Sum the Totals**: Sum up all the 'total' values extracted from 'shipped' orders.\n\nLet's directly compute this from the given data:\n\nOrders with 'shipped' status and their totals are as follows:\n- @0: total = 32.39\n- @6: total = 237.57\n- @10: total ="
+  FAIL total_revenue_shipped     json     [got "To calculate the sum of all order totals where the status is 'shipped' we will iterate over the provided JSON data filter orders by their status and sum their totals.\n\n1. **Filtering Orders by Status**: We need to go through each order in the \"orders\" array and check if the \"status\" is 'shipped'.\n\n2. **Summing Totals**: For each order that is 'shipped' we add its \"total\" to a running sum.\n\nLet's do this with the provided JSON data.\n\nAfter going through the data the sum of all order totals where the status is 'shipped' is calculated as follows:\n\n```python\nimport json\n\n# Provided JSON data\ndata = json.loads('''{\n  \"orders\": [...]\n}''')\n\n# Initialize sum\ntotal_sum = 0\n\n# Iterate over each order\nfor order in data['orders']:\n    # Check if the order status is 'shipped'\n    if order['status'] == 'sh"] expected="21325.50" got="To calculate the sum of all order totals where the status is 'shipped', we will iterate over the provided JSON data, filter orders by their status, and sum their totals.\n\n1. **Filtering Orders by Status**: We need to go through each order in the \"orders\" array and check if the \"status\" is 'shipped'.\n\n2. **Summing Totals**: For each order that is 'shipped', we add its \"total\" to a running sum.\n\nLet's do this with the provided JSON data.\n\nAfter going through the data, the sum of all order totals where the status is 'shipped' is calculated as follows:\n\n```python\nimport json\n\n# Provided JSON data\ndata = json.loads('''{\n  \"orders\": [...]\n}''')\n\n# Initialize sum\ntotal_sum = 0\n\n# Iterate over each order\nfor order in data['orders']:\n    # Check if the order status is 'shipped'\n    if order['status'] == 'sh"
+  PASS unique_statuses           gcf      [exact] expected="cancelled, delivered, pending, processing, shipped" got="cancelled,delivered,pending,processing,shipped"
+  PASS unique_statuses           gcf-flat [exact] expected="cancelled, delivered, pending, processing, shipped" got="cancelled,delivered,pending,processing,shipped"
+  PASS unique_statuses           gcf-flat-semi [exact] expected="cancelled, delivered, pending, processing, shipped" got="cancelled,delivered,pending,processing,shipped"
+  PASS unique_statuses           json     [exact] expected="cancelled, delivered, pending, processing, shipped" got="cancelled, delivered, pending, processing, shipped"
+  FAIL count_orders_with_3plus_items gcf      [got "150"] expected="250" got="150"
+  FAIL count_orders_with_3plus_items gcf-flat [got "150"] expected="250" got="150"
+  FAIL count_orders_with_3plus_items gcf-flat-semi [got "150"] expected="250" got="150"
+  FAIL count_orders_with_3plus_items json     [got "134"] expected="250" got="134"
+  PASS customer_tier_last_order  gcf      [exact] expected="premium" got="premium"
+  PASS customer_tier_last_order  gcf-flat [exact] expected="premium" got="premium"
+  PASS customer_tier_last_order  gcf-flat-semi [exact] expected="premium" got="premium"
+  PASS customer_tier_last_order  json     [exact] expected="premium" got="premium"
+
+=== Summary ===
+Format     Accuracy   Pass/Total
+gcf           76.9%     10/13
+gcf-flat      69.2%      9/13
+gcf-flat-semi    69.2%      9/13
+json          61.5%      8/13
+
+Log: results/v3/comprehension/generic-500orders-openai-meta-llama_llama-4-maverick-2026-06-22-165511.log

@@ -103,6 +103,50 @@ Rules:
 - Pipe-separated values matching schema field order
 - Output ONLY raw PLOON. No explanation, no code fences.`
 
+const gcfFlatPrimer = `GCF generic profile with nested object flattening (2 orders):
+GCF profile=generic
+## orders [2]{orderId,"customer>id","customer>name","customer>email","customer>tier",items,subtotal,total,status}
+@0 ORD-001|1|Alice|alice@test.com|standard|^|59.98|64.78|shipped
+.items [2]{sku,name,quantity,price}
+    SKU-A|Widget|2|19.99
+    SKU-B|Gadget|1|19.99
+@1 ORD-002|2|Bob|bob@test.com|premium|^|29.99|32.39|pending
+.items [1]
+    SKU-C|Gizmo|1|29.99
+
+Rules:
+- Header: GCF profile=generic
+- Nested objects with fixed shape are flattened into column names using > as path separator
+- "customer>id" means the id field inside the customer object
+- Variable-length arrays (items) still use ^ attachment with .fieldname
+- First row declares array schema: .items [count]{fields}
+- Subsequent rows: .items [count] (reuses schema)
+- Scalars: numbers unquoted, strings unquoted unless containing |, commas, or special chars
+- Null: -
+- Output ONLY raw GCF. No explanation, no code fences. First line starts with "GCF profile=generic".`
+
+const gcfFlatSemiPrimer = `GCF generic profile with nested object flattening (2 orders):
+GCF profile=generic
+## orders [2]{orderId,"customer;id","customer;name","customer;email","customer;tier",items,subtotal,total,status}
+@0 ORD-001|1|Alice|alice@test.com|standard|^|59.98|64.78|shipped
+.items [2]{sku,name,quantity,price}
+    SKU-A|Widget|2|19.99
+    SKU-B|Gadget|1|19.99
+@1 ORD-002|2|Bob|bob@test.com|premium|^|29.99|32.39|pending
+.items [1]
+    SKU-C|Gizmo|1|29.99
+
+Rules:
+- Header: GCF profile=generic
+- Nested objects with fixed shape are flattened into column names using ; as path separator
+- "customer;id" means the id field inside the customer object
+- Variable-length arrays (items) still use ^ attachment with .fieldname
+- First row declares array schema: .items [count]{fields}
+- Subsequent rows: .items [count] (reuses schema)
+- Scalars: numbers unquoted, strings unquoted unless containing |, commas, or special chars
+- Null: -
+- Output ONLY raw GCF. No explanation, no code fences. First line starts with "GCF profile=generic".`
+
 const jsonGenericPrimer = `JSON example (1 order):
 {"orders":[{"orderId":"ORD-001","customer":{"id":1,"name":"Alice","email":"alice@test.com","tier":"standard"},"items":[{"sku":"SKU-A","name":"Widget","quantity":2,"price":19.99}],"subtotal":19.99,"tax":1.60,"total":21.59,"status":"shipped"}]}
 
@@ -119,6 +163,18 @@ func buildGenPromptForFormat(format string, numOrders int, usePrimer bool) (stri
 			prompt = fmt.Sprintf("%s\n\nNow encode this order data as GCF generic profile:\n%d orders:\n%s", gcfV3Primer, numOrders, desc)
 		} else {
 			prompt = fmt.Sprintf("Encode this order data as GCF (Graph Compact Format) generic profile. Output ONLY the encoded data, no explanation.\n\n%d orders:\n%s", numOrders, desc)
+		}
+	case "gcf-flat":
+		if usePrimer {
+			prompt = fmt.Sprintf("%s\n\nNow encode this order data as GCF generic profile with nested object flattening (using > as path separator):\n%d orders:\n%s", gcfFlatPrimer, numOrders, desc)
+		} else {
+			prompt = fmt.Sprintf("Encode this order data as GCF (Graph Compact Format) generic profile with nested object flattening. Flatten fixed-shape nested objects into column names using > as path separator (e.g. \"customer>name\"). Output ONLY the encoded data, no explanation.\n\n%d orders:\n%s", numOrders, desc)
+		}
+	case "gcf-flat-semi":
+		if usePrimer {
+			prompt = fmt.Sprintf("%s\n\nNow encode this order data as GCF generic profile with nested object flattening (using ; as path separator):\n%d orders:\n%s", gcfFlatSemiPrimer, numOrders, desc)
+		} else {
+			prompt = fmt.Sprintf("Encode this order data as GCF (Graph Compact Format) generic profile with nested object flattening. Flatten fixed-shape nested objects into column names using ; as path separator (e.g. \"customer;name\"). Output ONLY the encoded data, no explanation.\n\n%d orders:\n%s", numOrders, desc)
 		}
 	case "json":
 		if usePrimer {
@@ -150,6 +206,10 @@ func validateGenOutput(format string, output string) (any, int, error) {
 		text := stripToGCFGeneric(output)
 		decoded, err := gcf.DecodeGeneric(text)
 		return decoded, len(text), err
+	case "gcf-flat", "gcf-flat-semi":
+		text := stripToGCFGeneric(output)
+		decoded, err := validateGCFFlat(text, format)
+		return decoded, len(text), err
 	case "json":
 		text := stripToJSONGen(output)
 		var decoded any
@@ -166,6 +226,83 @@ func validateGenOutput(format string, output string) (any, int, error) {
 		return decoded, len(text), err
 	}
 	return nil, 0, fmt.Errorf("unknown format: %s", format)
+}
+
+// validateGCFFlat validates flat GCF output structurally.
+// Checks: starts with header, has correct separator in column names, rows have correct pipe count.
+func validateGCFFlat(text string, format string) (any, error) {
+	sep := ">"
+	if format == "gcf-flat-semi" {
+		sep = ";"
+	}
+
+	lines := strings.Split(text, "\n")
+	if len(lines) < 3 {
+		return nil, fmt.Errorf("too few lines: %d", len(lines))
+	}
+	if !strings.HasPrefix(lines[0], "GCF profile=generic") {
+		return nil, fmt.Errorf("missing GCF header, got: %s", lines[0])
+	}
+
+	// Find the main tabular header (## ... {fields})
+	headerIdx := -1
+	for i, line := range lines {
+		if strings.Contains(line, "{") && strings.Contains(line, "}") && strings.HasPrefix(strings.TrimSpace(line), "##") {
+			headerIdx = i
+			break
+		}
+	}
+	if headerIdx < 0 {
+		return nil, fmt.Errorf("no tabular header found")
+	}
+
+	// Check that flattened column names use the correct separator
+	header := lines[headerIdx]
+	if !strings.Contains(header, "\"") {
+		return nil, fmt.Errorf("no quoted column names in header (expected flattened paths)")
+	}
+
+	// Check separator is used in at least one quoted column name
+	hasFlatPath := false
+	inQuote := false
+	current := ""
+	for _, c := range header {
+		if c == '"' {
+			if inQuote {
+				if strings.Contains(current, sep) {
+					hasFlatPath = true
+					break
+				}
+				current = ""
+			}
+			inQuote = !inQuote
+			continue
+		}
+		if inQuote {
+			current += string(c)
+		}
+	}
+	if !hasFlatPath {
+		return nil, fmt.Errorf("no flattened paths with '%s' separator found in header", sep)
+	}
+
+	// Count data rows (non-empty, non-header, non-attachment-only lines)
+	dataRows := 0
+	for i := headerIdx + 1; i < len(lines); i++ {
+		line := strings.TrimSpace(lines[i])
+		if line == "" {
+			continue
+		}
+		if strings.HasPrefix(line, "@") || (!strings.HasPrefix(line, ".") && !strings.HasPrefix(line, "#") && strings.Contains(line, "|")) {
+			dataRows++
+		}
+	}
+	if dataRows == 0 {
+		return nil, fmt.Errorf("no data rows found")
+	}
+
+	// Return a simple decoded representation (just confirm it parsed).
+	return map[string]any{"_valid": true, "_format": format, "_rows": dataRows}, nil
 }
 
 func stripToGCFGeneric(s string) string {

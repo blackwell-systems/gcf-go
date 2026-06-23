@@ -1,0 +1,105 @@
+=== Fixed-Budget Comprehension Eval ===
+Backend: codex (gpt-5.5)
+Total orders: 500, Needle at index: 299
+Budgets: [4000 8000 16000 32000] tokens
+Formats: json, gcf, gcf-flat, toon
+
+--- Budget: 4000 tokens ---
+  json       fits 44 orders (3954 tokens), needle visible: false
+    SKIP: needle at index 299 not reachable within budget
+    SKIP highest_total        (data truncated)
+    SKIP needle_customer      (data truncated)
+    SKIP needle_status        (data truncated)
+    SKIP needle_tier          (data truncated)
+  gcf        fits 85 orders (3997 tokens), needle visible: false
+    SKIP: needle at index 299 not reachable within budget
+    SKIP highest_total        (data truncated)
+    SKIP needle_customer      (data truncated)
+    SKIP needle_status        (data truncated)
+    SKIP needle_tier          (data truncated)
+  gcf-flat   fits 85 orders (3963 tokens), needle visible: false
+    SKIP: needle at index 299 not reachable within budget
+    SKIP highest_total        (data truncated)
+    SKIP needle_customer      (data truncated)
+    SKIP needle_status        (data truncated)
+    SKIP needle_tier          (data truncated)
+  toon       fits 47 orders (3937 tokens), needle visible: false
+    SKIP: needle at index 299 not reachable within budget
+    SKIP highest_total        (data truncated)
+    SKIP needle_customer      (data truncated)
+    SKIP needle_status        (data truncated)
+    SKIP needle_tier          (data truncated)
+
+--- Budget: 8000 tokens ---
+  json       fits 89 orders (7973 tokens), needle visible: false
+    SKIP: needle at index 299 not reachable within budget
+    SKIP highest_total        (data truncated)
+    SKIP needle_customer      (data truncated)
+    SKIP needle_status        (data truncated)
+    SKIP needle_tier          (data truncated)
+  gcf        fits 169 orders (7969 tokens), needle visible: false
+    SKIP: needle at index 299 not reachable within budget
+    SKIP highest_total        (data truncated)
+    SKIP needle_customer      (data truncated)
+    SKIP needle_status        (data truncated)
+    SKIP needle_tier          (data truncated)
+  gcf-flat   fits 171 orders (7986 tokens), needle visible: false
+    SKIP: needle at index 299 not reachable within budget
+    SKIP highest_total        (data truncated)
+    SKIP needle_customer      (data truncated)
+    SKIP needle_status        (data truncated)
+    SKIP needle_tier          (data truncated)
+  toon       fits 95 orders (7982 tokens), needle visible: false
+    SKIP: needle at index 299 not reachable within budget
+    SKIP highest_total        (data truncated)
+    SKIP needle_customer      (data truncated)
+    SKIP needle_status        (data truncated)
+    SKIP needle_tier          (data truncated)
+
+--- Budget: 16000 tokens ---
+  json       fits 178 orders (15982 tokens), needle visible: false
+    SKIP: needle at index 299 not reachable within budget
+    SKIP highest_total        (data truncated)
+    SKIP needle_customer      (data truncated)
+    SKIP needle_status        (data truncated)
+    SKIP needle_tier          (data truncated)
+  gcf        fits 338 orders (15967 tokens), needle visible: true
+    PASS highest_total        [exact] expected="99999.99" got="99999.99"
+    PASS needle_customer      [exact] expected="Needle McFindme" got="Needle McFindme"
+    PASS needle_status        [exact] expected="escalated" got="escalated"
+    PASS needle_tier          [exact] expected="diamond" got="diamond"
+  gcf-flat   fits 342 orders (15993 tokens), needle visible: true
+    PASS highest_total        [exact] expected="99999.99" got="99999.99"
+    PASS needle_customer      [exact] expected="Needle McFindme" got="Needle McFindme"
+    PASS needle_status        [exact] expected="escalated" got="escalated"
+    PASS needle_tier          [exact] expected="diamond" got="diamond"
+  toon       fits 190 orders (15985 tokens), needle visible: false
+    SKIP: needle at index 299 not reachable within budget
+    SKIP highest_total        (data truncated)
+    SKIP needle_customer      (data truncated)
+    SKIP needle_status        (data truncated)
+    SKIP needle_tier          (data truncated)
+
+--- Budget: 32000 tokens ---
+  json       fits 355 orders (31941 tokens), needle visible: true
+    PASS highest_total        [exact] expected="99999.99" got="99999.99"
+    PASS needle_customer      [exact] expected="Needle McFindme" got="Needle McFindme"
+    PASS needle_status        [exact] expected="escalated" got="escalated"
+    PASS needle_tier          [exact] expected="diamond" got="diamond"
+  gcf        fits 500 orders (23652 tokens), needle visible: true
+    PASS highest_total        [exact] expected="99999.99" got="99999.99"
+    PASS needle_customer      [exact] expected="Needle McFindme" got="Needle McFindme"
+    PASS needle_status        [exact] expected="escalated" got="escalated"
+    PASS needle_tier          [exact] expected="diamond" got="diamond"
+  gcf-flat   fits 500 orders (23411 tokens), needle visible: true
+    PASS highest_total        [exact] expected="99999.99" got="99999.99"
+    PASS needle_customer      [exact] expected="Needle McFindme" got="Needle McFindme"
+    PASS needle_status        [exact] expected="escalated" got="escalated"
+    PASS needle_tier          [exact] expected="diamond" got="diamond"
+  toon       fits 379 orders (31931 tokens), needle visible: true
+    PASS highest_total        [exact] expected="99999.99" got="99999.99"
+    PASS needle_customer      [exact] expected="Needle McFindme" got="Needle McFindme"
+    PASS needle_status        [exact] expected="escalated" got="escalated"
+    PASS needle_tier          [exact] expected="diamond" got="diamond"
+
+Log: results/v3/comprehension/budget-experiment/budget-codex-default-2026-06-22-180751.log

@@ -1,0 +1,158 @@
+=== Generic-Profile Generation Eval ===
+Backend: openai (mistral-small-latest)
+Primer: primer
+Sizes: [3 5 10 20 50] orders
+Formats: gcf, gcf-flat, gcf-flat-semi
+
+Generating 3 orders as gcf...
+  INVALID: row_width_mismatch: expected 5 fields, got 7
+  Output (first 500): GCF profile=generic
+## orders [3]{orderId,subtotal,tax,total,status}
+@0 ORD-0001|^{id,name,email,tier}|^|29.99|2.40|32.39|shipped
+1|Alice Chen|alice.chen@example.com|standard
+.items [1]{sku,name,quantity,price}
+    SKU-WM01|Wireless Mouse|1|29.99
+@1 ORD-0002|^|^|169.97|13.60|183.57|pending
+2|Bob Martinez|bob.martinez@example.com|premium
+.items [2]
+    SKU-MK04|Mechanical Keyboard|1|89.99
+    SKU-MA05|Monitor Arm|2|39.9
+Generating 3 orders as gcf-flat...
+  VALID  448 bytes, 982 bytes JSON ref, 54% savings, round-trip=n/a
+Generating 3 orders as gcf-flat-semi...
+  VALID  448 bytes, 982 bytes JSON ref, 54% savings, round-trip=n/a
+Generating 5 orders as gcf...
+  INVALID: row_width_mismatch: expected 6 fields, got 7
+  Output (first 500): GCF profile=generic
+## orders [5]{orderId,customer,subtotal,tax,total,status}
+@0 ORD-0001|^{id,name,email,tier}|^|29.99|2.40|32.39|shipped
+1|Alice Chen|alice.chen@example.com|standard
+.items [1]{sku,name,quantity,price}
+    SKU-WM01|Wireless Mouse|1|29.99
+@1 ORD-0002|^|^|169.97|13.60|183.57|pending
+2|Bob Martinez|bob.martinez@example.com|premium
+.items [2]
+    SKU-MK04|Mechanical Keyboard|1|89.99
+    SKU-MA05|Monitor Arm|2|39
+Generating 5 orders as gcf-flat...
+  VALID  448 bytes, 1702 bytes JSON ref, 74% savings, round-trip=n/a
+Generating 5 orders as gcf-flat-semi...
+  VALID  453 bytes, 1702 bytes JSON ref, 73% savings, round-trip=n/a
+Generating 10 orders as gcf...
+  INVALID: row_width_mismatch: expected 7 fields, got 6
+  Output (first 500): GCF profile=generic
+## orders [10]{orderId,customer,items,subtotal,tax,total,status}
+@0 ORD-0001|^{id,name,email,tier}|^|29.99|2.40|32.39|shipped
+1|Alice Chen|alice.chen@example.com|standard
+.items [1]{sku,name,quantity,price}
+    SKU-WM01|Wireless Mouse|1|29.99
+@1 ORD-0002|^|169.97|13.60|183.57|pending
+2|Bob Martinez|bob.martinez@example.com|premium
+.items [2]
+    SKU-MK04|Mechanical Keyboard|1|89.99
+    SKU-MA05|Monitor Arm|2|3
+Generating 10 orders as gcf-flat...
+  INVALID: no quoted column names in header (expected flattened paths)
+  Output (first 500): GCF profile=generic
+## orders [10]{orderId,customer>id,customer>name,customer>email,customer>tier,items,subtotal,tax,total,status}
+@0 ORD-0001|1|Alice Chen|alice.chen@example.com|standard|^|29.99|2.40|32.39|shipped
+.items [1]{sku,name,quantity,price}
+    SKU-WM01|Wireless Mouse|1|29.99
+@1 ORD-0002|2|Bob Martinez|bob.martinez@example.com|premium|^|169.97|13.60|183.57|pending
+.items [2]
+    SKU-MK04|Mechanical Keyboard|1|89.99
+    SKU-MA0
+Generating 10 orders as gcf-flat-semi...
+  INVALID: no tabular header found
+  Output (first 500): GCF profile=generic
+orderId;customer;id;customer;name;customer;email;customer;tier;subtotal;tax;total;status;items;^;sku;name;quantity;price
+ORD-0001|1|Alice Chen|alice.chen@example.com|standard|29.99|2.40|32.39|shipped|^|SKU-WM01|Wireless Mouse|1|29.99
+ORD-0002|2|Bob Martinez|bob.martinez@example.com|premium|169.97|13.60|183.57|pending|^|SKU-MK04|Mechanical Keyboard|1|89.99
+^|SKU-MA05|Monitor Arm|2|39.99
+ORD-000
+Generating 20 orders as gcf...
+  INVALID: row_width_mismatch: expected 4 fields, got 3
+  Output (first 500): GCF profile=generic
+## orders [20]{orderId,customer,items,subtotal,tax,total,status}
+@0 ORD-0001|^{id,name,email,tier}|^|29.99|2.40|32.39|shipped
+1|Alice Chen|alice.chen@example.com|standard
+.items [1]{sku,name,quantity,price}
+    SKU-WM01|Wireless Mouse|1|29.99
+@1 ORD-0002|^|^|169.97|13.60|183.57|pending
+2|Bob Martinez|bob.martinez@example.com|premium
+.items [2]
+    SKU-MK04|Mechanical Keyboard|1|89.99
+    SKU-MA05|Monitor Arm|2
+Generating 20 orders as gcf-flat...
+  INVALID: no quoted column names in header (expected flattened paths)
+  Output (first 500): GCF profile=generic
+## orders [20]{orderId,customer>id,customer>name,customer>email,customer>tier,subtotal,tax,total,status}
+@0 ORD-0001|1|Alice Chen|alice.chen@example.com|standard|29.99|2.40|32.39|shipped
+.items [1]{sku,name,quantity,price}
+    SKU-WM01|Wireless Mouse|1|29.99
+@1 ORD-0002|2|Bob Martinez|bob.martinez@example.com|premium|169.97|13.60|183.57|pending
+.items [2]
+    SKU-MK04|Mechanical Keyboard|1|89.99
+    SKU-MA05|Monitor Arm|2
+Generating 20 orders as gcf-flat-semi...
+  VALID  453 bytes, 7191 bytes JSON ref, 94% savings, round-trip=n/a
+Generating 50 orders as gcf...
+  INVALID: row_width_mismatch: expected 6 fields, got 7
+  Output (first 500): GCF profile=generic
+## orders [50]{orderId,customer,subtotal,tax,total,status}
+@0 ORD-0001|^{id,name,email,tier}|^|29.99|2.40|32.39|shipped
+1|Alice Chen|alice.chen@example.com|standard
+.items [1]{sku,name,quantity,price}
+    SKU-WM01|Wireless Mouse|1|29.99
+@1 ORD-0002|^{id,name,email,tier}|^|169.97|13.60|183.57|pending
+2|Bob Martinez|bob.martinez@example.com|premium
+.items [2]
+    SKU-MK04|Mechanical Keyboard|1|89.99
+    SKU-MA05|Monitor
+Generating 50 orders as gcf-flat...
+  INVALID: no quoted column names in header (expected flattened paths)
+  Output (first 500): GCF profile=generic
+## orders [50]{orderId,customer>id,customer>name,customer>email,customer>tier,subtotal,tax,total,status}
+@0 ORD-0001|1|Alice Chen|alice.chen@example.com|standard|29.99|2.40|32.39|shipped
+.items [1]{sku,quantity,price}
+    SKU-WM01|1|29.99
+@1 ORD-0002|2|Bob Martinez|bob.martinez@example.com|premium|169.97|13.60|183.57|pending
+.items [2]
+    SKU-MK04|1|89.99
+    SKU-MA05|2|39.99
+@2 ORD-
+Generating 50 orders as gcf-flat-semi...
+  INVALID: no quoted column names in header (expected flattened paths)
+  Output (first 500): GCF profile=generic
+## orders [50]{orderId,customer;id,customer;name,customer;email,customer;tier,subtotal,tax,total,status}
+@0 ORD-0001|1|Alice Chen|alice.chen@example.com|standard|29.99|2.40|32.39|shipped
+.items [1]{sku,name,quantity,price}
+    SKU-WM01|Wireless Mouse|1|29.99
+@1 ORD-0002|2|Bob Martinez|bob.martinez@example.com|premium|169.97|13.60|183.57|pending
+.items [2]
+    SKU-MK04|Mechanical Keyboard|1|89.99
+    SKU-MA05|Monitor Arm|2
+
+=== Summary ===
+Format   Orders   Valid  RoundTrip  Out bytes  JSON ref   Savings 
+gcf      3        NO     NO         422        0          0       %
+gcf-flat 3        YES    n/a        448        982        54      %
+gcf-flat-semi 3        YES    n/a        448        982        54      %
+gcf      5        NO     NO         429        0          0       %
+gcf-flat 5        YES    n/a        448        1702       74      %
+gcf-flat-semi 5        YES    n/a        453        1702       73      %
+gcf      10       NO     NO         433        0          0       %
+gcf-flat 10       NO     n/a        440        0          0       %
+gcf-flat-semi 10       NO     n/a        416        0          0       %
+gcf      20       NO     NO         433        0          0       %
+gcf-flat 20       NO     n/a        445        0          0       %
+gcf-flat-semi 20       YES    n/a        453        7191       94      %
+gcf      50       NO     NO         441        0          0       %
+gcf-flat 50       NO     n/a        407        0          0       %
+gcf-flat-semi 50       NO     n/a        445        0          0       %
+
+gcf: 0/5 valid
+gcf-flat: 2/5 valid
+gcf-flat-semi: 3/5 valid
+
+Log: results/v3/generation/generic-gen-primer-openai-mistral-small-latest-2026-06-22-115052.log

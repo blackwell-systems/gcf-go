@@ -1,0 +1,54 @@
+Generic-Profile Comprehension Eval
+Backend: openai (mistral-medium-latest)
+Orders: 500, Questions: 13, Formats: gcf, gcf-flat, gcf-flat-semi
+gcf       94613 bytes, ~23653 tokens
+gcf-flat  93647 bytes, ~23411 tokens
+gcf-flat-semi  93647 bytes, ~23411 tokens
+
+  FAIL order_count               gcf      [got "501"] expected="500" got="501"
+  PASS order_count               gcf-flat [exact] expected="500" got="500"
+  PASS order_count               gcf-flat-semi [exact] expected="500" got="500"
+  PASS first_customer_name       gcf      [exact] expected="Alice Chen" got="Alice Chen"
+  PASS first_customer_name       gcf-flat [exact] expected="Alice Chen" got="Alice Chen"
+  PASS first_customer_name       gcf-flat-semi [exact] expected="Alice Chen" got="Alice Chen"
+  PASS last_order_status         gcf      [exact] expected="cancelled" got="cancelled"
+  PASS last_order_status         gcf-flat [exact] expected="cancelled" got="cancelled"
+  PASS last_order_status         gcf-flat-semi [exact] expected="cancelled" got="cancelled"
+  PASS total_items_first_order   gcf      [exact] expected="1" got="1"
+  PASS total_items_first_order   gcf-flat [exact] expected="1" got="1"
+  PASS total_items_first_order   gcf-flat-semi [exact] expected="1" got="1"
+  PASS customer_email_order5     gcf      [exact] expected="eva.johansson@example.com" got="eva.johansson@example.com"
+  PASS customer_email_order5     gcf-flat [exact] expected="eva.johansson@example.com" got="eva.johansson@example.com"
+  PASS customer_email_order5     gcf-flat-semi [exact] expected="eva.johansson@example.com" got="eva.johansson@example.com"
+  PASS count_shipped             gcf      [exact] expected="100" got="100"
+  FAIL count_shipped             gcf-flat [got "125"] expected="100" got="125"
+  FAIL count_shipped             gcf-flat-semi [got "125"] expected="100" got="125"
+  PASS count_premium_customers   gcf      [exact] expected="200" got="200"
+  FAIL count_premium_customers   gcf-flat [got "100"] expected="200" got="100"
+  FAIL count_premium_customers   gcf-flat-semi [got "100"] expected="200" got="100"
+  PASS highest_total             gcf      [exact] expected="464.32" got="464.32"
+  PASS highest_total             gcf-flat [exact] expected="464.32" got="464.32"
+  PASS highest_total             gcf-flat-semi [exact] expected="464.32" got="464.32"
+  PASS sku_first_item_order3     gcf      [exact] expected="SKU-HP07" got="SKU-HP07"
+  PASS sku_first_item_order3     gcf-flat [exact] expected="SKU-HP07" got="SKU-HP07"
+  PASS sku_first_item_order3     gcf-flat-semi [exact] expected="SKU-HP07" got="SKU-HP07"
+  FAIL total_revenue_shipped     gcf      [got "11147.96"] expected="21325.50" got="11147.96"
+  FAIL total_revenue_shipped     gcf-flat [got "113936.98"] expected="21325.50" got="113936.98"
+  FAIL total_revenue_shipped     gcf-flat-semi [got "114695.91"] expected="21325.50" got="114695.91"
+  PASS unique_statuses           gcf      [exact] expected="cancelled, delivered, pending, processing, shipped" got="cancelled,delivered,pending,processing,shipped"
+  PASS unique_statuses           gcf-flat [exact] expected="cancelled, delivered, pending, processing, shipped" got="cancelled, delivered, pending, processing, shipped"
+  PASS unique_statuses           gcf-flat-semi [exact] expected="cancelled, delivered, pending, processing, shipped" got="cancelled,delivered,pending,processing,shipped"
+  FAIL count_orders_with_3plus_items gcf      [got "200"] expected="250" got="200"
+  FAIL count_orders_with_3plus_items gcf-flat [got "200"] expected="250" got="200"
+  FAIL count_orders_with_3plus_items gcf-flat-semi [got "200"] expected="250" got="200"
+  PASS customer_tier_last_order  gcf      [exact] expected="premium" got="premium"
+  PASS customer_tier_last_order  gcf-flat [exact] expected="premium" got="premium"
+  PASS customer_tier_last_order  gcf-flat-semi [exact] expected="premium" got="premium"
+
+=== Summary ===
+Format     Accuracy   Pass/Total
+gcf           76.9%     10/13
+gcf-flat      69.2%      9/13
+gcf-flat-semi    69.2%      9/13
+
+Log: results/v3/comprehension/generic-500orders-openai-mistral-medium-latest-2026-06-22-095516.log

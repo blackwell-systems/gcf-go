@@ -1,0 +1,144 @@
+=== Generic-Profile Generation Eval ===
+Backend: google (gemini-3.5-flash)
+Primer: primer
+Sizes: [3 5 10 20 50] orders
+Formats: gcf, gcf-flat, gcf-flat-semi
+
+Generating 3 orders as gcf...
+  VALID  633 bytes, 982 bytes JSON ref, 36% savings, round-trip=true
+Generating 3 orders as gcf-flat...
+  VALID  661 bytes, 982 bytes JSON ref, 33% savings, round-trip=n/a
+Generating 3 orders as gcf-flat-semi...
+  VALID  661 bytes, 982 bytes JSON ref, 33% savings, round-trip=n/a
+Generating 5 orders as gcf...
+  ERROR: Google API 503: {
+  "error": {
+    "code": 503,
+    "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.",
+    "status": "UNAVAILABLE"
+  }
+}
+
+Generating 5 orders as gcf-flat...
+  ERROR: Google API 503: {
+  "error": {
+    "code": 503,
+    "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.",
+    "status": "UNAVAILABLE"
+  }
+}
+
+Generating 5 orders as gcf-flat-semi...
+  ERROR: Google API 503: {
+  "error": {
+    "code": 503,
+    "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.",
+    "status": "UNAVAILABLE"
+  }
+}
+
+Generating 10 orders as gcf...
+  ERROR: Google API 503: {
+  "error": {
+    "code": 503,
+    "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.",
+    "status": "UNAVAILABLE"
+  }
+}
+
+Generating 10 orders as gcf-flat...
+  ERROR: Google API 503: {
+  "error": {
+    "code": 503,
+    "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.",
+    "status": "UNAVAILABLE"
+  }
+}
+
+Generating 10 orders as gcf-flat-semi...
+  ERROR: Google API 503: {
+  "error": {
+    "code": 503,
+    "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.",
+    "status": "UNAVAILABLE"
+  }
+}
+
+Generating 20 orders as gcf...
+  ERROR: Google API 503: {
+  "error": {
+    "code": 503,
+    "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.",
+    "status": "UNAVAILABLE"
+  }
+}
+
+Generating 20 orders as gcf-flat...
+  ERROR: Google API 503: {
+  "error": {
+    "code": 503,
+    "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.",
+    "status": "UNAVAILABLE"
+  }
+}
+
+Generating 20 orders as gcf-flat-semi...
+  ERROR: Google API 503: {
+  "error": {
+    "code": 503,
+    "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.",
+    "status": "UNAVAILABLE"
+  }
+}
+
+Generating 50 orders as gcf...
+  ERROR: Google API 503: {
+  "error": {
+    "code": 503,
+    "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.",
+    "status": "UNAVAILABLE"
+  }
+}
+
+Generating 50 orders as gcf-flat...
+  ERROR: Google API 503: {
+  "error": {
+    "code": 503,
+    "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.",
+    "status": "UNAVAILABLE"
+  }
+}
+
+Generating 50 orders as gcf-flat-semi...
+  ERROR: Google API 503: {
+  "error": {
+    "code": 503,
+    "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.",
+    "status": "UNAVAILABLE"
+  }
+}
+
+
+=== Summary ===
+Format   Orders   Valid  RoundTrip  Out bytes  JSON ref   Savings 
+gcf      3        YES    YES        633        982        36      %
+gcf-flat 3        YES    n/a        661        982        33      %
+gcf-flat-semi 3        YES    n/a        661        982        33      %
+gcf      5        NO     NO         0          0          0       %
+gcf-flat 5        NO     n/a        0          0          0       %
+gcf-flat-semi 5        NO     n/a        0          0          0       %
+gcf      10       NO     NO         0          0          0       %
+gcf-flat 10       NO     n/a        0          0          0       %
+gcf-flat-semi 10       NO     n/a        0          0          0       %
+gcf      20       NO     NO         0          0          0       %
+gcf-flat 20       NO     n/a        0          0          0       %
+gcf-flat-semi 20       NO     n/a        0          0          0       %
+gcf      50       NO     NO         0          0          0       %
+gcf-flat 50       NO     n/a        0          0          0       %
+gcf-flat-semi 50       NO     n/a        0          0          0       %
+
+gcf: 1/5 valid
+gcf-flat: 1/5 valid
+gcf-flat-semi: 1/5 valid
+
+Log: results/v3/generation/generic-gen-primer-google-gemini-3.5-flash-2026-06-22-122143.log
