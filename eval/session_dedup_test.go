@@ -744,7 +744,13 @@ func TestSessionDedupMaxDepth(t *testing.T) {
 	}
 	model := os.Getenv("EVAL_MODEL")
 
+	maxDepthEnv := os.Getenv("EVAL_MAX_DEPTH")
 	maxDepth := 15
+	if maxDepthEnv != "" {
+		if d, err := strconv.Atoi(maxDepthEnv); err == nil {
+			maxDepth = d
+		}
+	}
 
 	// Call 1: declare 3 target symbols with distinct kinds
 	p1 := &gcf.Payload{Tool: "topology", TokenBudget: 5000}
