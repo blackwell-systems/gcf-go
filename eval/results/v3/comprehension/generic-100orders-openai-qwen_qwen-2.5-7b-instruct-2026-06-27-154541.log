@@ -1,0 +1,39 @@
+Generic-Profile Comprehension Eval
+Backend: openai (qwen/qwen-2.5-7b-instruct)
+Orders: 100, Questions: 13, Formats: gcf, json
+gcf       18687 bytes, ~4671 tokens
+json      64452 bytes, ~16113 tokens
+
+  PASS order_count               gcf      [exact] expected="100" got="100"
+  PASS order_count               json     [exact] expected="100" got="100"
+  PASS first_customer_name       gcf      [exact] expected="Alice Chen" got="Alice Chen"
+  PASS first_customer_name       json     [exact] expected="Alice Chen" got="Alice Chen"
+  PASS last_order_status         gcf      [exact] expected="cancelled" got="cancelled"
+  PASS last_order_status         json     [exact] expected="cancelled" got="cancelled"
+  PASS total_items_first_order   gcf      [exact] expected="1" got="1"
+  PASS total_items_first_order   json     [exact] expected="1" got="1"
+  PASS customer_email_order5     gcf      [exact] expected="eva.johansson@example.com" got="eva.johansson@example.com"
+  PASS customer_email_order5     json     [exact] expected="eva.johansson@example.com" got="eva.johansson@example.com"
+  FAIL count_shipped             gcf      [got "24"] expected="20" got="24"
+  FAIL count_shipped             json     [got "48"] expected="20" got="48"
+  FAIL count_premium_customers   gcf      [got "20"] expected="40" got="20"
+  FAIL count_premium_customers   json     [got "50"] expected="40" got="50"
+  FAIL highest_total             gcf      [got "431.94"] expected="464.32" got="431.94"
+  PASS highest_total             json     [exact] expected="464.32" got="464.32"
+  PASS sku_first_item_order3     gcf      [exact] expected="SKU-HP07" got="SKU-HP07"
+  PASS sku_first_item_order3     json     [exact] expected="SKU-HP07" got="SKU-HP07"
+  FAIL total_revenue_shipped     gcf      [got "2855.81"] expected="4265.10" got="2855.81"
+  FAIL total_revenue_shipped     json     [got "8055.80"] expected="4265.10" got="8055.80"
+  PASS unique_statuses           gcf      [all present] expected="cancelled, delivered, pending, processing, shipped" got="cancelled,delivered,processing,pending,shipped"
+  PASS unique_statuses           json     [all present] expected="cancelled, delivered, pending, processing, shipped" got="cancelled,delivered,processing,pending,shipped"
+  FAIL count_orders_with_3plus_items gcf      [got "33"] expected="50" got="33"
+  FAIL count_orders_with_3plus_items json     [got "20"] expected="50" got="20"
+  PASS customer_tier_last_order  gcf      [exact] expected="premium" got="premium"
+  PASS customer_tier_last_order  json     [exact] expected="premium" got="premium"
+
+=== Summary ===
+Format     Accuracy   Pass/Total
+gcf           61.5%      8/13
+json          69.2%      9/13
+
+Log: results/v3/comprehension/generic-100orders-openai-qwen_qwen-2.5-7b-instruct-2026-06-27-154541.log

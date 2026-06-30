@@ -747,7 +747,7 @@ func callOpenAIGen(apiKey, model, prompt string) (string, error) {
 		respBody, _ := io.ReadAll(resp.Body)
 		resp.Body.Close()
 
-		if resp.StatusCode == 429 && attempt < maxRetries {
+		if (resp.StatusCode == 429 || resp.StatusCode == 503) && attempt < maxRetries {
 			wait := time.Duration(1<<uint(attempt)) * 5 * time.Second
 			time.Sleep(wait)
 			continue
@@ -798,7 +798,7 @@ func callGoogleGen(apiKey, model, prompt string) (string, error) {
 		respBody, _ := io.ReadAll(resp.Body)
 		resp.Body.Close()
 
-		if resp.StatusCode == 429 && attempt < maxRetries {
+		if (resp.StatusCode == 429 || resp.StatusCode == 503) && attempt < maxRetries {
 			wait := time.Duration(10+attempt*5) * time.Second
 			time.Sleep(wait)
 			continue

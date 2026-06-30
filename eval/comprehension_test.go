@@ -612,7 +612,7 @@ func callOpenAI(apiKey, model, prompt string) (string, error) {
 		respBody, _ := io.ReadAll(resp.Body)
 		resp.Body.Close()
 
-		if resp.StatusCode == 429 && attempt < maxRetries {
+		if (resp.StatusCode == 429 || resp.StatusCode == 503) && attempt < maxRetries {
 			wait := time.Duration(1<<uint(attempt)) * 5 * time.Second // 5s, 10s, 20s, 40s, 80s
 			time.Sleep(wait)
 			continue
@@ -664,8 +664,8 @@ func callGoogle(apiKey, model, prompt string) (string, error) {
 		respBody, _ := io.ReadAll(resp.Body)
 		resp.Body.Close()
 
-		if resp.StatusCode == 429 && attempt < maxRetries {
-			wait := time.Duration(10+attempt*5) * time.Second // 10s, 15s, 20s, 25s...
+		if (resp.StatusCode == 429 || resp.StatusCode == 503) && attempt < maxRetries {
+			wait := time.Duration(10+attempt*10) * time.Second // 10s, 20s, 30s, 40s...
 			time.Sleep(wait)
 			continue
 		}

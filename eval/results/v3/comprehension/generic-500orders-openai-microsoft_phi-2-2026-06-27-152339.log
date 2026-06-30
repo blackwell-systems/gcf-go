@@ -1,0 +1,39 @@
+Generic-Profile Comprehension Eval
+Backend: openai (microsoft/phi-2)
+Orders: 500, Questions: 13, Formats: gcf, json
+gcf       93647 bytes, ~23411 tokens
+json     322612 bytes, ~80653 tokens
+
+  SKIP order_count               gcf      error: OpenAI API 400: {"error":{"message":"microsoft/phi-2 is not a valid model ID","code":400},"user_id":"user_3FVRbszRx5Ok3ubXQPqWpj7pj5j"}
+  SKIP order_count               json     error: OpenAI API 400: {"error":{"message":"microsoft/phi-2 is not a valid model ID","code":400},"user_id":"user_3FVRbszRx5Ok3ubXQPqWpj7pj5j"}
+  SKIP first_customer_name       gcf      error: OpenAI API 400: {"error":{"message":"microsoft/phi-2 is not a valid model ID","code":400},"user_id":"user_3FVRbszRx5Ok3ubXQPqWpj7pj5j"}
+  SKIP first_customer_name       json     error: OpenAI API 400: {"error":{"message":"microsoft/phi-2 is not a valid model ID","code":400},"user_id":"user_3FVRbszRx5Ok3ubXQPqWpj7pj5j"}
+  SKIP last_order_status         gcf      error: OpenAI API 400: {"error":{"message":"microsoft/phi-2 is not a valid model ID","code":400},"user_id":"user_3FVRbszRx5Ok3ubXQPqWpj7pj5j"}
+  SKIP last_order_status         json     error: OpenAI API 400: {"error":{"message":"microsoft/phi-2 is not a valid model ID","code":400},"user_id":"user_3FVRbszRx5Ok3ubXQPqWpj7pj5j"}
+  SKIP total_items_first_order   gcf      error: OpenAI API 400: {"error":{"message":"microsoft/phi-2 is not a valid model ID","code":400},"user_id":"user_3FVRbszRx5Ok3ubXQPqWpj7pj5j"}
+  SKIP total_items_first_order   json     error: OpenAI API 400: {"error":{"message":"microsoft/phi-2 is not a valid model ID","code":400},"user_id":"user_3FVRbszRx5Ok3ubXQPqWpj7pj5j"}
+  SKIP customer_email_order5     gcf      error: OpenAI API 400: {"error":{"message":"microsoft/phi-2 is not a valid model ID","code":400},"user_id":"user_3FVRbszRx5Ok3ubXQPqWpj7pj5j"}
+  SKIP customer_email_order5     json     error: OpenAI API 400: {"error":{"message":"microsoft/phi-2 is not a valid model ID","code":400},"user_id":"user_3FVRbszRx5Ok3ubXQPqWpj7pj5j"}
+  SKIP count_shipped             gcf      error: OpenAI API 400: {"error":{"message":"microsoft/phi-2 is not a valid model ID","code":400},"user_id":"user_3FVRbszRx5Ok3ubXQPqWpj7pj5j"}
+  SKIP count_shipped             json     error: OpenAI API 400: {"error":{"message":"microsoft/phi-2 is not a valid model ID","code":400},"user_id":"user_3FVRbszRx5Ok3ubXQPqWpj7pj5j"}
+  SKIP count_premium_customers   gcf      error: OpenAI API 400: {"error":{"message":"microsoft/phi-2 is not a valid model ID","code":400},"user_id":"user_3FVRbszRx5Ok3ubXQPqWpj7pj5j"}
+  SKIP count_premium_customers   json     error: OpenAI API 400: {"error":{"message":"microsoft/phi-2 is not a valid model ID","code":400},"user_id":"user_3FVRbszRx5Ok3ubXQPqWpj7pj5j"}
+  SKIP highest_total             gcf      error: OpenAI API 400: {"error":{"message":"microsoft/phi-2 is not a valid model ID","code":400},"user_id":"user_3FVRbszRx5Ok3ubXQPqWpj7pj5j"}
+  SKIP highest_total             json     error: OpenAI API 400: {"error":{"message":"microsoft/phi-2 is not a valid model ID","code":400},"user_id":"user_3FVRbszRx5Ok3ubXQPqWpj7pj5j"}
+  SKIP sku_first_item_order3     gcf      error: OpenAI API 400: {"error":{"message":"microsoft/phi-2 is not a valid model ID","code":400},"user_id":"user_3FVRbszRx5Ok3ubXQPqWpj7pj5j"}
+  SKIP sku_first_item_order3     json     error: OpenAI API 400: {"error":{"message":"microsoft/phi-2 is not a valid model ID","code":400},"user_id":"user_3FVRbszRx5Ok3ubXQPqWpj7pj5j"}
+  SKIP total_revenue_shipped     gcf      error: OpenAI API 400: {"error":{"message":"microsoft/phi-2 is not a valid model ID","code":400},"user_id":"user_3FVRbszRx5Ok3ubXQPqWpj7pj5j"}
+  SKIP total_revenue_shipped     json     error: OpenAI API 400: {"error":{"message":"microsoft/phi-2 is not a valid model ID","code":400},"user_id":"user_3FVRbszRx5Ok3ubXQPqWpj7pj5j"}
+  SKIP unique_statuses           gcf      error: OpenAI API 400: {"error":{"message":"microsoft/phi-2 is not a valid model ID","code":400},"user_id":"user_3FVRbszRx5Ok3ubXQPqWpj7pj5j"}
+  SKIP unique_statuses           json     error: OpenAI API 400: {"error":{"message":"microsoft/phi-2 is not a valid model ID","code":400},"user_id":"user_3FVRbszRx5Ok3ubXQPqWpj7pj5j"}
+  SKIP count_orders_with_3plus_items gcf      error: OpenAI API 400: {"error":{"message":"microsoft/phi-2 is not a valid model ID","code":400},"user_id":"user_3FVRbszRx5Ok3ubXQPqWpj7pj5j"}
+  SKIP count_orders_with_3plus_items json     error: OpenAI API 400: {"error":{"message":"microsoft/phi-2 is not a valid model ID","code":400},"user_id":"user_3FVRbszRx5Ok3ubXQPqWpj7pj5j"}
+  SKIP customer_tier_last_order  gcf      error: OpenAI API 400: {"error":{"message":"microsoft/phi-2 is not a valid model ID","code":400},"user_id":"user_3FVRbszRx5Ok3ubXQPqWpj7pj5j"}
+  SKIP customer_tier_last_order  json     error: OpenAI API 400: {"error":{"message":"microsoft/phi-2 is not a valid model ID","code":400},"user_id":"user_3FVRbszRx5Ok3ubXQPqWpj7pj5j"}
+
+=== Summary ===
+Format     Accuracy   Pass/Total
+gcf            0.0%      0/0
+json           0.0%      0/0
+
+Log: results/v3/comprehension/generic-500orders-openai-microsoft_phi-2-2026-06-27-152339.log

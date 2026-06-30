@@ -8,7 +8,7 @@
 
 Go implementation of [GCF](https://gcformat.com/) — the most token-efficient wire format for LLMs. A drop-in alternative to JSON and TOON for any structured data.
 
-**100% comprehension on every frontier model tested. 29% fewer tokens than TOON, 56% fewer than JSON across 16 datasets. 91.6% on structurally complex code graphs (vs TOON 66.9%, JSON 54.6%). 2,400+ LLM evaluations. Zero training.**
+**100% comprehension on every frontier model tested. 29% fewer tokens than TOON, 56% fewer than JSON across 16 datasets. 91.2% on structurally complex code graphs (vs TOON 68.8%, JSON 54.1%). 2,400+ LLM evaluations. Zero training.**
 
 Docs: [gcformat.com](https://gcformat.com/) · [Playground](https://gcformat.com/playground.html) · [GCF vs TOON](https://gcformat.com/guide/vs-toon.html)
 
@@ -215,7 +215,7 @@ Works on maps, slices, structs, and primitives. Arrays of uniform objects get ta
 
 | | GCF | TOON | JSON |
 |---|---|---|---|
-| **Comprehension** (23 runs, 10 models) | **91.6%** | 66.9% | 54.6% |
+| **Comprehension** (23 runs, 10 models) | **91.2%** | 68.8% | 54.1% |
 | **Generation** (28 runs, 9 models) | **5/5** | 1.0/5 | 5.0/5 |
 | **Input tokens** (500 symbols) | **11,090** | 16,378 | 53,341 |
 | **Output tokens** (100 symbols) | **5,976** | 8,937 | 16,121 |
