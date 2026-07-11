@@ -364,7 +364,17 @@ func analyzeFlattenable(arr []any, fieldName string, parentPath string) []flatLe
 
 	for _, item := range arr {
 		v, exists := objectItemGet(item, fieldName)
-		if !exists || v == nil {
+		if !exists {
+			continue
+		}
+		// A nested (non-top-level) null cannot be flattened losslessly: its leaves
+		// would encode as absent ("~") and unflatten back to a missing key, not null.
+		// Bail to the attachment path. A top-level null is fine (it emits "-" and
+		// reconstructs via the all-null rule), so just skip the row from shape analysis.
+		if v == nil {
+			if parentPath != "" {
+				return nil
+			}
 			continue
 		}
 		keys := objectItemKeys(v)

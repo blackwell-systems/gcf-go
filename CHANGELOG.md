@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.3.2 (2026-07-10)
+
+### Fixes
+
+- **Losslessness (nested null):** a nested object that is null at an intermediate level (e.g. `{"meta":{"owner":null}}`) is no longer flattened. Previously its leaves encoded as absent (`~`) and unflattened to a missing key, silently dropping the null. Such fields now fall back to the attachment mechanism; a top-level null still flattens losslessly (emits `-`, reconstructs via the all-null rule). Enforced by the shared conformance fixtures `flatten/017`–`019`. Prototype pollution does not affect Go (maps have no mutable prototype).
+
+### Tests
+
+- `TestPropertyRoundTripFlatten`: aligned arrays whose shared fields are fixed-shape nested objects, with a field or an intermediate nested level sometimes null/absent — the shape the prior scalar-only generator never produced, leaving the flatten/unflatten path unexercised. Verified to fail on the pre-fix encoder and pass on the fix.
+
 ## v1.3.1 (2026-06-23)
 
 ### Flatten Opt-Out

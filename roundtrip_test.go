@@ -83,6 +83,110 @@ func TestPropertyRoundTripAdversarial(t *testing.T) {
 	t.Logf("PASS: %d adversarial values round-tripped successfully", iterations)
 }
 
+// TestPropertyRoundTripFlatten exercises the v3.2 nested-flatten path: aligned
+// arrays whose shared fields are fixed-shape nested objects, with a field or an
+// intermediate nested level sometimes null/absent. The scalar-only tabular
+// generator above never produces this shape, so the flatten/unflatten path (and
+// its null-at-depth losslessness edge) would otherwise be unexercised.
+func TestPropertyRoundTripFlatten(t *testing.T) {
+	iterations := getIterations(100_000)
+	rng := rand.New(rand.NewSource(7))
+
+	for i := 0; i < iterations; i++ {
+		val := genFlattenableArray(rng)
+		gcfText := EncodeGeneric(val)
+		decoded, err := DecodeGeneric(gcfText)
+		if err != nil {
+			t.Fatalf("iteration %d: decode failed: %v\n  input:  %s\n  gcf:    %q",
+				i, err, jsonStr(val), truncate(gcfText, 500))
+		}
+		if !jsonDeepEqual(val, decoded) {
+			t.Fatalf("iteration %d: round-trip mismatch\n  input:   %s\n  gcf:     %q\n  decoded: %s",
+				i, jsonStr(val), truncate(gcfText, 500), jsonStr(decoded))
+		}
+	}
+	t.Logf("PASS: %d aligned nested arrays round-tripped successfully", iterations)
+}
+
+// flatShape describes a fixed nested schema: a scalar leaf or a set of named sub-shapes.
+type flatShape struct {
+	scalar bool
+	sub    map[string]flatShape
+}
+
+func genFlatShape(rng *rand.Rand, depth, maxDepth int) flatShape {
+	if depth >= maxDepth || rng.Float64() < 0.45 {
+		return flatShape{scalar: true}
+	}
+	sub := make(map[string]flatShape)
+	n := 1 + rng.Intn(3)
+	for i := 0; i < n; i++ {
+		sub[genBareKey(rng)] = genFlatShape(rng, depth+1, maxDepth)
+	}
+	if len(sub) == 0 {
+		return flatShape{scalar: true}
+	}
+	return flatShape{sub: sub}
+}
+
+func materializeFlatShape(rng *rand.Rand, sh flatShape) any {
+	if sh.scalar {
+		return genScalar(rng)
+	}
+	obj := map[string]any{}
+	for k, s := range sh.sub {
+		// A nested sub-object is sometimes null (intermediate null — the case the
+		// pre-fix encoder dropped) instead of a full object.
+		if !s.scalar && rng.Float64() < 0.3 {
+			obj[k] = nil
+		} else {
+			obj[k] = materializeFlatShape(rng, s)
+		}
+	}
+	return obj
+}
+
+func genFlattenableArray(rng *rand.Rand) []any {
+	rows := 2 + rng.Intn(6)
+	schema := map[string]flatShape{"id": {scalar: true}}
+	order := []string{"id"}
+	hasNested := false
+	n := 1 + rng.Intn(3)
+	for i := 0; i < n; i++ {
+		k := genBareKey(rng)
+		if _, exists := schema[k]; exists {
+			continue
+		}
+		s := genFlatShape(rng, 1, 3)
+		schema[k] = s
+		order = append(order, k)
+		if !s.scalar {
+			hasNested = true
+		}
+	}
+	if !hasNested {
+		k := genBareKey(rng)
+		schema[k] = flatShape{sub: map[string]flatShape{genBareKey(rng): {sub: map[string]flatShape{genBareKey(rng): {scalar: true}}}}}
+		order = append(order, k)
+	}
+	arr := make([]any, 0, rows)
+	for i := 0; i < rows; i++ {
+		row := map[string]any{}
+		for _, f := range order {
+			r := rng.Float64()
+			if r < 0.12 {
+				continue // field absent this row
+			} else if r < 0.24 {
+				row[f] = nil // field present-null (top-level null)
+			} else {
+				row[f] = materializeFlatShape(rng, schema[f])
+			}
+		}
+		arr = append(arr, row)
+	}
+	return arr
+}
+
 // --- Value generators ---
 
 func genValue(rng *rand.Rand, depth, maxDepth int) any {
