@@ -161,3 +161,41 @@ func runGenericDeltaDecodeTest(t *testing.T, fix conformanceFixture) {
 		t.Errorf("decoded-apply root mismatch:\n  got:      %s\n  expected: %s", got, expected)
 	}
 }
+
+func TestDumpHardeningValues(t *testing.T) {
+	if !testing.Verbose() {
+		t.Skip("fixture generator; run with -v")
+	}
+	// A. nulls
+	nulls := GenericSet{Name: "items", Key: "id", Fields: []string{"id", "total", "status", "customer"},
+		Rows: []map[string]any{
+			{"id": 2001.0, "total": 10.0, "status": nil, "customer": "Amy"},
+			{"id": 2002.0, "total": nil, "status": "open", "customer": nil},
+		}}
+	fmt.Println("NULLS_ROOT=" + GenericPackRoot(nulls))
+	fmt.Println("NULLS_FULL:\n" + EncodeGenericFull(nulls, ""))
+
+	// B. string keys (quoting path): sku "1001" spells a number -> quoted
+	sku := GenericSet{Name: "parts", Key: "sku", Fields: []string{"sku", "name", "qty"},
+		Rows: []map[string]any{
+			{"sku": "1001", "name": "Widget", "qty": 5.0},
+			{"sku": "A-200", "name": "Gadget", "qty": 3.0},
+		}}
+	fmt.Println("SKU_ROOT=" + GenericPackRoot(sku))
+	fmt.Println("SKU_FULL:\n" + EncodeGenericFull(sku, ""))
+
+	// C. larger set (12 rows)
+	large := GenericSet{Name: "rows", Key: "id", Fields: []string{"id", "v"}}
+	for i := 0; i < 12; i++ {
+		large.Rows = append(large.Rows, map[string]any{"id": float64(3000 + i), "v": float64(i * i)})
+	}
+	fmt.Println("LARGE_ROOT=" + GenericPackRoot(large))
+
+	// D. empty delta (base == next): no sections, base_root == new_root
+	base := ordersBase()
+	empty, _ := DiffGenericSets(base, base)
+	fmt.Printf("EMPTY_COUNTS added=%d changed=%d removed=%d baseEqNew=%v\n",
+		len(empty.Added), len(empty.Changed), len(empty.Removed), empty.BaseRoot == empty.NewRoot)
+	fmt.Println("EMPTY_WIRE:\n" + EncodeGenericDelta(empty))
+	fmt.Println("BASE_ROOT=" + GenericPackRoot(base))
+}

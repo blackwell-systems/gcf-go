@@ -196,3 +196,38 @@ func TestGenericDeltaEndToEnd(t *testing.T) {
 		t.Fatalf("delta wire not stable through decode/re-encode")
 	}
 }
+
+// Hardening: nulls and quoting-triggering string keys round-trip through the wire.
+func TestGenericDeltaNullsAndStringKeys(t *testing.T) {
+	nulls := GenericSet{Name: "items", Key: "id", Fields: []string{"id", "total", "status", "customer"},
+		Rows: []map[string]any{
+			{"id": 2001.0, "total": 10.0, "status": nil, "customer": "Amy"},
+			{"id": 2002.0, "total": nil, "status": "open", "customer": nil},
+		}}
+	if got, _, err := DecodeGenericFull(EncodeGenericFull(nulls, "")); err != nil || GenericPackRoot(got) != GenericPackRoot(nulls) {
+		t.Fatalf("nulls full round-trip: err=%v", err)
+	}
+
+	sku := GenericSet{Name: "parts", Key: "sku", Fields: []string{"sku", "name", "qty"},
+		Rows: []map[string]any{
+			{"sku": "1001", "name": "Widget", "qty": 5.0}, // "1001" spells a number -> quoted
+			{"sku": "A-200", "name": "Gadget", "qty": 3.0},
+		}}
+	if got, _, err := DecodeGenericFull(EncodeGenericFull(sku, "")); err != nil || GenericPackRoot(got) != GenericPackRoot(sku) {
+		t.Fatalf("string-key full round-trip: err=%v", err)
+	}
+	next := sku
+	next.Rows = []map[string]any{
+		{"sku": "1001", "name": "Widget v2", "qty": 6.0},
+		{"sku": "A-200", "name": "Gadget", "qty": 3.0},
+	}
+	d, _ := DiffGenericSets(sku, next)
+	parsed, err := DecodeGenericDelta(EncodeGenericDelta(d))
+	if err != nil {
+		t.Fatalf("string-key delta decode: %v", err)
+	}
+	res, err := VerifyGenericDelta(sku, parsed, GenericPackRoot(next))
+	if err != nil || GenericPackRoot(res) != GenericPackRoot(next) {
+		t.Fatalf("string-key delta apply: err=%v", err)
+	}
+}
