@@ -1,5 +1,23 @@
 # Changelog
 
+## v1.4.0 (unreleased)
+
+### Generic-profile delta encoding (SPEC §10a)
+
+- Full producer + consumer implementation of generic-profile delta:
+  - `GenericSet` (keyed record set), `GenericDeltaPayload`
+  - `GenericPackRoot` (`gcf-pack-root-v1`, generic profile) with a purpose-built cell canonicalization decoupled from the wire cell encoder — collision-free (null/bool/number bare, strings always quoted) and record-safe
+  - `DiffGenericSets` (the blessed producer path; centralizes the keyed-diff invariants), `EncodeGenericFull`, `EncodeGenericDelta`
+  - `DecodeGenericFull`, `DecodeGenericDelta` (consumer wire parsing)
+  - `VerifyGenericDelta` (atomic apply + `new_root` verification)
+- Delta is opt-in and bilateral; the existing `EncodeGeneric` path is unchanged (backward compatible).
+
+### Tests
+
+- Self-proving round-trip (diff -> encode -> apply -> recomputed root), determinism, no-type-collision, every invariant/error path, full-payload wire round-trip, and the complete server -> wire -> consumer end-to-end loop.
+- Decoder-robustness suite (malformed/truncated wire fails closed, never panics) and two fuzz targets (`FuzzGenericDeltaDecode`: decoder never panics; `FuzzGenericStringRoundTrip`: arbitrary UTF-8 string cells round-trip preserving the pack root).
+- Conformance runner support for `generic-pack-root`, `generic-delta`, `generic-delta-verify`, `generic-delta-decode` (12 shared fixtures).
+
 ## v1.3.2 (2026-07-10)
 
 ### Fixes
