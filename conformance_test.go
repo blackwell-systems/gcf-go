@@ -73,6 +73,14 @@ func TestConformance(t *testing.T) {
 				runRoundtripTest(t, fix)
 			case "delta":
 				t.Skipf("delta operation not yet implemented")
+			case "generic-pack-root":
+				runGenericPackRootTest(t, fix)
+			case "generic-delta":
+				runGenericDeltaTest(t, fix)
+			case "generic-delta-verify":
+				runGenericDeltaVerifyTest(t, fix)
+			case "generic-delta-decode":
+				runGenericDeltaDecodeTest(t, fix)
 			default:
 				t.Skipf("unsupported operation: %s", fix.Operation)
 			}
