@@ -13,7 +13,11 @@ jobs:
       matrix:
         go-version: ['1.22', '1.23', '1.26']
     steps:
+      # Check out gcf-go and the shared-fixtures gcf repo as SIBLINGS so the
+      # conformance runner's ../gcf/tests/conformance path resolves on CI.
       - uses: actions/checkout@v4
+        with:
+          path: gcf-go
       - uses: actions/checkout@v4
         with:
           repository: blackwell-systems/gcf
@@ -22,20 +26,25 @@ jobs:
         with:
           go-version: ${{ matrix.go-version }}
       - run: go build ./...
+        working-directory: gcf-go
         env:
           GOWORK: 'off'
-      - name: Conformance tests (133 fixtures)
-        run: go test -v -run TestConformanceV2 -count=1 -timeout 60s ./...
+      - name: Conformance tests (shared fixtures)
+        run: go test -v -run TestConformance -count=1 -timeout 60s ./...
+        working-directory: gcf-go
         env:
           GOWORK: 'off'
       - name: Property-based round-trip (100K + 50K)
         run: go test -v -run "TestPropertyRoundTrip" -count=1 -timeout 120s ./...
+        working-directory: gcf-go
         env:
           GOWORK: 'off'
       - name: Fuzz regression (replay saved crashes)
         run: go test -v -run "Fuzz" -count=1 -timeout 60s ./...
+        working-directory: gcf-go
         env:
           GOWORK: 'off'
       - run: go vet ./...
+        working-directory: gcf-go
         env:
           GOWORK: 'off'

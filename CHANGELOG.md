@@ -1,6 +1,6 @@
 # Changelog
 
-## v1.4.0 (unreleased)
+## v1.4.0 (2026-07-12)
 
 ### Generic-profile delta encoding (SPEC §10a)
 
