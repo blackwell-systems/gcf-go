@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.5.0 (2026-07-12)
+
+### Streaming: opt-in labeled trailer counts (SPEC §8.4.1)
+
+- New `StreamOptions.LabeledTrailerCounts`. When set, the `##! summary` graph streaming trailer emits `counts=` in the labeled form `label:count` per group (e.g. `counts=targets:2,related:1,edges:3`) instead of the default positional values-only form (`counts=2,1,3`). Default false is byte-identical to prior output.
+- Opt-in and non-breaking: a producer-side comprehension aid for known weak consumers. The trailer counts remain informational (decoder-ignored) in both forms; neither changes the decoded payload.
+- Conformance: the `graph-stream-encode` runner reads the fixture `options.labeledTrailerCounts` and drives the shared fixture 005 (labeled) alongside 004 (positional).
+
 ## v1.4.1 (2026-07-12)
 
 ### Fixes
