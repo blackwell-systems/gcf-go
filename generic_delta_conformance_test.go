@@ -111,6 +111,7 @@ func TestDumpGenericDeltaFixtureValues(t *testing.T) {
 	d.DeltaTokens = 30
 	d.FullTokens = 160
 	fmt.Println("BASE_ROOT=" + GenericPackRoot(base))
+
 	fmt.Println("NEXT_ROOT=" + GenericPackRoot(next))
 	fmt.Println("---DELTA_WIRE---")
 	fmt.Print(EncodeGenericDelta(d))
