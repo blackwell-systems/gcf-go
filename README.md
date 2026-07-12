@@ -127,7 +127,7 @@ enc.WriteSymbol(gcf.Symbol{QualifiedName: "pkg.Server", Kind: "function", Score:
 // Edges emit immediately too.
 enc.WriteEdge(gcf.Edge{Source: "pkg.Server", Target: "pkg.Auth", EdgeType: "calls"})
 
-// Close emits the ## _summary trailer with final counts.
+// Close emits the ##! summary trailer with final counts.
 enc.Close()
 ```
 
@@ -140,10 +140,10 @@ GCF tool=context_for_task budget=5000
 @1 fn pkg.Server 0.60 lsp
 ## edges [?]
 @0<@1 calls
-## _summary symbols=2 edges=1 sections=targets:1,related:1,edges:1
+##! summary symbols=2 edges=1 counts=1,1,1
 ```
 
-The `[?]` marker signals deferred count. The `## _summary` trailer provides counts after the data. The LLM has both the data and the counts in context. Standard `Decode()` handles streaming output with no changes.
+The `[?]` marker signals deferred count. The `##! summary` trailer provides counts after the data. The LLM has both the data and the counts in context. Standard `Decode()` handles streaming output with no changes.
 
 ## Delta Encoding
 
