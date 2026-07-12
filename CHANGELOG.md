@@ -1,5 +1,21 @@
 # Changelog
 
+## v1.4.1 (2026-07-12)
+
+### Fixes
+
+- **Streaming graph header now carries `profile=graph`.** The streaming encoder emitted a bare `GCF tool=...` header, omitting the REQUIRED profile discriminator (SPEC §3.1, §16.1). This was a Go-only divergence from the buffered encoder and the other five SDKs, and a strict conforming decoder would reject it. The streaming header is now `GCF profile=graph tool=...`, matching every other encode path. The wire trailer was already correct (`##! summary ... counts=`).
+
+### Conformance and validation
+
+- Graph `Decode` now requires `profile=graph` as the first header field (SPEC §16.3), rejecting a missing or mismatched profile.
+- New `graph-stream-encode` conformance operation and shared fixture that drive the streaming encoder and compare its exact header and trailer bytes. Streaming encode previously had only decode fixtures, which is how the header regression escaped.
+- Unit tests for the streaming header and for decoder profile strictness.
+
+### Docs
+
+- README streaming example: corrected the trailer from the defunct `## _summary ... sections=...` to the real `##! summary ... counts=...`.
+
 ## v1.4.0 (2026-07-12)
 
 ### Generic-profile delta encoding (SPEC §10a)
