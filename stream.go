@@ -43,6 +43,11 @@ type StreamOptions struct {
 	TokensUsed  int
 	PackRoot    string
 	Session     bool
+	// LabeledTrailerCounts opts into the labeled trailer counts form (SPEC §8.4.1):
+	// the graph "##! summary" counts field is emitted as label:count
+	// (counts=targets:2,related:1,edges:3) instead of the positional default. A
+	// producer-side comprehension aid for weaker consumers; decoder-ignored either way.
+	LabeledTrailerCounts bool
 }
 
 // NewStreamEncoder creates a streaming encoder that writes to w.
@@ -198,15 +203,23 @@ func (enc *StreamEncoder) Close() error {
 	}
 
 	symbolCount := enc.nextID
-	counts := make([]string, 0, len(sections))
-	for _, s := range sections {
-		parts := strings.SplitN(s, ":", 2)
-		if len(parts) == 2 {
-			counts = append(counts, parts[1])
+	var countsStr string
+	if enc.opts.LabeledTrailerCounts {
+		// Labeled form (SPEC §8.4.1): label:count per entry.
+		countsStr = strings.Join(sections, ",")
+	} else {
+		// Positional form (default): values only.
+		counts := make([]string, 0, len(sections))
+		for _, s := range sections {
+			parts := strings.SplitN(s, ":", 2)
+			if len(parts) == 2 {
+				counts = append(counts, parts[1])
+			}
 		}
+		countsStr = strings.Join(counts, ",")
 	}
 	fmt.Fprintf(enc.w, "##! summary symbols=%d edges=%d counts=%s\n",
-		symbolCount, enc.edgeCount, strings.Join(counts, ","))
+		symbolCount, enc.edgeCount, countsStr)
 
 	return nil
 }

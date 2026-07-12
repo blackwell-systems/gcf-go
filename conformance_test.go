@@ -20,6 +20,9 @@ type conformanceFixture struct {
 	Expected      json.RawMessage `json:"expected"`
 	ExpectedError string          `json:"expectedError"`
 	InputBase64   string          `json:"inputBase64"`
+	Options       struct {
+		LabeledTrailerCounts bool `json:"labeledTrailerCounts"`
+	} `json:"options"`
 }
 
 func TestConformance(t *testing.T) {
@@ -222,9 +225,10 @@ func runGraphStreamEncodeTest(t *testing.T, fix conformanceFixture) {
 
 	var buf bytes.Buffer
 	enc := NewStreamEncoder(&buf, input.Tool, StreamOptions{
-		TokenBudget: input.TokenBudget,
-		TokensUsed:  input.TokensUsed,
-		PackRoot:    input.PackRoot,
+		TokenBudget:          input.TokenBudget,
+		TokensUsed:           input.TokensUsed,
+		PackRoot:             input.PackRoot,
+		LabeledTrailerCounts: fix.Options.LabeledTrailerCounts,
 	})
 	for _, s := range input.Symbols {
 		enc.WriteSymbol(Symbol{

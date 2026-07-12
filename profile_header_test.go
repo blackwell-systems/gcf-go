@@ -49,3 +49,31 @@ func TestGraphDecodeRequiresProfileGraph(t *testing.T) {
 		})
 	}
 }
+
+// TestStreamingLabeledTrailerCounts covers the opt-in labeled trailer counts form
+// (SPEC 8.4.1): StreamOptions.LabeledTrailerCounts=true emits counts=label:count;
+// the default stays positional; both decode cleanly.
+func TestStreamingLabeledTrailerCounts(t *testing.T) {
+	write := func(o StreamOptions) string {
+		var buf bytes.Buffer
+		enc := NewStreamEncoder(&buf, "context_for_task", o)
+		enc.WriteSymbol(Symbol{QualifiedName: "pkg.Auth", Kind: "function", Score: 0.95, Provenance: "lsp", Distance: 0})
+		enc.WriteSymbol(Symbol{QualifiedName: "pkg.Server", Kind: "function", Score: 0.60, Provenance: "lsp", Distance: 1})
+		enc.WriteEdge(Edge{Source: "pkg.Server", Target: "pkg.Auth", EdgeType: "calls"})
+		enc.Close()
+		return buf.String()
+	}
+	labeled := write(StreamOptions{TokenBudget: 5000, LabeledTrailerCounts: true})
+	if !strings.Contains(labeled, "##! summary symbols=2 edges=1 counts=targets:1,related:1,edges:1\n") {
+		t.Fatalf("labeled trailer counts wrong:\n%s", labeled)
+	}
+	def := write(StreamOptions{TokenBudget: 5000})
+	if !strings.Contains(def, "##! summary symbols=2 edges=1 counts=1,1,1\n") {
+		t.Fatalf("positional default changed:\n%s", def)
+	}
+	for _, s := range []string{labeled, def} {
+		if _, err := Decode(s); err != nil {
+			t.Fatalf("decode failed: %v\n%s", err, s)
+		}
+	}
+}
