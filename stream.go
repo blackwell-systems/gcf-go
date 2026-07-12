@@ -60,7 +60,7 @@ func NewStreamEncoder(w io.Writer, tool string, opts StreamOptions) *StreamEncod
 }
 
 func (enc *StreamEncoder) writeHeader() {
-	parts := []string{fmt.Sprintf("GCF tool=%s", enc.tool)}
+	parts := []string{fmt.Sprintf("GCF profile=graph tool=%s", enc.tool)}
 	if enc.opts.TokenBudget > 0 {
 		parts = append(parts, fmt.Sprintf("budget=%d", enc.opts.TokenBudget))
 	}

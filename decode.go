@@ -23,6 +23,12 @@ func Decode(input string) (*Payload, error) {
 	if err := parseHeader(header[4:], p); err != nil {
 		return nil, err
 	}
+	// Graph payloads MUST declare profile=graph as the first header field
+	// (SPEC Sections 3.1 and 16.3). The buffered, session, and streaming
+	// encoders all emit it; reject a header that omits or misstates it.
+	if hf := strings.Fields(header[4:]); len(hf) == 0 || hf[0] != "profile=graph" {
+		return nil, fmt.Errorf("gcf: graph header must begin with 'GCF profile=graph', got %q", header)
+	}
 	// tool is optional since v3.1 (SHOULD for MCP, not required)
 
 	// Detect delta mode.

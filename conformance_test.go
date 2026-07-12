@@ -1,6 +1,7 @@
 package gcf
 
 import (
+	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -63,6 +64,8 @@ func TestConformance(t *testing.T) {
 			switch fix.Operation {
 			case "encode":
 				runEncodeTest(t, fix)
+			case "graph-stream-encode":
+				runGraphStreamEncodeTest(t, fix)
 			case "decode":
 				runDecodeTest(t, fix)
 			case "error":
@@ -180,6 +183,69 @@ func runGraphEncodeTest(t *testing.T, fix conformanceFixture, expected string) {
 	got := Encode(p)
 	if got != expected {
 		t.Errorf("encode mismatch:\n  got:      %s\n  expected: %s", quote(got), quote(expected))
+	}
+}
+
+// runGraphStreamEncodeTest drives the streaming graph encoder and compares its
+// exact bytes to the fixture. This is the only conformance path that exercises
+// the streaming encoder's header and trailer; buffered graph encode uses
+// runGraphEncodeTest. The streaming header MUST carry profile=graph (SPEC 3.1).
+func runGraphStreamEncodeTest(t *testing.T, fix conformanceFixture) {
+	t.Helper()
+
+	var expected string
+	if err := json.Unmarshal(fix.Expected, &expected); err != nil {
+		t.Fatalf("parsing expected: %v", err)
+	}
+
+	var input struct {
+		Tool        string `json:"tool"`
+		TokenBudget int    `json:"tokenBudget"`
+		TokensUsed  int    `json:"tokensUsed"`
+		PackRoot    string `json:"packRoot"`
+		Symbols     []struct {
+			QualifiedName string  `json:"qualifiedName"`
+			Kind          string  `json:"kind"`
+			Score         float64 `json:"score"`
+			Provenance    string  `json:"provenance"`
+			Distance      int     `json:"distance"`
+		} `json:"symbols"`
+		Edges []struct {
+			Source   string `json:"source"`
+			Target   string `json:"target"`
+			EdgeType string `json:"edgeType"`
+		} `json:"edges"`
+	}
+	if err := json.Unmarshal(fix.Input, &input); err != nil {
+		t.Fatalf("parsing graph stream input: %v", err)
+	}
+
+	var buf bytes.Buffer
+	enc := NewStreamEncoder(&buf, input.Tool, StreamOptions{
+		TokenBudget: input.TokenBudget,
+		TokensUsed:  input.TokensUsed,
+		PackRoot:    input.PackRoot,
+	})
+	for _, s := range input.Symbols {
+		enc.WriteSymbol(Symbol{
+			QualifiedName: s.QualifiedName,
+			Kind:          s.Kind,
+			Score:         s.Score,
+			Provenance:    s.Provenance,
+			Distance:      s.Distance,
+		})
+	}
+	for _, e := range input.Edges {
+		enc.WriteEdge(Edge{Source: e.Source, Target: e.Target, EdgeType: e.EdgeType})
+	}
+	enc.Close()
+
+	got := buf.String()
+	if got != expected {
+		t.Errorf("stream encode mismatch:\n  got:      %s\n  expected: %s", quote(got), quote(expected))
+	}
+	if !strings.HasPrefix(got, "GCF profile=graph ") {
+		t.Errorf("streaming header missing profile=graph: %s", quote(got))
 	}
 }
 
