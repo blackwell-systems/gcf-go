@@ -81,6 +81,8 @@ func TestConformance(t *testing.T) {
 				runGenericDeltaVerifyTest(t, fix)
 			case "generic-delta-decode":
 				runGenericDeltaDecodeTest(t, fix)
+			case "generic-delta-session":
+				runGenericDeltaSessionTest(t, fix)
 			default:
 				t.Skipf("unsupported operation: %s", fix.Operation)
 			}

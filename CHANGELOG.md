@@ -12,11 +12,18 @@
   - `VerifyGenericDelta` (atomic apply + `new_root` verification)
 - Delta is opt-in and bilateral; the existing `EncodeGeneric` path is unchanged (backward compatible).
 
+### Re-anchor session helper (producer convenience, SPEC §10a.8)
+
+- `GenericDeltaSession` — a thin, stateful producer helper over the primitives that manages the re-anchor cadence: each `Next(next)` emits either a compact delta or, on its chosen cadence, a full re-anchor (the spec's "full" outcome), updating its held base. It introduces **no new wire syntax** (every payload is exactly what `EncodeGenericFull`/`EncodeGenericDelta` produce) and the cadence knobs are never wire fields — the wire spec stays cadence-agnostic.
+- Pluggable policy: `FixedN(n)` (re-anchor every `n` turns; default `DefaultReanchorN = 15`) or `SizeGuard()` (re-anchor once the cumulative delta since the last anchor reaches the current full payload's byte size — the size-adaptive, production-recommended mode). A schema change forces a full (§10a.7).
+- `CurrentFull()` returns the base as a full payload (send first / manual re-anchor); `Next` returns `(wire, isFull, err)`.
+
 ### Tests
 
 - Self-proving round-trip (diff -> encode -> apply -> recomputed root), determinism, no-type-collision, every invariant/error path, full-payload wire round-trip, and the complete server -> wire -> consumer end-to-end loop.
 - Decoder-robustness suite (malformed/truncated wire fails closed, never panics) and two fuzz targets (`FuzzGenericDeltaDecode`: decoder never panics; `FuzzGenericStringRoundTrip`: arbitrary UTF-8 string cells round-trip preserving the pack root).
-- Conformance runner support for `generic-pack-root`, `generic-delta`, `generic-delta-verify`, `generic-delta-decode` (12 shared fixtures).
+- Conformance runner support for `generic-pack-root`, `generic-delta`, `generic-delta-verify`, `generic-delta-decode`, and `generic-delta-session` (15 shared fixtures).
+- Session tests: FixedN cadence pattern, SizeGuard trigger, schema-change forces full, and the load-bearing "consumer applies every emission and stays byte-for-byte in sync with the producer at each turn" loop under both policies.
 
 ## v1.3.2 (2026-07-10)
 

@@ -99,6 +99,74 @@ func runGenericDeltaVerifyTest(t *testing.T, fix conformanceFixture) {
 	}
 }
 
+// runGenericDeltaSessionTest drives a GenericDeltaSession through the fixture's
+// updates and checks the initial full plus every (isFull, wire) emission — the
+// producer-side re-anchor cadence contract, byte-identical across SDKs.
+func runGenericDeltaSessionTest(t *testing.T, fix conformanceFixture) {
+	t.Helper()
+	var in struct {
+		Base    setInput          `json:"base"`
+		Tool    string            `json:"tool"`
+		Policy  struct {
+			Mode string `json:"mode"`
+			N    int    `json:"n"`
+		} `json:"policy"`
+		Updates []setInput `json:"updates"`
+	}
+	if err := json.Unmarshal(fix.Input, &in); err != nil {
+		t.Fatalf("parse input: %v", err)
+	}
+	var exp struct {
+		InitialFull string `json:"initialFull"`
+		Emissions   []struct {
+			IsFull bool   `json:"isFull"`
+			Wire   string `json:"wire"`
+		} `json:"emissions"`
+	}
+	if err := json.Unmarshal(fix.Expected, &exp); err != nil {
+		t.Fatalf("parse expected: %v", err)
+	}
+
+	var policy ReanchorPolicy
+	switch in.Policy.Mode {
+	case "sizeGuard":
+		policy = SizeGuard()
+	default: // fixedN
+		policy = FixedN(in.Policy.N)
+	}
+
+	s := NewGenericDeltaSession(in.Base.set(), in.Tool, policy)
+	if got := s.CurrentFull(); got != exp.InitialFull {
+		t.Errorf("initial full mismatch:\n  got:      %s\n  expected: %s", quote(got), quote(exp.InitialFull))
+	}
+	for i, up := range in.Updates {
+		wire, isFull, err := s.Next(up.set())
+		if err != nil {
+			t.Fatalf("turn %d: %v", i+1, err)
+		}
+		if i >= len(exp.Emissions) {
+			t.Fatalf("turn %d: no expected emission", i+1)
+		}
+		if isFull != exp.Emissions[i].IsFull {
+			t.Errorf("turn %d: isFull=%v, want %v", i+1, isFull, exp.Emissions[i].IsFull)
+		}
+		if wire != exp.Emissions[i].Wire {
+			t.Errorf("turn %d wire mismatch:\n  got:      %s\n  expected: %s", i+1, quote(wire), quote(exp.Emissions[i].Wire))
+		}
+	}
+}
+
+type setInput struct {
+	Name   string           `json:"name"`
+	Key    string           `json:"key"`
+	Fields []string         `json:"fields"`
+	Rows   []map[string]any `json:"rows"`
+}
+
+func (s setInput) set() GenericSet {
+	return GenericSet{Name: s.Name, Key: s.Key, Fields: s.Fields, Rows: s.Rows}
+}
+
 // TestDumpGenericDeltaFixtureValues prints the computed roots and wire text used
 // to author the conformance fixtures. Run with -run TestDump -v.
 func TestDumpGenericDeltaFixtureValues(t *testing.T) {
