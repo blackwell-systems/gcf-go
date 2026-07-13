@@ -645,6 +645,17 @@ func parseTabularBody(lines []string, start, depth int, fields []string, expecte
 			resolvedAttachments := make(map[string]struct{})
 			inlineIdx := 0 // tracks position in inlineAttOrder for no-prefix lines
 
+			// Columns that carry a `^` marker cell in this row legitimately expect
+			// a `.field` body. Any other `.field` is an orphan (Section 16.5) unless
+			// its name contains `>` (the flatten-fallback attachment, Section 7.4.6.1.4).
+			expectedAtt := make(map[string]bool, len(traditionalAttFields)+len(inlineAttFields))
+			for _, f := range traditionalAttFields {
+				expectedAtt[f] = true
+			}
+			for _, f := range inlineAttFields {
+				expectedAtt[f] = true
+			}
+
 			for i < len(lines) {
 				aLine := lines[i]
 				aContent := ""
@@ -664,6 +675,15 @@ func parseTabularBody(lines []string, start, depth int, fields []string, expecte
 					rest := aContent[1:]
 					attName, afterName := parseAttachmentName(rest)
 					afterName = strings.TrimLeft(afterName, " ")
+
+					// Orphan attachment: a `.field` with no matching `^` cell in this
+					// row is only legitimate for a `>`-named field (Section 7.4.6.1.4).
+					// Any other unmatched attachment is rejected rather than silently
+					// injected as an undeclared extra field, which would decode to a
+					// record no encoder produces (Section 16.5, lossless round-trip).
+					if !expectedAtt[attName] && !strings.Contains(attName, ">") {
+						return nil, 0, fmt.Errorf("orphan_attachment: %s", attName)
+					}
 
 					// Check duplicate.
 					if _, already := resolvedAttachments[attName]; already {
