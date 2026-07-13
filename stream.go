@@ -31,6 +31,7 @@ type StreamEncoder struct {
 	nextID       int
 	currentGroup string
 	groupCounts  map[string]int // group name -> count
+	groupOrder   []string       // group names in header-emission order (deterministic trailer, SPEC §8.4)
 
 	// Edge tracking.
 	edgeCount    int
@@ -101,6 +102,11 @@ func (enc *StreamEncoder) WriteSymbol(s Symbol) {
 	if groupName != enc.currentGroup {
 		fmt.Fprintf(enc.w, "## %s\n", groupName)
 		enc.currentGroup = groupName
+	}
+	// Record the group's first appearance so the trailer counts follow the actual
+	// group-header order deterministically (SPEC §8.4), not Go map iteration order.
+	if enc.groupCounts[groupName] == 0 {
+		enc.groupOrder = append(enc.groupOrder, groupName)
 	}
 
 	// Assign local ID.
@@ -181,20 +187,13 @@ func (enc *StreamEncoder) Close() error {
 	enc.mu.Lock()
 	defer enc.mu.Unlock()
 
-	// Build sections list.
+	// Build sections list: one entry per non-empty distance group in group-header
+	// emission order (SPEC §8.4). Iterating the recorded emission order (not the
+	// groupCounts map) makes the trailer deterministic and match the section order,
+	// including distance_N groups.
 	var sections []string
-	groupOrder := []string{"targets", "related", "extended"}
-	seen := make(map[string]bool)
-
-	for _, g := range groupOrder {
-		if c, ok := enc.groupCounts[g]; ok && c > 0 {
-			sections = append(sections, fmt.Sprintf("%s:%d", g, c))
-			seen[g] = true
-		}
-	}
-	// Add any distance_N groups.
-	for g, c := range enc.groupCounts {
-		if !seen[g] && c > 0 {
+	for _, g := range enc.groupOrder {
+		if c := enc.groupCounts[g]; c > 0 {
 			sections = append(sections, fmt.Sprintf("%s:%d", g, c))
 		}
 	}
