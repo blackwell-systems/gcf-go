@@ -20,6 +20,8 @@ type conformanceFixture struct {
 	Expected      json.RawMessage `json:"expected"`
 	ExpectedError string          `json:"expectedError"`
 	InputBase64   string          `json:"inputBase64"`
+	BaseSnapshot     json.RawMessage `json:"base_snapshot"`
+	ExpectedSnapshot json.RawMessage `json:"expected_snapshot"`
 	Options       struct {
 		LabeledTrailerCounts bool `json:"labeledTrailerCounts"`
 	} `json:"options"`
@@ -86,7 +88,7 @@ func TestConformance(t *testing.T) {
 			case "delta":
 				runDeltaTest(t, fix)
 			case "delta-verify":
-				t.Skipf("delta-verify: graph delta wire decoder not yet implemented")
+				runDeltaVerifyTest(t, fix)
 			case "pack-root":
 				runGraphPackRootTest(t, fix)
 			case "generic-pack-root":
@@ -115,11 +117,12 @@ func TestConformance(t *testing.T) {
 func runDeltaTest(t *testing.T, fix conformanceFixture) {
 	t.Helper()
 
-	// Detect the verify-shaped fixture: its input is a JSON string (the wire form),
-	// not a DeltaPayload object. Skip it with the delta-verify allow-list reason.
+	// The verify-shaped fixture's input is a JSON string (the wire form), not a
+	// DeltaPayload object: decode it, apply it to base_snapshot, and verify new_root.
 	var asString string
 	if err := json.Unmarshal(fix.Input, &asString); err == nil {
-		t.Skipf("delta-verify: graph delta wire decoder not yet implemented")
+		runDeltaVerifyTest(t, fix)
+		return
 	}
 
 	var input struct {
@@ -194,6 +197,77 @@ func runDeltaTest(t *testing.T, fix conformanceFixture) {
 	if got != expected {
 		t.Errorf("delta encode mismatch:\n  got:      %s\n  expected: %s", quote(got), quote(expected))
 	}
+}
+
+// runDeltaVerifyTest decodes a graph delta wire payload, applies it to the
+// fixture's base_snapshot, and verifies new_root. For a root_mismatch fixture it
+// asserts VerifyDelta returns the expected error; otherwise it asserts success and
+// that the applied snapshot's pack_root matches the expected_snapshot.
+func runDeltaVerifyTest(t *testing.T, fix conformanceFixture) {
+	t.Helper()
+
+	var wire string
+	if err := json.Unmarshal(fix.Input, &wire); err != nil {
+		t.Fatalf("delta-verify input must be a wire string: %v", err)
+	}
+	dd, err := DecodeDelta(wire)
+	if err != nil {
+		t.Fatalf("DecodeDelta: %v", err)
+	}
+	baseSyms, baseEdges := parseSnapshot(t, fix.BaseSnapshot)
+
+	result, resultEdges, verr := VerifyDelta(baseSyms, baseEdges,
+		dd.Removed, dd.Added, dd.RemovedEdges, dd.AddedEdges, dd.NewRoot)
+
+	if fix.ExpectedError != "" {
+		if verr == nil {
+			t.Errorf("expected error %q, got success", fix.ExpectedError)
+		} else if !strings.Contains(verr.Error(), fix.ExpectedError) {
+			t.Errorf("expected error %q, got: %v", fix.ExpectedError, verr)
+		}
+		return
+	}
+	if verr != nil {
+		t.Errorf("delta verify failed: %v", verr)
+		return
+	}
+	// The applied snapshot must match the expected snapshot; compare by pack_root
+	// (content identity, order-independent).
+	expSyms, expEdges := parseSnapshot(t, fix.ExpectedSnapshot)
+	if got, want := PackRoot(result, resultEdges), PackRoot(expSyms, expEdges); got != want {
+		t.Errorf("applied snapshot mismatch:\n  got pack_root:      %s\n  expected pack_root: %s", got, want)
+	}
+}
+
+// parseSnapshot parses a {symbols, edges} snapshot object into typed slices.
+func parseSnapshot(t *testing.T, raw json.RawMessage) ([]Symbol, []Edge) {
+	t.Helper()
+	var snap struct {
+		Symbols []struct {
+			QualifiedName string  `json:"qualifiedName"`
+			Kind          string  `json:"kind"`
+			Score         float64 `json:"score"`
+			Provenance    string  `json:"provenance"`
+			Distance      int     `json:"distance"`
+		} `json:"symbols"`
+		Edges []struct {
+			Source   string `json:"source"`
+			Target   string `json:"target"`
+			EdgeType string `json:"edgeType"`
+		} `json:"edges"`
+	}
+	if err := json.Unmarshal(raw, &snap); err != nil {
+		t.Fatalf("parsing snapshot: %v", err)
+	}
+	var syms []Symbol
+	for _, s := range snap.Symbols {
+		syms = append(syms, Symbol{QualifiedName: s.QualifiedName, Kind: s.Kind, Score: s.Score, Provenance: s.Provenance, Distance: s.Distance})
+	}
+	var edges []Edge
+	for _, e := range snap.Edges {
+		edges = append(edges, Edge{Source: e.Source, Target: e.Target, EdgeType: e.EdgeType})
+	}
+	return syms, edges
 }
 
 func runEncodeTest(t *testing.T, fix conformanceFixture) {
