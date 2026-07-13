@@ -223,7 +223,15 @@ func parseObjectBody(lines []string, start, depth int, out map[string]any) (int,
 			continue
 		}
 
-		i++
+		// An object-body line that is not a `## ` section, a `key=value` field, or
+		// an inline array is not valid content and MUST NOT be silently skipped
+		// (that dropped data — a lossless round-trip hole). A pipe-delimited line is
+		// a stray positional inline body with no eligible `^` cell (Section 16.5,
+		// orphan_inline_attachment); any other unrecognized line is likewise rejected.
+		if strings.Contains(content, "|") {
+			return 0, fmt.Errorf("orphan_inline_attachment: %s", content)
+		}
+		return 0, fmt.Errorf("invalid_line: unexpected content in object body: %q", content)
 	}
 
 	return i - start, nil
