@@ -28,7 +28,7 @@ func EncodeDelta(d *DeltaPayload) string {
 	if d.FullTokens > 0 {
 		savings = 100.0 * (1.0 - float64(d.DeltaTokens)/float64(d.FullTokens))
 	}
-	b.WriteString(fmt.Sprintf("GCF tool=%s delta=true base_root=%s new_root=%s tokens=%d savings=%.0f%%\n",
+	b.WriteString(fmt.Sprintf("GCF profile=graph tool=%s delta=true base_root=%s new_root=%s tokens=%d savings=%.0f%%\n",
 		d.Tool, d.BaseRoot, d.NewRoot, d.DeltaTokens, savings))
 
 	// Removed symbols: short references (consumer already has the full declaration).

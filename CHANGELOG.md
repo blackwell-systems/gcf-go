@@ -4,6 +4,7 @@
 
 ### Fixes
 
+- Fixed: `EncodeDelta` emitted a header missing the mandatory `profile=graph` discriminator (SPEC 3.1/16.1); it is now `GCF profile=graph tool=...`. The conformance runner now hard-fails on unhandled operations and exercises the `delta` encode fixture (previously skipped).
 - Buffered graph encoder: order edges by source ID, then target ID, then edge type (SPEC 16.1), instead of emitting them in input order. Decode-invariant (edges are a set) and does not affect `pack_root` (which sorts edge records independently), so no content addresses change. Pinned by shared fixture `graph-encode/003`. Streaming edges remain in producer-arrival order.
 - Streaming graph trailer: `distance_N` group counts (distance >= 3) are now emitted in group-header emission order, not Go map-iteration order, so the trailer is deterministic (SPEC 16.1). Previously multiple `distance_N` groups produced a randomly-ordered trailer across runs. The encoder now records group-header emission order and builds the trailer from it.
 - Decoder: reject an orphan `.field` attachment (a `.field` whose name is neither a `^`-marked column of its row nor a `>`-containing field name, SPEC 7.4.6.1.4) instead of silently absorbing it as an undeclared extra field. Such a stray attachment previously decoded to a record no encoder produces, silently injecting a field onto the last-parsed row (a lossless round-trip hole); now rejected per SPEC 16.5 (`orphan_attachment`).

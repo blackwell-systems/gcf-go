@@ -84,7 +84,9 @@ func TestConformance(t *testing.T) {
 			case "roundtrip":
 				runRoundtripTest(t, fix)
 			case "delta":
-				t.Skipf("delta operation not yet implemented")
+				runDeltaTest(t, fix)
+			case "delta-verify":
+				t.Skipf("delta-verify: graph delta wire decoder not yet implemented")
 			case "pack-root":
 				runGraphPackRootTest(t, fix)
 			case "generic-pack-root":
@@ -98,9 +100,99 @@ func TestConformance(t *testing.T) {
 			case "generic-delta-session":
 				runGenericDeltaSessionTest(t, fix)
 			default:
-				t.Skipf("unsupported operation: %s", fix.Operation)
+				t.Fatalf("unhandled operation %q; every operation must be handled or explicitly allow-listed", fix.Operation)
 			}
 		})
+	}
+}
+
+// runDeltaTest handles the graph "delta" operation. Fixtures in graph-delta share
+// this operation name but come in two shapes: an ENCODE scenario whose input is a
+// DeltaPayload struct, and a VERIFY scenario whose input is a pre-encoded wire
+// string (with base_snapshot/expected_snapshot). The verify-shaped fixtures require
+// the graph delta wire decoder, which is not yet implemented, so they are routed to
+// the same allow-listed skip as delta-verify rather than the encode path.
+func runDeltaTest(t *testing.T, fix conformanceFixture) {
+	t.Helper()
+
+	// Detect the verify-shaped fixture: its input is a JSON string (the wire form),
+	// not a DeltaPayload object. Skip it with the delta-verify allow-list reason.
+	var asString string
+	if err := json.Unmarshal(fix.Input, &asString); err == nil {
+		t.Skipf("delta-verify: graph delta wire decoder not yet implemented")
+	}
+
+	var input struct {
+		Tool     string `json:"tool"`
+		BaseRoot string `json:"baseRoot"`
+		NewRoot  string `json:"newRoot"`
+		Removed  []struct {
+			QualifiedName string  `json:"qualifiedName"`
+			Kind          string  `json:"kind"`
+			Score         float64 `json:"score"`
+			Provenance    string  `json:"provenance"`
+		} `json:"removed"`
+		Added []struct {
+			QualifiedName string  `json:"qualifiedName"`
+			Kind          string  `json:"kind"`
+			Score         float64 `json:"score"`
+			Provenance    string  `json:"provenance"`
+		} `json:"added"`
+		RemovedEdges []struct {
+			Source   string `json:"source"`
+			Target   string `json:"target"`
+			EdgeType string `json:"edgeType"`
+		} `json:"removedEdges"`
+		AddedEdges []struct {
+			Source   string `json:"source"`
+			Target   string `json:"target"`
+			EdgeType string `json:"edgeType"`
+		} `json:"addedEdges"`
+		DeltaTokens int `json:"deltaTokens"`
+		FullTokens  int `json:"fullTokens"`
+	}
+	if err := json.Unmarshal(fix.Input, &input); err != nil {
+		t.Fatalf("parsing delta input: %v", err)
+	}
+
+	var expected string
+	if err := json.Unmarshal(fix.Expected, &expected); err != nil {
+		t.Fatalf("parsing expected: %v", err)
+	}
+
+	d := &DeltaPayload{
+		Tool:        input.Tool,
+		BaseRoot:    input.BaseRoot,
+		NewRoot:     input.NewRoot,
+		DeltaTokens: input.DeltaTokens,
+		FullTokens:  input.FullTokens,
+	}
+	for _, s := range input.Removed {
+		d.Removed = append(d.Removed, Symbol{
+			QualifiedName: s.QualifiedName,
+			Kind:          s.Kind,
+			Score:         s.Score,
+			Provenance:    s.Provenance,
+		})
+	}
+	for _, s := range input.Added {
+		d.Added = append(d.Added, Symbol{
+			QualifiedName: s.QualifiedName,
+			Kind:          s.Kind,
+			Score:         s.Score,
+			Provenance:    s.Provenance,
+		})
+	}
+	for _, e := range input.RemovedEdges {
+		d.RemovedEdges = append(d.RemovedEdges, Edge{Source: e.Source, Target: e.Target, EdgeType: e.EdgeType})
+	}
+	for _, e := range input.AddedEdges {
+		d.AddedEdges = append(d.AddedEdges, Edge{Source: e.Source, Target: e.Target, EdgeType: e.EdgeType})
+	}
+
+	got := EncodeDelta(d)
+	if got != expected {
+		t.Errorf("delta encode mismatch:\n  got:      %s\n  expected: %s", quote(got), quote(expected))
 	}
 }
 
