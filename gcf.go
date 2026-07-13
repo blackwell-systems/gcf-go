@@ -183,18 +183,38 @@ func Encode(p *Payload) string {
 		}
 	}
 
-	// Edges section.
+	// Edges section. Order edges by source ID then target ID (then edge type for
+	// parallel edges) so the wire is canonical regardless of the order edges were
+	// provided (SPEC 16.1). Edge reordering is decode-invariant (edges are a set)
+	// and does not affect pack_root, which sorts edge records independently.
 	if len(p.Edges) > 0 {
-		b.WriteString(fmt.Sprintf("## edges [%d]\n", validEdges))
+		type resolvedEdge struct {
+			srcIdx, tgtIdx    int
+			edgeType, status string
+		}
+		resolved := make([]resolvedEdge, 0, validEdges)
 		for _, e := range p.Edges {
 			srcIdx, srcOk := symIndex[e.Source]
 			tgtIdx, tgtOk := symIndex[e.Target]
 			if !srcOk || !tgtOk {
 				continue
 			}
-			line := fmt.Sprintf("@%d<@%d %s", tgtIdx, srcIdx, e.EdgeType)
-			if e.Status != "" && e.Status != "unchanged" {
-				line += " " + e.Status
+			resolved = append(resolved, resolvedEdge{srcIdx, tgtIdx, e.EdgeType, e.Status})
+		}
+		sort.SliceStable(resolved, func(i, j int) bool {
+			if resolved[i].srcIdx != resolved[j].srcIdx {
+				return resolved[i].srcIdx < resolved[j].srcIdx
+			}
+			if resolved[i].tgtIdx != resolved[j].tgtIdx {
+				return resolved[i].tgtIdx < resolved[j].tgtIdx
+			}
+			return resolved[i].edgeType < resolved[j].edgeType
+		})
+		b.WriteString(fmt.Sprintf("## edges [%d]\n", validEdges))
+		for _, e := range resolved {
+			line := fmt.Sprintf("@%d<@%d %s", e.tgtIdx, e.srcIdx, e.edgeType)
+			if e.status != "" && e.status != "unchanged" {
+				line += " " + e.status
 			}
 			b.WriteString(line)
 			b.WriteByte('\n')
