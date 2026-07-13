@@ -198,9 +198,11 @@ func (enc *StreamEncoder) Close() error {
 			sections = append(sections, fmt.Sprintf("%s:%d", g, c))
 		}
 	}
-	if enc.edgeCount > 0 {
-		sections = append(sections, fmt.Sprintf("edges:%d", enc.edgeCount))
-	}
+	// The edge count is always the last counts entry, even when 0 (SPEC §8.4,
+	// §8.4.1): it is what keeps the positional form unambiguous and anchors the
+	// labeled form (minimal counts=edges:0). Distance groups with 0 count are
+	// omitted, but edges is not.
+	sections = append(sections, fmt.Sprintf("edges:%d", enc.edgeCount))
 
 	symbolCount := enc.nextID
 	var countsStr string
