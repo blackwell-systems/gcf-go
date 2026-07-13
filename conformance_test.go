@@ -45,8 +45,14 @@ func TestConformance(t *testing.T) {
 		t.Fatalf("walking fixtures: %v", err)
 	}
 
-	if len(fixtures) == 0 {
-		t.Fatal("no fixtures found")
+	// Floor assertion: a green conformance run MUST have exercised the full shared
+	// suite. If the fixtures directory is present but yields too few files (mispathed,
+	// partial, or empty checkout), fail loudly rather than pass having verified almost
+	// nothing. A wholly-absent directory is handled by the Skip above; in CI the
+	// separate gcf checkout step fails loudly if the repo cannot be cloned.
+	const minFixtures = 150
+	if len(fixtures) < minFixtures {
+		t.Fatalf("discovered %d conformance fixtures at %s, expected at least %d; the shared gcf fixture set is missing or mispathed", len(fixtures), fixtureDir, minFixtures)
 	}
 
 	t.Logf("Found %d fixtures", len(fixtures))
