@@ -85,6 +85,8 @@ func TestConformance(t *testing.T) {
 				runRoundtripTest(t, fix)
 			case "delta":
 				t.Skipf("delta operation not yet implemented")
+			case "pack-root":
+				runGraphPackRootTest(t, fix)
 			case "generic-pack-root":
 				runGenericPackRootTest(t, fix)
 			case "generic-delta":
@@ -192,6 +194,60 @@ func runGraphEncodeTest(t *testing.T, fix conformanceFixture, expected string) {
 	got := Encode(p)
 	if got != expected {
 		t.Errorf("encode mismatch:\n  got:      %s\n  expected: %s", quote(got), quote(expected))
+	}
+}
+
+// runGraphPackRootTest builds the symbol/edge graph from the fixture input and
+// asserts that PackRoot produces the expected content-addressed sha256 hash. This
+// exercises the graph pack_root operation the graph-encode path does not verify.
+func runGraphPackRootTest(t *testing.T, fix conformanceFixture) {
+	t.Helper()
+
+	var expected string
+	if err := json.Unmarshal(fix.Expected, &expected); err != nil {
+		t.Fatalf("parsing expected: %v", err)
+	}
+
+	var input struct {
+		Symbols []struct {
+			QualifiedName string  `json:"qualifiedName"`
+			Kind          string  `json:"kind"`
+			Score         float64 `json:"score"`
+			Provenance    string  `json:"provenance"`
+			Distance      int     `json:"distance"`
+		} `json:"symbols"`
+		Edges []struct {
+			Source   string `json:"source"`
+			Target   string `json:"target"`
+			EdgeType string `json:"edgeType"`
+		} `json:"edges"`
+	}
+	if err := json.Unmarshal(fix.Input, &input); err != nil {
+		t.Fatalf("parsing pack-root input: %v", err)
+	}
+
+	var symbols []Symbol
+	for _, s := range input.Symbols {
+		symbols = append(symbols, Symbol{
+			QualifiedName: s.QualifiedName,
+			Kind:          s.Kind,
+			Score:         s.Score,
+			Provenance:    s.Provenance,
+			Distance:      s.Distance,
+		})
+	}
+	var edges []Edge
+	for _, e := range input.Edges {
+		edges = append(edges, Edge{
+			Source:   e.Source,
+			Target:   e.Target,
+			EdgeType: e.EdgeType,
+		})
+	}
+
+	got := PackRoot(symbols, edges)
+	if got != expected {
+		t.Errorf("pack-root mismatch:\n  got:      %s\n  expected: %s", quote(got), quote(expected))
 	}
 }
 
