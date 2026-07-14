@@ -12,7 +12,13 @@
 
 Go implementation of [GCF](https://gcformat.com/) — the most token-efficient wire format for LLMs. A drop-in alternative to JSON and TOON for any structured data.
 
-**100% comprehension on every frontier model tested. 29% fewer tokens than TOON, 56% fewer than JSON across 16 datasets. 91.2% on structurally complex code graphs (vs TOON 68.8%, JSON 54.1%). 2,400+ LLM evaluations. Zero training.**
+**Built for the agentic loop, where the same structured context crosses the model boundary turn after turn.** A single payload is 50-92% smaller than JSON, but GCF also deduplicates repeated structure across turns and sends only deltas when context changes, so by the 5th overlapping call each response costs 99% fewer tokens than JSON, and a 10-call session runs 94.4% cheaper than re-sending JSON every turn. Session dedup and delta both need local IDs and a multi-turn design that neither JSON nor TOON has.
+
+- **100% comprehension on every frontier model**, zero training. 29% fewer tokens than TOON and 56% fewer than JSON across 16 datasets; 91.2% on structurally complex code graphs (vs TOON 68.8%, JSON 54.1%).
+- **Proven lossless** across 43,000,000,000+ round-trips in 5 formats and 6 languages. Zero runtime dependencies.
+- **One format, four properties no other single format holds at once:** schema-free, lossless, token-compact (50-92% vs JSON), and model-readable with zero training. JSON is verbose, Protobuf needs a schema, MessagePack is binary, and TOON isn't reliably lossless.
+
+2,500+ LLM evaluations. [Full benchmarks](https://gcformat.com/guide/benchmarks.html).
 
 Docs: [gcformat.com](https://gcformat.com/) · [Playground](https://gcformat.com/playground.html) · [GCF vs TOON](https://gcformat.com/guide/vs-toon.html)
 
@@ -111,7 +117,7 @@ out1 := gcf.EncodeWithSession(payload1, sess) // full declarations
 out2 := gcf.EncodeWithSession(payload2, sess) // reused symbols as "@N  # previously transmitted"
 ```
 
-By the 5th call in a session: 92.7% token savings vs JSON.
+By the 5th call in a session: 86% fewer tokens than JSON from dedup alone, 99% stacked with delta encoding.
 
 ## Streaming Encode
 
@@ -215,7 +221,7 @@ Works on maps, slices, structs, and primitives. Arrays of uniform objects get ta
 
 ## Benchmarks
 
-2,400+ LLM evaluations across 10 models, 3 providers, and 51 independent test runs.
+2,500+ LLM evaluations across 11 models, 4 providers, and 50+ independent test runs.
 
 | | GCF | TOON | JSON |
 |---|---|---|---|
