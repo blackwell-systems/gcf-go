@@ -44,6 +44,11 @@ jobs:
         working-directory: gcf-go
         env:
           GOWORK: 'off'
+      - name: Generic encode (native Go types + round-trip)
+        run: go test -v -run "TestEncodeGeneric" -count=1 -timeout 60s ./...
+        working-directory: gcf-go
+        env:
+          GOWORK: 'off'
       - run: go vet ./...
         working-directory: gcf-go
         env:

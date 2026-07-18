@@ -80,18 +80,38 @@ func orderedKeys(m map[string]any) []string {
 	return keys
 }
 
-// toAny converts arbitrary Go values to JSON-compatible any types.
+// toAny converts arbitrary Go values to JSON-compatible any types, recursively.
+//
+// The container fast paths recurse into their values so that native Go types the
+// caller passes directly (e.g. []map[string]any, map[string]int, []MyStruct) are
+// normalized at every depth. The encoder's type switches recognize only
+// *OrderedMap, map[string]any, and []any; without full recursion a nested value
+// such as []map[string]any (a distinct type from []any) would fall through to the
+// default scalar path and emit Go's fmt map printing instead of a tabular section.
 func toAny(data any) any {
 	if data == nil {
 		return nil
 	}
 	switch v := data.(type) {
 	case *OrderedMap:
-		return v
+		out := NewOrderedMap()
+		for _, k := range v.Keys() {
+			val, _ := v.Get(k)
+			out.Set(k, toAny(val))
+		}
+		return out
 	case map[string]any:
-		return v
+		out := make(map[string]any, len(v))
+		for k, val := range v {
+			out[k] = toAny(val)
+		}
+		return out
 	case []any:
-		return v
+		out := make([]any, len(v))
+		for i, val := range v {
+			out[i] = toAny(val)
+		}
+		return out
 	case string:
 		return v
 	case bool:
@@ -102,8 +122,6 @@ func toAny(data any) any {
 		return float64(v)
 	case int64:
 		return float64(v)
-	case nil:
-		return nil
 	}
 	v := reflect.ValueOf(data)
 	return reflectToAny(v)

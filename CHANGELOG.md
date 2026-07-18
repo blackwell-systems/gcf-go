@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.5.1 (2026-07-18)
+
+### Fixes
+
+- `EncodeGeneric` now normalizes native Go container types passed directly by the caller (e.g. `[]map[string]any`, `map[string]int`, `[]SomeStruct`) at every nesting depth, not just at the root. The input normalizer previously recursed only through its reflection fallback; the fast paths for `map[string]any` and `[]any` returned the value without descending into it, so a nested field such as `[]map[string]any` (a distinct type from `[]any` in Go, which has no slice covariance) fell through the encoder's type switch to the default scalar path and emitted Go's `fmt` map printing instead of a tabular section. Routing the same value through `ParseJSONOrdered` was already correct because it produces fully canonical `*OrderedMap`/`[]any`. Pinned by `native_types_test.go` (#2).
+- Go-specific: the other five SDKs were checked and are not affected. They dispatch on dynamic types (TypeScript, Python), type-erased generics (Kotlin), covariant array casts (Swift, verified: `[[String: Any]] as? [Any]` succeeds), or a pre-normalized value enum (Rust). None distinguish `[]map` from `[]any` the way Go's static slice types do.
+
 ## v1.5.0 (2026-07-12)
 
 ### Fixes
