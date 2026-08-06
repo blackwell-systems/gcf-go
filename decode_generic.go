@@ -273,6 +273,12 @@ func parseArrayFromHeader(lines []string, headerLine, depth int, bracketPart str
 		count = n
 	}
 
+	// A keyed map has at least one member; an empty object is encoded per
+	// Section 7.7, never as [0:] (SPEC 7.2a.4).
+	if keyed && count == 0 {
+		return nil, 0, fmt.Errorf("keyed_map: zero count [0:] is invalid (an empty object uses Section 7.7)")
+	}
+
 	if count == 0 && !strings.HasPrefix(afterBracket, "{") && !strings.HasPrefix(afterBracket, ":") {
 		return []any{}, 1, nil
 	}
