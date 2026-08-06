@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"strings"
 	"testing"
 )
 
@@ -75,6 +76,47 @@ func TestKeyedMapRoundTrip(t *testing.T) {
 		if normJSON(t, orig) != normJSON(t, got) {
 			t.Errorf("[%s] MISMATCH\n orig: %s\n got:  %s\n wire:\n%s", name, normJSON(t, orig), normJSON(t, got), wire)
 		}
+	}
+}
+
+// TestKeyedMapSelectionR3 locks the R3 selection rule (single-member-wrapper
+// deferral) at the wire level. Round-trip alone cannot prove selection because
+// both the greedy and the R3 form round-trip; these assert the chosen form.
+func TestKeyedMapSelectionR3(t *testing.T) {
+	ord := func(s string) any { v, _ := ParseJSONOrdered([]byte(s)); return v }
+	enc := func(s string) string { return EncodeGeneric(ord(s), GenericOptions{KeyedMap: true}) }
+
+	// (1) Single-member wrapper of a map defers to a NAMED keyed map, not a
+	// greedy one-row table that flattens the inner map's keys into columns.
+	if w := enc(`{"users":{"u1":{"a":1,"b":2},"u2":{"a":3,"b":4}}}`); !strings.Contains(w, "## users [2:]{key,a,b}") {
+		t.Errorf("wrapper should defer to `## users [2:]{key,a,b}`, got:\n%s", w)
+	}
+
+	// (2) Non-regression: a record with a uniform nested-object field still
+	// flattens per Section 7.4.6 (objects with >=2 members tabulate as before).
+	if w := enc(`{"row1":{"tags":{"a":1,"b":2}},"row2":{"tags":{"a":3,"b":4}}}`); !strings.Contains(w, `"tags>a"`) {
+		t.Errorf("nested record field should flatten to tags>a, got:\n%s", w)
+	}
+
+	// (3) An empty-string wrapper key defers to a quoted empty-name section
+	// (`## "" `), distinct from the anonymous root form, and round-trips.
+	inEmpty := `{"":{"g":{"kpdy":{"z":1},"v":"s"}}}`
+	if w := enc(inEmpty); !strings.Contains(w, `## "" `) {
+		t.Errorf("empty-key wrapper should defer to `## \"\" ` (named empty), got:\n%s", w)
+	} else {
+		got, err := DecodeGeneric(w)
+		if err != nil {
+			t.Fatalf("empty-name decode: %v\n%s", err, w)
+		}
+		if normJSON(t, ord(inEmpty)) != normJSON(t, got) {
+			t.Errorf("empty-name wrapper round-trip broken\n want: %s\n got:  %s", normJSON(t, ord(inEmpty)), normJSON(t, got))
+		}
+	}
+
+	// (4) A single flat record still keys as [1:] (mirrors a one-row array),
+	// since its value is not itself keyed-eligible.
+	if w := enc(`{"only":{"a":1,"b":2}}`); !strings.Contains(w, "## [1:]{key,a,b}") {
+		t.Errorf("single flat record should key as `## [1:]{key,a,b}`, got:\n%s", w)
 	}
 }
 

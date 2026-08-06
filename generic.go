@@ -87,7 +87,7 @@ func encodeRootValue(b *strings.Builder, v any, opts encodeOpts) {
 	case *OrderedMap:
 		if opts.KeyedMap {
 			if ks, vs, vf, kl, ok := keyedMapEligible(val, opts); ok {
-				encodeKeyedMap(b, "", ks, vs, vf, kl, 0, opts)
+				encodeKeyedMap(b, "", false, ks, vs, vf, kl, 0, opts)
 				return
 			}
 		}
@@ -95,7 +95,7 @@ func encodeRootValue(b *strings.Builder, v any, opts encodeOpts) {
 	case map[string]any:
 		if opts.KeyedMap {
 			if ks, vs, vf, kl, ok := keyedMapEligible(val, opts); ok {
-				encodeKeyedMap(b, "", ks, vs, vf, kl, 0, opts)
+				encodeKeyedMap(b, "", false, ks, vs, vf, kl, 0, opts)
 				return
 			}
 		}
@@ -118,7 +118,7 @@ func encodeOrderedObject(b *strings.Builder, m *OrderedMap, depth int, opts enco
 		case *OrderedMap:
 			if opts.KeyedMap {
 				if ks, vs, vf, kl, ok := keyedMapEligible(v, opts); ok {
-					encodeKeyedMap(b, key, ks, vs, vf, kl, depth, opts)
+					encodeKeyedMap(b, key, true, ks, vs, vf, kl, depth, opts)
 					continue
 				}
 			}
@@ -130,7 +130,7 @@ func encodeOrderedObject(b *strings.Builder, m *OrderedMap, depth int, opts enco
 		case map[string]any:
 			if opts.KeyedMap {
 				if ks, vs, vf, kl, ok := keyedMapEligible(v, opts); ok {
-					encodeKeyedMap(b, key, ks, vs, vf, kl, depth, opts)
+					encodeKeyedMap(b, key, true, ks, vs, vf, kl, depth, opts)
 					continue
 				}
 			}
@@ -160,7 +160,7 @@ func encodeObject(b *strings.Builder, m map[string]any, depth int, opts encodeOp
 		case *OrderedMap:
 			if opts.KeyedMap {
 				if ks, vs, vf, kl, ok := keyedMapEligible(v, opts); ok {
-					encodeKeyedMap(b, key, ks, vs, vf, kl, depth, opts)
+					encodeKeyedMap(b, key, true, ks, vs, vf, kl, depth, opts)
 					continue
 				}
 			}
@@ -172,7 +172,7 @@ func encodeObject(b *strings.Builder, m map[string]any, depth int, opts encodeOp
 		case map[string]any:
 			if opts.KeyedMap {
 				if ks, vs, vf, kl, ok := keyedMapEligible(v, opts); ok {
-					encodeKeyedMap(b, key, ks, vs, vf, kl, depth, opts)
+					encodeKeyedMap(b, key, true, ks, vs, vf, kl, depth, opts)
 					continue
 				}
 			}

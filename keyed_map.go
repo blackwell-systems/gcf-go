@@ -32,6 +32,20 @@ func keyedMapEligible(m any, opts encodeOpts) (keys []string, values []any, valu
 		return nil, nil, nil, "", false
 	}
 
+	// Single-member wrapper deferral: an object with exactly one member whose
+	// value is itself a keyed map is NOT keyed here. Keying it would make the
+	// lone key a one-row header and flatten the inner map's data-keys into
+	// columns (a 1-row, wide/inverted table). Instead the object uses ordinary
+	// encoding and the inner map is a keyed map at its own level (named member
+	// or attachment). This targets only the wrapper case: objects with >=2
+	// members still tabulate, so a record with a uniform nested-object field
+	// (which shares a schema across members) still flattens per Section 7.4.6.
+	if len(keys) == 1 {
+		if _, _, _, _, inner := keyedMapEligible(values[0], opts); inner {
+			return nil, nil, nil, "", false
+		}
+	}
+
 	// Every value must be an object; build the ordered field union.
 	seen := make(map[string]bool)
 	for _, v := range values {
@@ -75,14 +89,17 @@ func keyedMapEligible(m any, opts encodeOpts) (keys []string, values []any, valu
 // value object with the key column and routes through encodeTabular with the
 // keyed bracket, so nested-value handling (flatten/inline/attachment/null/
 // absent) is inherited unchanged. name is empty for a root/anonymous map.
-func encodeKeyedMap(b *strings.Builder, name string, keys []string, values []any, valueFields []string, keyLabel string, depth int, opts encodeOpts) {
-	encodeKeyedMapWithPrefix(b, keyedHeaderPrefix(name, depth), keys, values, valueFields, keyLabel, depth, opts)
+func encodeKeyedMap(b *strings.Builder, name string, named bool, keys []string, values []any, valueFields []string, keyLabel string, depth int, opts encodeOpts) {
+	encodeKeyedMapWithPrefix(b, keyedHeaderPrefix(name, named, depth), keys, values, valueFields, keyLabel, depth, opts)
 }
 
-// keyedHeaderPrefix builds the `## `/`## name ` header prefix for a keyed map.
-func keyedHeaderPrefix(name string, depth int) string {
+// keyedHeaderPrefix builds the header prefix. named distinguishes an anonymous
+// root keyed map (`## `) from a named member whose name may itself be the empty
+// string (`## ""`), which formatKey quotes so it round-trips as a distinct level
+// rather than collapsing into the anonymous root form.
+func keyedHeaderPrefix(name string, named bool, depth int) string {
 	prefix := indentStr(depth)
-	if name == "" {
+	if !named {
 		return prefix + "## "
 	}
 	return prefix + "## " + formatKey(name) + " "
