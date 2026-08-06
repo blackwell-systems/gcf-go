@@ -108,6 +108,51 @@ func TestPropertyRoundTripFlatten(t *testing.T) {
 	t.Logf("PASS: %d aligned nested arrays round-tripped successfully", iterations)
 }
 
+// TestPropertyRoundTripFlattenAdversarialKeys hammers the flatten path with keys
+// drawn from an alphabet that includes the empty string and every '>' arrangement
+// (leading, trailing, bare, interior). These are exactly the keys the §7.4.6
+// empty-key fix guards against: an empty or '>'-containing key produces an empty
+// or literal path segment that the decoder refuses to invert, so a pre-fix encoder
+// emitted a column it could not round-trip (silent corruption). The scalar and
+// genBareKey generators never produce these, so without this test the fix is
+// unverified under fuzz. Post-fix these fields fall back to the attachment form
+// and MUST round-trip.
+func TestPropertyRoundTripFlattenAdversarialKeys(t *testing.T) {
+	iterations := getIterations(200_000)
+	rng := rand.New(rand.NewSource(0x5e))
+
+	sawEmpty, sawGT := false, false
+	for i := 0; i < iterations; i++ {
+		val := genFlattenableArrayWith(rng, genFlattenAdversarialKey)
+		if !sawEmpty || !sawGT {
+			for _, row := range val {
+				for k := range row.(map[string]any) {
+					if k == "" {
+						sawEmpty = true
+					}
+					if strings.Contains(k, ">") {
+						sawGT = true
+					}
+				}
+			}
+		}
+		gcfText := EncodeGeneric(val)
+		decoded, err := DecodeGeneric(gcfText)
+		if err != nil {
+			t.Fatalf("iteration %d: decode failed: %v\n  input:  %s\n  gcf:    %q",
+				i, err, jsonStr(val), truncate(gcfText, 500))
+		}
+		if !jsonDeepEqual(val, decoded) {
+			t.Fatalf("iteration %d: round-trip mismatch\n  input:   %s\n  gcf:     %q\n  decoded: %s",
+				i, jsonStr(val), truncate(gcfText, 500), jsonStr(decoded))
+		}
+	}
+	if !sawEmpty || !sawGT {
+		t.Fatalf("adversarial generator failed to exercise the target keys: sawEmpty=%v sawGT=%v", sawEmpty, sawGT)
+	}
+	t.Logf("PASS: %d adversarial empty/'>'-key nested arrays round-tripped (sawEmpty=%v sawGT=%v)", iterations, sawEmpty, sawGT)
+}
+
 // flatShape describes a fixed nested schema: a scalar leaf or a set of named sub-shapes.
 type flatShape struct {
 	scalar bool
@@ -115,13 +160,20 @@ type flatShape struct {
 }
 
 func genFlatShape(rng *rand.Rand, depth, maxDepth int) flatShape {
+	return genFlatShapeWith(rng, depth, maxDepth, genBareKey)
+}
+
+// genFlatShapeWith is the key-parametrized generator. keyFn chooses each nested
+// key, so an adversarial alphabet (empty string, '>' arrangements) can be threaded
+// through the whole flatten path.
+func genFlatShapeWith(rng *rand.Rand, depth, maxDepth int, keyFn func(*rand.Rand) string) flatShape {
 	if depth >= maxDepth || rng.Float64() < 0.45 {
 		return flatShape{scalar: true}
 	}
 	sub := make(map[string]flatShape)
 	n := 1 + rng.Intn(3)
 	for i := 0; i < n; i++ {
-		sub[genBareKey(rng)] = genFlatShape(rng, depth+1, maxDepth)
+		sub[keyFn(rng)] = genFlatShapeWith(rng, depth+1, maxDepth, keyFn)
 	}
 	if len(sub) == 0 {
 		return flatShape{scalar: true}
@@ -147,17 +199,33 @@ func materializeFlatShape(rng *rand.Rand, sh flatShape) any {
 }
 
 func genFlattenableArray(rng *rand.Rand) []any {
+	return genFlattenableArrayWith(rng, genBareKey)
+}
+
+// adversarialFlattenKeys is the alphabet for the empty-key / '>' flatten fuzz. It
+// deliberately includes the empty string and every leading/trailing/bare/interior
+// '>' arrangement, so the flatten-eligibility guard (§7.4.6.1.3) is stressed on
+// exactly the keys that would produce empty or literal path segments — the class
+// that silently corrupted round-trips before the fix. Plain keys are mixed in so
+// flatten still triggers (mixed eligible/ineligible fields).
+var adversarialFlattenKeys = []string{"", ">", ">>", "a>b", "a>", ">b", ">a>", "a>>b", "a", "b", "c", "id", "m", "n"}
+
+func genFlattenAdversarialKey(rng *rand.Rand) string {
+	return adversarialFlattenKeys[rng.Intn(len(adversarialFlattenKeys))]
+}
+
+func genFlattenableArrayWith(rng *rand.Rand, keyFn func(*rand.Rand) string) []any {
 	rows := 2 + rng.Intn(6)
 	schema := map[string]flatShape{"id": {scalar: true}}
 	order := []string{"id"}
 	hasNested := false
 	n := 1 + rng.Intn(3)
 	for i := 0; i < n; i++ {
-		k := genBareKey(rng)
+		k := keyFn(rng)
 		if _, exists := schema[k]; exists {
 			continue
 		}
-		s := genFlatShape(rng, 1, 3)
+		s := genFlatShapeWith(rng, 1, 3, keyFn)
 		schema[k] = s
 		order = append(order, k)
 		if !s.scalar {
@@ -165,9 +233,11 @@ func genFlattenableArray(rng *rand.Rand) []any {
 		}
 	}
 	if !hasNested {
-		k := genBareKey(rng)
-		schema[k] = flatShape{sub: map[string]flatShape{genBareKey(rng): {sub: map[string]flatShape{genBareKey(rng): {scalar: true}}}}}
-		order = append(order, k)
+		k := keyFn(rng)
+		if _, exists := schema[k]; !exists {
+			schema[k] = flatShape{sub: map[string]flatShape{keyFn(rng): {sub: map[string]flatShape{keyFn(rng): {scalar: true}}}}}
+			order = append(order, k)
+		}
 	}
 	arr := make([]any, 0, rows)
 	for i := 0; i < rows; i++ {
