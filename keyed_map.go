@@ -76,6 +76,21 @@ func keyedMapEligible(m any, opts encodeOpts) (keys []string, values []any, valu
 // keyed bracket, so nested-value handling (flatten/inline/attachment/null/
 // absent) is inherited unchanged. name is empty for a root/anonymous map.
 func encodeKeyedMap(b *strings.Builder, name string, keys []string, values []any, valueFields []string, keyLabel string, depth int, opts encodeOpts) {
+	encodeKeyedMapWithPrefix(b, keyedHeaderPrefix(name, depth), keys, values, valueFields, keyLabel, depth, opts)
+}
+
+// keyedHeaderPrefix builds the `## `/`## name ` header prefix for a keyed map.
+func keyedHeaderPrefix(name string, depth int) string {
+	prefix := indentStr(depth)
+	if name == "" {
+		return prefix + "## "
+	}
+	return prefix + "## " + formatKey(name) + " "
+}
+
+// encodeKeyedMapWithPrefix emits `<headerPrefix>[N:]{...}` and the keyed rows,
+// reusing encodeTabular. headerPrefix is the full prefix up to the count bracket.
+func encodeKeyedMapWithPrefix(b *strings.Builder, headerPrefix string, keys []string, values []any, valueFields []string, keyLabel string, depth int, opts encodeOpts) {
 	fields := make([]string, 0, len(valueFields)+1)
 	fields = append(fields, keyLabel)
 	fields = append(fields, valueFields...)
@@ -96,14 +111,6 @@ func encodeKeyedMap(b *strings.Builder, name string, keys []string, values []any
 		}
 		aug[keyLabel] = k
 		arr[i] = aug
-	}
-
-	prefix := indentStr(depth)
-	var headerPrefix string
-	if name == "" {
-		headerPrefix = prefix + "## "
-	} else {
-		headerPrefix = prefix + "## " + formatKey(name) + " "
 	}
 	encodeTabular(b, headerPrefix, arr, fields, depth, opts, true)
 }

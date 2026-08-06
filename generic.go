@@ -240,9 +240,21 @@ func encodeExpanded(b *strings.Builder, headerPrefix string, arr []any, depth in
 	for i, item := range arr {
 		switch v := item.(type) {
 		case *OrderedMap:
+			if opts.KeyedMap {
+				if ks, vs, vf, kl, ok := keyedMapEligible(v, opts); ok {
+					encodeKeyedMapWithPrefix(b, fmt.Sprintf("%s@%d ", prefix, i), ks, vs, vf, kl, depth+1, opts)
+					continue
+				}
+			}
 			fmt.Fprintf(b, "%s@%d {}\n", prefix, i)
 			encodeOrderedObject(b, v, depth+1, opts)
 		case map[string]any:
+			if opts.KeyedMap {
+				if ks, vs, vf, kl, ok := keyedMapEligible(v, opts); ok {
+					encodeKeyedMapWithPrefix(b, fmt.Sprintf("%s@%d ", prefix, i), ks, vs, vf, kl, depth+1, opts)
+					continue
+				}
+			}
 			fmt.Fprintf(b, "%s@%d {}\n", prefix, i)
 			encodeObject(b, v, depth+1, opts)
 		case []any:
@@ -582,9 +594,9 @@ func resolveKeyChain(item any, keys []string) (val any, exists bool) {
 
 // flatColumn describes a column in the expanded (flattened) field list.
 type flatColumn struct {
-	headerName string // formatted name for the header
-	colType    string // "scalar", "flat", or "attachment"
-	field      string // original field name
+	headerName string   // formatted name for the header
+	colType    string   // "scalar", "flat", or "attachment"
+	field      string   // original field name
 	keys       []string // key chain for flat columns
 }
 
@@ -803,9 +815,21 @@ func encodeTabular(b *strings.Builder, headerPrefix string, arr []any, fields []
 			} else {
 				switch av := att.value.(type) {
 				case *OrderedMap:
+					if opts.KeyedMap {
+						if ks, vs, vf, kl, ok := keyedMapEligible(av, opts); ok {
+							encodeKeyedMapWithPrefix(b, fmt.Sprintf("%s.%s ", attIndent, fk), ks, vs, vf, kl, depth+2, opts)
+							break
+						}
+					}
 					fmt.Fprintf(b, "%s.%s {}\n", attIndent, fk)
 					encodeOrderedObject(b, av, depth+2, opts)
 				case map[string]any:
+					if opts.KeyedMap {
+						if ks, vs, vf, kl, ok := keyedMapEligible(av, opts); ok {
+							encodeKeyedMapWithPrefix(b, fmt.Sprintf("%s.%s ", attIndent, fk), ks, vs, vf, kl, depth+2, opts)
+							break
+						}
+					}
 					fmt.Fprintf(b, "%s.%s {}\n", attIndent, fk)
 					encodeObject(b, av, depth+2, opts)
 				case []any:

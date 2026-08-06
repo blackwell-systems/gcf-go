@@ -1,7 +1,10 @@
 package gcf
 
 import (
+	"bytes"
 	"encoding/json"
+	"fmt"
+	"sort"
 	"testing"
 )
 
@@ -72,5 +75,153 @@ func TestKeyedMapRoundTrip(t *testing.T) {
 		if normJSON(t, orig) != normJSON(t, got) {
 			t.Errorf("[%s] MISMATCH\n orig: %s\n got:  %s\n wire:\n%s", name, normJSON(t, orig), normJSON(t, got), wire)
 		}
+	}
+}
+
+func TestKeyedMapNestedPositions(t *testing.T) {
+	kmap := func() map[string]any {
+		return map[string]any{
+			"web-01": map[string]any{"cpu": 1, "mem": 2},
+			"db-01":  map[string]any{"cpu": 3, "mem": 4},
+		}
+	}
+	cases := map[string]any{
+		// keyed map as an expanded-array item (mixed array)
+		"expanded item": []any{kmap(), 42, "tail"},
+		// keyed map as a tabular-row attachment (nested field is a map of objects)
+		"tabular attachment": []any{
+			map[string]any{"id": 1, "nodes": kmap()},
+			map[string]any{"id": 2, "nodes": map[string]any{"x": map[string]any{"cpu": 9, "mem": 8}}},
+		},
+		// keyed map whose value objects themselves contain a keyed map (deep)
+		"deep nested keyed map": map[string]any{
+			"a": map[string]any{"id": 1, "sub": map[string]any{"s1": map[string]any{"v": 1}, "s2": map[string]any{"v": 2}}},
+			"b": map[string]any{"id": 2, "sub": map[string]any{"s3": map[string]any{"v": 3}}},
+		},
+	}
+	for name, orig := range cases {
+		wire := EncodeGeneric(orig, GenericOptions{KeyedMap: true})
+		got, err := DecodeGeneric(wire)
+		if err != nil {
+			t.Errorf("[%s] decode error: %v\nwire:\n%s", name, err, wire)
+			continue
+		}
+		if normJSON(t, orig) != normJSON(t, got) {
+			t.Errorf("[%s] MISMATCH\n orig: %s\n got:  %s\n wire:\n%s", name, normJSON(t, orig), normJSON(t, got), wire)
+		} else {
+			t.Logf("[%s] OK\n%s", name, wire)
+		}
+	}
+}
+
+func TestKeyedMapStreaming(t *testing.T) {
+	var buf bytes.Buffer
+	enc := NewGenericStreamEncoder(&buf)
+	enc.BeginKeyedMap("servers", "key", []string{"cpu", "mem"})
+	enc.WriteRow([]any{"web-01", 23, 61})
+	enc.WriteRow([]any{"db-01", 41, 83})
+	enc.WriteRow([]any{"cache-1", 7, 12})
+	enc.EndArray()
+	if err := enc.Close(); err != nil {
+		t.Fatalf("close: %v", err)
+	}
+	wire := buf.String()
+	got, err := DecodeGeneric(wire)
+	if err != nil {
+		t.Fatalf("decode: %v\nwire:\n%s", err, wire)
+	}
+	want := map[string]any{
+		"servers": map[string]any{
+			"web-01":  map[string]any{"cpu": 23, "mem": 61},
+			"db-01":   map[string]any{"cpu": 41, "mem": 83},
+			"cache-1": map[string]any{"cpu": 7, "mem": 12},
+		},
+	}
+	if normJSON(t, want) != normJSON(t, got) {
+		t.Errorf("MISMATCH\n want: %s\n got:  %s\n wire:\n%s", normJSON(t, want), normJSON(t, got), wire)
+	} else {
+		t.Logf("streaming keyed map OK\n%s", wire)
+	}
+}
+
+// keyedMapToSet / setToKeyedMap: a keyed map IS a GenericSet whose identity is
+// the map key (SPEC 7.2a delta reuses 10a unchanged).
+func keyedMapToSet(m map[string]any, keyLabel string) GenericSet {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	seen := map[string]bool{}
+	var vf []string
+	for _, k := range keys {
+		vo := m[k].(map[string]any)
+		vk := make([]string, 0, len(vo))
+		for f := range vo {
+			vk = append(vk, f)
+		}
+		sort.Strings(vk)
+		for _, f := range vk {
+			if !seen[f] {
+				seen[f] = true
+				vf = append(vf, f)
+			}
+		}
+	}
+	rows := make([]map[string]any, 0, len(keys))
+	for _, k := range keys {
+		row := map[string]any{keyLabel: k}
+		for f, v := range m[k].(map[string]any) {
+			row[f] = v
+		}
+		rows = append(rows, row)
+	}
+	return GenericSet{Name: "servers", Key: keyLabel, Fields: append([]string{keyLabel}, vf...), Rows: rows}
+}
+
+func setToKeyedMap(s GenericSet) map[string]any {
+	out := make(map[string]any, len(s.Rows))
+	for _, row := range s.Rows {
+		k := fmt.Sprintf("%v", row[s.Key])
+		vo := map[string]any{}
+		for f, v := range row {
+			if f != s.Key {
+				vo[f] = v
+			}
+		}
+		out[k] = vo
+	}
+	return out
+}
+
+func TestKeyedMapDelta(t *testing.T) {
+	base := map[string]any{
+		"web-01": map[string]any{"cpu": 20, "status": "ok"},
+		"db-01":  map[string]any{"cpu": 40, "status": "ok"},
+		"old":    map[string]any{"cpu": 5, "status": "warn"},
+	}
+	next := map[string]any{
+		"web-01": map[string]any{"cpu": 88, "status": "warn"}, // changed
+		"db-01":  map[string]any{"cpu": 40, "status": "ok"},   // unchanged
+		"new":    map[string]any{"cpu": 1, "status": "ok"},    // added
+		// "old" removed
+	}
+	bset := keyedMapToSet(base, "key")
+	nset := keyedMapToSet(next, "key")
+
+	d, err := DiffGenericSets(bset, nset)
+	if err != nil {
+		t.Fatalf("diff: %v", err)
+	}
+	wire := EncodeGenericDelta(d)
+	recon, err := VerifyGenericDelta(bset, d, GenericPackRoot(nset))
+	if err != nil {
+		t.Fatalf("verify: %v\ndelta:\n%s", err, wire)
+	}
+	got := setToKeyedMap(recon)
+	if normJSON(t, next) != normJSON(t, got) {
+		t.Errorf("MISMATCH\n next: %s\n got:  %s\ndelta:\n%s", normJSON(t, next), normJSON(t, got), wire)
+	} else {
+		t.Logf("keyed-map delta OK (map key = identity)\n%s", wire)
 	}
 }

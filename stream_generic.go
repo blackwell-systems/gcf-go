@@ -21,8 +21,8 @@ import (
 //	enc.WriteKV("total", 2)
 //	enc.Close()
 type GenericStreamEncoder struct {
-	w       io.Writer
-	mu      sync.Mutex
+	w        io.Writer
+	mu       sync.Mutex
 	sections []sectionCount
 	current  *activeArray
 }
@@ -56,6 +56,22 @@ func (enc *GenericStreamEncoder) BeginArray(name string, fields []string) {
 	}
 
 	fmt.Fprintf(enc.w, "## %s [?]{%s}\n", name, strings.Join(fields, ","))
+	enc.current = &activeArray{name: name, fields: fields}
+}
+
+// BeginKeyedMap starts a keyed-map section with deferred count [?:] (SPEC 7.2a).
+// keyLabel is the key column; valueFields are the value-object fields. Each
+// WriteRow value slice is [keyValue, ...valueFields].
+func (enc *GenericStreamEncoder) BeginKeyedMap(name, keyLabel string, valueFields []string) {
+	enc.mu.Lock()
+	defer enc.mu.Unlock()
+
+	if enc.current != nil {
+		enc.endArrayLocked()
+	}
+
+	fields := append([]string{keyLabel}, valueFields...)
+	fmt.Fprintf(enc.w, "## %s [?:]{%s}\n", name, strings.Join(fields, ","))
 	enc.current = &activeArray{name: name, fields: fields}
 }
 

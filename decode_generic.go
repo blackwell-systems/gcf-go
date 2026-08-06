@@ -68,7 +68,7 @@ func DecodeGeneric(input string) (any, error) {
 			summaryLine = trimmed
 			continue
 		}
-		if strings.HasPrefix(trimmed, "## ") && strings.Contains(trimmed, "[?]") {
+		if strings.HasPrefix(trimmed, "## ") && (strings.Contains(trimmed, "[?]") || strings.Contains(trimmed, "[?:]")) {
 			deferredCount++
 		}
 		contentLines = append(contentLines, l)
