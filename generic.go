@@ -352,8 +352,9 @@ type flatLeaf struct {
 // nested object that can be flattened into path columns. Returns leaf descriptors
 // if flattenable, nil otherwise. Recurses into nested objects.
 func analyzeFlattenable(arr []any, fieldName string, parentPath string) []flatLeaf {
-	// Field names containing ">" cannot be flattened (would create ambiguous paths).
-	if strings.Contains(fieldName, ">") {
+	// A field name containing ">" or empty cannot be flattened: it would create an
+	// ambiguous path column (empty segment) the decoder treats as a literal field (SPEC 7.4.6.1.3).
+	if fieldName == "" || strings.Contains(fieldName, ">") {
 		return nil
 	}
 	type shapeEntry struct {
@@ -389,8 +390,9 @@ func analyzeFlattenable(arr []any, fieldName string, parentPath string) []flatLe
 		if canonicalKeys == nil {
 			canonicalKeys = keys
 			for _, k := range keys {
-				// Keys containing ">" cannot be flattened (would create ambiguous paths).
-				if strings.Contains(k, ">") {
+				// A nested key containing ">" or empty cannot be flattened: empty
+				// produces an empty path segment the decoder rejects as a path column (SPEC 7.4.6.1.3).
+				if k == "" || strings.Contains(k, ">") {
 					return nil
 				}
 				val, _ := objectItemGet(v, k)
