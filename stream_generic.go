@@ -55,8 +55,20 @@ func (enc *GenericStreamEncoder) BeginArray(name string, fields []string) {
 		enc.endArrayLocked()
 	}
 
-	fmt.Fprintf(enc.w, "## %s [?]{%s}\n", name, strings.Join(fields, ","))
+	fmt.Fprintf(enc.w, "## %s [?]{%s}\n", formatKey(name), formatFieldDecl(fields))
 	enc.current = &activeArray{name: name, fields: fields}
+}
+
+// formatFieldDecl quotes each field name per Section 2.4 (via formatKey), matching
+// the buffered tabular header. The streaming header previously joined raw field
+// names, producing an invalid header for any name that needs quoting (containing
+// a delimiter, quote, etc.).
+func formatFieldDecl(fields []string) string {
+	parts := make([]string, len(fields))
+	for i, f := range fields {
+		parts[i] = formatKey(f)
+	}
+	return strings.Join(parts, ",")
 }
 
 // BeginKeyedMap starts a keyed-map section with deferred count [?:] (SPEC 7.2a).
@@ -71,7 +83,7 @@ func (enc *GenericStreamEncoder) BeginKeyedMap(name, keyLabel string, valueField
 	}
 
 	fields := append([]string{keyLabel}, valueFields...)
-	fmt.Fprintf(enc.w, "## %s [?:]{%s}\n", name, strings.Join(fields, ","))
+	fmt.Fprintf(enc.w, "## %s [?:]{%s}\n", formatKey(name), formatFieldDecl(fields))
 	enc.current = &activeArray{name: name, fields: fields}
 }
 

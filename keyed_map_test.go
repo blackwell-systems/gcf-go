@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"sort"
 	"strings"
 	"testing"
@@ -184,6 +185,87 @@ func TestKeyedMapStreaming(t *testing.T) {
 	} else {
 		t.Logf("streaming keyed map OK\n%s", wire)
 	}
+}
+
+// TestPropertyRoundTripKeyedMapStreaming fuzzes the streaming keyed-map path
+// (GenericStreamEncoder.BeginKeyedMap + WriteRow), which is separate code from
+// the buffered EncodeGeneric path the other property tests cover. Value fields,
+// member keys, and cell values are all drawn from the adversarial key/scalar
+// alphabets (empty, pipe, quote, numeric-like, markers) so header field-name
+// quoting and cell quoting on the streaming path are exercised, not just the
+// buffered path. Streaming has a fixed value schema (Section 8.3), so every
+// member has every field present (null allowed, absent not expressible).
+func TestPropertyRoundTripKeyedMapStreaming(t *testing.T) {
+	iterations := getIterations(200_000)
+	rng := rand.New(rand.NewSource(0x5417))
+	contains := func(ss []string, s string) bool {
+		for _, x := range ss {
+			if x == s {
+				return true
+			}
+		}
+		return false
+	}
+	for i := 0; i < iterations; i++ {
+		// Distinct value-field schema (adversarial names).
+		nf := 1 + rng.Intn(5)
+		var fields []string
+		for len(fields) < nf {
+			f := genKey(rng)
+			// A flat streaming column cannot carry a '>' in its name: the decoder
+			// reads a '>'-column as a flattened path (Section 7.4.6). The buffered
+			// path routes such a field to an attachment; streaming has only flat
+			// columns, so a '>' field name is outside the streaming schema contract.
+			if strings.Contains(f, ">") {
+				continue
+			}
+			if !contains(fields, f) {
+				fields = append(fields, f)
+			}
+		}
+		keyLabel := "key"
+		for contains(fields, keyLabel) {
+			keyLabel = "_" + keyLabel
+		}
+		// Distinct member keys (adversarial).
+		nr := 2 + rng.Intn(7)
+		var keys []string
+		for len(keys) < nr {
+			k := genKey(rng)
+			if !contains(keys, k) {
+				keys = append(keys, k)
+			}
+		}
+		expected := map[string]any{}
+		var buf bytes.Buffer
+		enc := NewGenericStreamEncoder(&buf)
+		enc.BeginKeyedMap("m", keyLabel, fields)
+		for _, k := range keys {
+			row := []any{k}
+			valObj := map[string]any{}
+			for _, f := range fields {
+				v := genScalar(rng)
+				row = append(row, v)
+				valObj[f] = v
+			}
+			enc.WriteRow(row)
+			expected[k] = valObj
+		}
+		enc.EndArray()
+		if err := enc.Close(); err != nil {
+			t.Fatalf("iter %d: close: %v", i, err)
+		}
+		wire := buf.String()
+		decoded, err := DecodeGeneric(wire)
+		want := map[string]any{"m": expected}
+		if err != nil {
+			t.Fatalf("iter %d: decode failed: %v\n want: %s\n wire: %q", i, err, jsonStr(want), truncate(wire, 600))
+		}
+		if !jsonDeepEqual(want, decoded) {
+			t.Fatalf("iter %d: streaming round-trip mismatch\n want: %s\n got:  %s\n wire: %q", i, jsonStr(want), jsonStr(decoded), truncate(wire, 600))
+		}
+	}
+	t.Logf("PASS: %d streaming keyed maps round-tripped", iterations)
 }
 
 // keyedMapToSet / setToKeyedMap: a keyed map IS a GenericSet whose identity is
