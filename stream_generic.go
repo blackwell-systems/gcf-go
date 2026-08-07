@@ -21,10 +21,11 @@ import (
 //	enc.WriteKV("total", 2)
 //	enc.Close()
 type GenericStreamEncoder struct {
-	w       io.Writer
-	mu      sync.Mutex
+	w        io.Writer
+	mu       sync.Mutex
 	sections []sectionCount
 	current  *activeArray
+	err      error
 }
 
 type sectionCount struct {
@@ -51,12 +52,36 @@ func (enc *GenericStreamEncoder) BeginArray(name string, fields []string) {
 	enc.mu.Lock()
 	defer enc.mu.Unlock()
 
+	if enc.err != nil {
+		return
+	}
 	if enc.current != nil {
 		enc.endArrayLocked()
 	}
 
-	fmt.Fprintf(enc.w, "## %s [?]{%s}\n", name, strings.Join(fields, ","))
+	// A streaming tabular row has only flat columns; a field name containing ">"
+	// is a flattened path the stream cannot represent (SPEC 8.3, 7.4.6). Reject.
+	for _, f := range fields {
+		if strings.Contains(f, ">") {
+			enc.err = fmt.Errorf("streaming field name %q contains '>' (a flattened path is not representable in a streaming row)", f)
+			return
+		}
+	}
+
+	fmt.Fprintf(enc.w, "## %s [?]{%s}\n", formatKey(name), formatFieldDecl(fields))
 	enc.current = &activeArray{name: name, fields: fields}
+}
+
+// formatFieldDecl quotes each field name per Section 2.4 (via formatKey), matching
+// the buffered tabular header. The streaming header previously joined field names
+// raw, so a name containing a delimiter or quote produced an invalid or ambiguous
+// header (SPEC 8.3).
+func formatFieldDecl(fields []string) string {
+	parts := make([]string, len(fields))
+	for i, f := range fields {
+		parts[i] = formatKey(f)
+	}
+	return strings.Join(parts, ",")
 }
 
 // WriteRow emits a single pipe-separated row immediately.
@@ -133,6 +158,9 @@ func (enc *GenericStreamEncoder) Close() error {
 	enc.mu.Lock()
 	defer enc.mu.Unlock()
 
+	if enc.err != nil {
+		return enc.err
+	}
 	if enc.current != nil {
 		enc.endArrayLocked()
 	}
