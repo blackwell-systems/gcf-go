@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.6.0 (2026-08-07)
+
+### Added
+- Keyed-tabular map encoding (SPEC 7.2a): a JSON object whose values are all objects forming a tabular set is encoded as a keyed table (`## [N:]{key,...}`) - the shared value fields are declared once, with one key-prefixed row per member. Canonical by default, supported in nested and streaming positions, and integrated with generic delta using the map key as the identity.
+
+### Changed
+- Negative zero is canonicalized to `0` for both integer and floating-point values (SPEC 2.3.1).
+- Canonical-output alignment across all six SDKs: object key ordering, graph header fields, and symbol ordering follow the specification and reference implementation exactly.
+
+### Testing
+- Conformance runners assert re-encode idempotence (`encode(decode(x)) == x`) for the generic, graph, and delta profiles; a differential cross-SDK fuzz was added to the verification suite.
+
 ## v1.5.1 (2026-07-18)
 
 ### Fixes
