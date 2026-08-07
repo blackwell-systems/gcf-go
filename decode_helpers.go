@@ -34,10 +34,28 @@ func parseHeaderProfile(header string) (string, error) {
 }
 
 func findBracketStart(s string) int {
-	// Check for " [" first (named array with space before bracket).
-	idx := strings.Index(s, " [")
-	if idx >= 0 {
-		return idx
+	// Find " [" (the named-array count bracket) that is OUTSIDE any quoted name,
+	// so a quoted section/key name containing " [" (e.g. `## "a [1] b"`) is not
+	// misread as a named-array header.
+	inQuote := false
+	escaped := false
+	for i := 0; i < len(s); i++ {
+		if escaped {
+			escaped = false
+			continue
+		}
+		c := s[i]
+		if c == '\\' && inQuote {
+			escaped = true
+			continue
+		}
+		if c == '"' {
+			inQuote = !inQuote
+			continue
+		}
+		if !inQuote && c == ' ' && i+1 < len(s) && s[i+1] == '[' {
+			return i
+		}
 	}
 	return -1
 }
