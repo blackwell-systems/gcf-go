@@ -14,10 +14,14 @@ func tabularFields(arr []any) []string {
 	var fieldOrder []string
 	seen := make(map[string]struct{})
 	for _, item := range arr {
-		keys := objectItemKeys(item)
-		if keys == nil {
+		if !isObjectItem(item) {
 			return nil // not an object
 		}
+		// An empty object is a valid object that contributes no fields to the
+		// union; it must not disqualify the array from tabular form (Section 7.3).
+		// objectItemKeys returns nil for an empty object, so a nil-keys check here
+		// would wrongly conflate "empty object" with "not an object".
+		keys := objectItemKeys(item)
 		for _, k := range keys {
 			if _, exists := seen[k]; !exists {
 				fieldOrder = append(fieldOrder, k)
@@ -29,6 +33,18 @@ func tabularFields(arr []any) []string {
 		return nil // all empty objects: use expanded form
 	}
 	return fieldOrder
+}
+
+// isObjectItem reports whether item is a JSON object (OrderedMap or
+// map[string]any), distinct from objectItemKeys which cannot tell an empty
+// object apart from a non-object (both yield nil keys).
+func isObjectItem(item any) bool {
+	switch item.(type) {
+	case *OrderedMap, map[string]any:
+		return true
+	default:
+		return false
+	}
 }
 
 // objectItemKeys returns the keys of an object item (OrderedMap or map[string]any).
