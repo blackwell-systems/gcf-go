@@ -48,6 +48,8 @@ func Decode(input string) (*Payload, error) {
 	symByID := make(map[int]*Symbol)
 	currentDistance := 0
 	inEdges := false
+	declaredEdges := -1
+	edgesDeclared := false
 
 	for _, line := range lines[1:] {
 		line = strings.TrimRight(line, "\r")
@@ -63,9 +65,22 @@ func Decode(input string) (*Payload, error) {
 		// Group header.
 		if strings.HasPrefix(line, "## ") {
 			group := line[3:]
-			// Strip bracket suffix: "edges [200]" -> "edges"
+			// Strip bracket suffix: "edges [200]" -> "edges", capturing the
+			// declared count so it can be enforced per Section 13.
+			declaredCount := -1
 			if idx := strings.Index(group, " ["); idx >= 0 {
+				bracket := group[idx+2:]
 				group = group[:idx]
+				if end := strings.Index(bracket, "]"); end >= 0 {
+					cntStr := bracket[:end]
+					if cntStr != "?" { // "[?]" is a streaming deferred count (Section 8)
+						n, err := strconv.Atoi(cntStr)
+						if err != nil {
+							return nil, fmt.Errorf("count_mismatch: invalid section count %q", cntStr)
+						}
+						declaredCount = n
+					}
+				}
 			}
 
 			if isDelta && !validDeltaSections[group] {
@@ -73,6 +88,10 @@ func Decode(input string) (*Payload, error) {
 			}
 
 			inEdges = group == "edges"
+			if inEdges && declaredCount >= 0 {
+				declaredEdges = declaredCount
+				edgesDeclared = true
+			}
 			if !inEdges {
 				switch group {
 				case "targets":
@@ -112,6 +131,12 @@ func Decode(input string) (*Payload, error) {
 			symbols = append(symbols, sym)
 			symByID[id] = &symbols[len(symbols)-1]
 		}
+	}
+
+	// Section 13: a declared [N] section count MUST match the actual item count.
+	// The graph edges section is the graph profile's only [N]-bearing section.
+	if edgesDeclared && len(p.Edges) != declaredEdges {
+		return nil, fmt.Errorf("count_mismatch: declared %d edges, got %d", declaredEdges, len(p.Edges))
 	}
 
 	p.Symbols = symbols

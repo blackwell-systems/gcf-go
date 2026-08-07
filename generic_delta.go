@@ -428,8 +428,14 @@ func DecodeGenericFull(text string) (GenericSet, string, error) {
 	for i := 1; i < len(lines); {
 		line := lines[i]
 		if !strings.HasPrefix(line, "## ") {
-			i++
-			continue
+			// Only blank lines, comments, and the ##! summary trailer are valid
+			// outside a section; any other line is a surplus row past a declared
+			// section count (Section 13).
+			if line == "" || strings.HasPrefix(line, "# ") || strings.HasPrefix(line, "##! ") {
+				i++
+				continue
+			}
+			return GenericSet{}, "", fmt.Errorf("count_mismatch: unexpected content after declared section rows: %q", line)
 		}
 		name, count, fields, keyField, err := parseSectionHeader(line[3:])
 		if err != nil {
@@ -441,8 +447,8 @@ func DecodeGenericFull(text string) (GenericSet, string, error) {
 		}
 		i++
 		for j := 0; j < count; j++ {
-			if i >= len(lines) {
-				return GenericSet{}, "", fmt.Errorf("delta_invalid: fewer rows than declared count")
+			if i >= len(lines) || strings.HasPrefix(lines[i], "## ") {
+				return GenericSet{}, "", fmt.Errorf("count_mismatch: declared %d rows, got %d", count, j)
 			}
 			row, err := parseRow(lines[i], fields)
 			if err != nil {
@@ -476,8 +482,14 @@ func DecodeGenericDelta(text string) (*GenericDeltaPayload, error) {
 	for i := 1; i < len(lines); {
 		line := lines[i]
 		if !strings.HasPrefix(line, "## ") {
-			i++
-			continue
+			// Only blank lines, comments, and the ##! summary trailer are valid
+			// outside a section; any other line is a surplus row past a declared
+			// section count (Section 13).
+			if line == "" || strings.HasPrefix(line, "# ") || strings.HasPrefix(line, "##! ") {
+				i++
+				continue
+			}
+			return nil, fmt.Errorf("count_mismatch: unexpected content after declared section rows: %q", line)
 		}
 		name, count, fields, keyField, err := parseSectionHeader(line[3:])
 		if err != nil {
@@ -494,8 +506,8 @@ func DecodeGenericDelta(text string) (*GenericDeltaPayload, error) {
 		case "added", "changed":
 			rows := make([]map[string]any, 0, count)
 			for j := 0; j < count; j++ {
-				if i >= len(lines) {
-					return nil, fmt.Errorf("delta_invalid: fewer rows than declared count in ## %s", name)
+				if i >= len(lines) || strings.HasPrefix(lines[i], "## ") {
+					return nil, fmt.Errorf("count_mismatch: declared %d rows in ## %s, got %d", count, name, j)
 				}
 				row, err := parseRow(lines[i], fields)
 				if err != nil {
@@ -511,8 +523,8 @@ func DecodeGenericDelta(text string) (*GenericDeltaPayload, error) {
 			}
 		case "removed":
 			for j := 0; j < count; j++ {
-				if i >= len(lines) {
-					return nil, fmt.Errorf("delta_invalid: fewer identities than declared count in ## removed")
+				if i >= len(lines) || strings.HasPrefix(lines[i], "## ") {
+					return nil, fmt.Errorf("count_mismatch: declared %d identities in ## removed, got %d", count, j)
 				}
 				v, err := parseScalar(lines[i], true)
 				if err != nil {

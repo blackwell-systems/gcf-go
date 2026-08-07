@@ -240,8 +240,19 @@ func parseObjectBody(lines []string, start, depth int, out *OrderedMap) (int, er
 func parseArraySection(lines []string, start, depth int) (any, error) {
 	first := strings.TrimLeft(lines[start], " ")
 	rest := first[3:]
-	arr, _, err := parseArrayFromHeader(lines, start, depth, rest)
-	return arr, err
+	arr, consumed, err := parseArrayFromHeader(lines, start, depth, rest)
+	if err != nil {
+		return nil, err
+	}
+	// A root array or keyed map spans the whole document, so any structural line
+	// past the consumed rows is a surplus item, not sibling content. The row loop
+	// stops at the declared count, so the count assert in parseArrayFromHeader only
+	// catches the deficit case; surplus is caught here (SPEC Section 13: a mismatch,
+	// fewer OR more items than declared, is an error).
+	if start+consumed < len(lines) {
+		return nil, fmt.Errorf("count_mismatch: declared count is fewer than the rows present")
+	}
+	return arr, nil
 }
 
 func parseArrayFromHeader(lines []string, headerLine, depth int, bracketPart string) (any, int, error) {
