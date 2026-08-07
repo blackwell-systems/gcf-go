@@ -305,6 +305,13 @@ func runEncodeTest(t *testing.T, fix conformanceFixture) {
 	if !jsonEqual(input, decoded) {
 		t.Errorf("round-trip mismatch:\n  input:   %v\n  decoded: %v", input, decoded)
 	}
+	// Re-encode idempotence: encode(decode(got)) == got. Order-sensitive, so it
+	// catches a decoder that drops object field order, which jsonEqual (normalizing
+	// through unordered maps) cannot. Object key ordering is a preserved round-trip
+	// property (SPEC 52, 931).
+	if reEncoded := EncodeGeneric(decoded); reEncoded != got {
+		t.Errorf("re-encode not idempotent (field order or value loss):\n  got:  %s\n  renc: %s", quote(got), quote(reEncoded))
+	}
 }
 
 func runGraphEncodeTest(t *testing.T, fix conformanceFixture, expected string) {
