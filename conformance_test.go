@@ -368,6 +368,16 @@ func runGraphEncodeTest(t *testing.T, fix conformanceFixture, expected string) {
 	if got != expected {
 		t.Errorf("encode mismatch:\n  got:      %s\n  expected: %s", quote(got), quote(expected))
 	}
+	// Re-encode idempotence: encode(decode(got)) == got. Confirms the graph decoder
+	// reconstructs the payload without dropping or reordering fields (SPEC 52, 931).
+	decoded, err := Decode(got)
+	if err != nil {
+		t.Errorf("round-trip decode failed: %v", err)
+		return
+	}
+	if reEncoded := Encode(decoded); reEncoded != got {
+		t.Errorf("graph re-encode not idempotent:\n  got:  %s\n  renc: %s", quote(got), quote(reEncoded))
+	}
 }
 
 // runGraphPackRootTest builds the symbol/edge graph from the fixture input and

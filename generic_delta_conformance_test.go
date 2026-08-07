@@ -63,6 +63,32 @@ func runGenericDeltaTest(t *testing.T, fix conformanceFixture) {
 	if got != expected {
 		t.Errorf("delta encode mismatch:\n  got:      %s\n  expected: %s", quote(got), quote(expected))
 	}
+	// Re-encode idempotence: encode(decode(got)) == got, ignoring the derived
+	// savings= header stat (computed from the original set sizes at encode time and
+	// not carried in the wire, so a decode/re-encode legitimately cannot reconstruct
+	// it). Confirms the delta decoder preserves fields and their order (SPEC 52, 931).
+	decoded, err := DecodeGenericDelta(got)
+	if err != nil {
+		t.Errorf("delta round-trip decode failed: %v", err)
+		return
+	}
+	if reEncoded := EncodeGenericDelta(decoded); stripDeltaSavings(reEncoded) != stripDeltaSavings(got) {
+		t.Errorf("delta re-encode not idempotent:\n  got:  %s\n  renc: %s", quote(got), quote(reEncoded))
+	}
+}
+
+// stripDeltaSavings removes the derived ` savings=...` header stat so re-encode
+// idempotence can be checked on the parts of the wire the payload actually carries.
+func stripDeltaSavings(s string) string {
+	idx := strings.Index(s, " savings=")
+	if idx < 0 {
+		return s
+	}
+	end := idx + len(" savings=")
+	for end < len(s) && s[end] != ' ' && s[end] != '\n' {
+		end++
+	}
+	return s[:idx] + s[end:]
 }
 
 func runGenericDeltaVerifyTest(t *testing.T, fix conformanceFixture) {
