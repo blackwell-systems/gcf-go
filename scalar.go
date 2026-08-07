@@ -147,9 +147,7 @@ func formatNumber(f float64) string {
 		return "0"
 	}
 	if f == 0 {
-		if math.Signbit(f) {
-			return "-0"
-		}
+		// Negative zero canonicalizes to 0 (SPEC 2.3.1): -0.0 equals 0.0 by value.
 		return "0"
 	}
 	abs := math.Abs(f)
