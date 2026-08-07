@@ -68,7 +68,7 @@ func TestKeyedMapRoundTrip(t *testing.T) {
 		},
 	}
 	for name, orig := range cases {
-		wire := EncodeGeneric(orig, GenericOptions{KeyedMap: true})
+		wire := EncodeGeneric(orig)
 		got, err := DecodeGeneric(wire)
 		if err != nil {
 			t.Errorf("[%s] decode error: %v\nwire:\n%s", name, err, wire)
@@ -80,44 +80,48 @@ func TestKeyedMapRoundTrip(t *testing.T) {
 	}
 }
 
-// TestKeyedMapSelectionR3 locks the R3 selection rule (single-member-wrapper
-// deferral) at the wire level. Round-trip alone cannot prove selection because
-// both the greedy and the R3 form round-trip; these assert the chosen form.
-func TestKeyedMapSelectionR3(t *testing.T) {
+// TestKeyedMapSelection locks the keyed-map selection rule (SPEC 7.2a.1) at the
+// wire level. Round-trip alone cannot prove selection because both the keyed and
+// section forms round-trip; these assert the chosen form. A keyed map requires at
+// least two members.
+func TestKeyedMapSelection(t *testing.T) {
 	ord := func(s string) any { v, _ := ParseJSONOrdered([]byte(s)); return v }
-	enc := func(s string) string { return EncodeGeneric(ord(s), GenericOptions{KeyedMap: true}) }
+	enc := func(s string) string { return EncodeGeneric(ord(s)) }
 
-	// (1) Single-member wrapper of a map defers to a NAMED keyed map, not a
-	// greedy one-row table that flattens the inner map's keys into columns.
+	// (1) A multi-member map of objects keys. A single-key wrapper of such a map
+	// does not key at the wrapper level (one member); the inner two-member map
+	// keys at its own level as a named keyed table.
 	if w := enc(`{"users":{"u1":{"a":1,"b":2},"u2":{"a":3,"b":4}}}`); !strings.Contains(w, "## users [2:]{key,a,b}") {
-		t.Errorf("wrapper should defer to `## users [2:]{key,a,b}`, got:\n%s", w)
+		t.Errorf("wrapper's inner map should key as `## users [2:]{key,a,b}`, got:\n%s", w)
 	}
 
-	// (2) Non-regression: a record with a uniform nested-object field still
-	// flattens per Section 7.4.6 (objects with >=2 members tabulate as before).
+	// (2) A record with a uniform nested-object field flattens per Section 7.4.6
+	// (the single-member nested value is not itself keyed-eligible).
 	if w := enc(`{"row1":{"tags":{"a":1,"b":2}},"row2":{"tags":{"a":3,"b":4}}}`); !strings.Contains(w, `"tags>a"`) {
 		t.Errorf("nested record field should flatten to tags>a, got:\n%s", w)
 	}
 
-	// (3) An empty-string wrapper key defers to a quoted empty-name section
-	// (`## "" `), distinct from the anonymous root form, and round-trips.
-	inEmpty := `{"":{"g":{"kpdy":{"z":1},"v":"s"}}}`
-	if w := enc(inEmpty); !strings.Contains(w, `## "" `) {
-		t.Errorf("empty-key wrapper should defer to `## \"\" ` (named empty), got:\n%s", w)
-	} else {
-		got, err := DecodeGeneric(w)
-		if err != nil {
-			t.Fatalf("empty-name decode: %v\n%s", err, w)
-		}
-		if normJSON(t, ord(inEmpty)) != normJSON(t, got) {
-			t.Errorf("empty-name wrapper round-trip broken\n want: %s\n got:  %s", normJSON(t, ord(inEmpty)), normJSON(t, got))
-		}
+	// (3) A single-member map is NOT keyed (a one-row table has no benefit); it
+	// uses ordinary section encoding.
+	if w := enc(`{"only":{"a":1,"b":2}}`); strings.Contains(w, "[1:]") || !strings.Contains(w, "## only") {
+		t.Errorf("single-member map should be a section (## only), not keyed, got:\n%s", w)
 	}
 
-	// (4) A single flat record still keys as [1:] (mirrors a one-row array),
-	// since its value is not itself keyed-eligible.
-	if w := enc(`{"only":{"a":1,"b":2}}`); !strings.Contains(w, "## [1:]{key,a,b}") {
-		t.Errorf("single flat record should key as `## [1:]{key,a,b}`, got:\n%s", w)
+	// (4) An empty-string single-key wrapper is a section (## "") and round-trips
+	// losslessly (empty-name section handling, not the keyed path).
+	inEmpty := `{"":{"g":{"kpdy":{"z":1},"v":"s"}}}`
+	w := enc(inEmpty)
+	got, err := DecodeGeneric(w)
+	if err != nil {
+		t.Fatalf("empty-name decode: %v\n%s", err, w)
+	}
+	if normJSON(t, ord(inEmpty)) != normJSON(t, got) {
+		t.Errorf("empty-name wrapper round-trip broken\n want: %s\n got:  %s", normJSON(t, ord(inEmpty)), normJSON(t, got))
+	}
+
+	// (5) A two-member map of flat records keys.
+	if w := enc(`{"a":{"x":1},"b":{"x":2}}`); !strings.Contains(w, "## [2:]{key,x}") {
+		t.Errorf("two-member map should key as `## [2:]{key,x}`, got:\n%s", w)
 	}
 }
 
@@ -143,7 +147,7 @@ func TestKeyedMapNestedPositions(t *testing.T) {
 		},
 	}
 	for name, orig := range cases {
-		wire := EncodeGeneric(orig, GenericOptions{KeyedMap: true})
+		wire := EncodeGeneric(orig)
 		got, err := DecodeGeneric(wire)
 		if err != nil {
 			t.Errorf("[%s] decode error: %v\nwire:\n%s", name, err, wire)

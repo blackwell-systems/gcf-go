@@ -12,9 +12,6 @@ type GenericOptions struct {
 	// objects use attachment syntax instead. Open-weight models currently
 	// comprehend the expanded form better; this gap is expected to close.
 	NoFlatten bool
-
-	// KeyedMap (prototype) encodes a map of objects as a keyed table `## [N:]{key,...}`.
-	KeyedMap bool
 }
 
 // EncodeGeneric encodes with all v3 optimizations:
@@ -33,7 +30,6 @@ func EncodeGeneric(data any, optsList ...GenericOptions) string {
 		SharedArraySchema:  true,
 		MinInlineFields:    3,
 		FlattenNested:      !gopts.NoFlatten,
-		KeyedMap:           gopts.KeyedMap,
 	}
 	return encodeGenericImpl(data, opts)
 }
@@ -46,7 +42,6 @@ type encodeOpts struct {
 	SharedArraySchema  bool
 	MinInlineFields    int
 	FlattenNested      bool
-	KeyedMap           bool
 }
 
 func (o encodeOpts) String() string {
@@ -85,19 +80,15 @@ func encodeRootValue(b *strings.Builder, v any, opts encodeOpts) {
 	case nil:
 		b.WriteString("=-\n")
 	case *OrderedMap:
-		if opts.KeyedMap {
-			if ks, vs, vf, kl, ok := keyedMapEligible(val, opts); ok {
-				encodeKeyedMap(b, "", false, ks, vs, vf, kl, 0, opts)
-				return
-			}
+		if ks, vs, vf, kl, ok := keyedMapEligible(val, opts); ok {
+			encodeKeyedMap(b, "", false, ks, vs, vf, kl, 0, opts)
+			return
 		}
 		encodeOrderedObject(b, val, 0, opts)
 	case map[string]any:
-		if opts.KeyedMap {
-			if ks, vs, vf, kl, ok := keyedMapEligible(val, opts); ok {
-				encodeKeyedMap(b, "", false, ks, vs, vf, kl, 0, opts)
-				return
-			}
+		if ks, vs, vf, kl, ok := keyedMapEligible(val, opts); ok {
+			encodeKeyedMap(b, "", false, ks, vs, vf, kl, 0, opts)
+			return
 		}
 		encodeObject(b, val, 0, opts)
 	case []any:
@@ -116,11 +107,9 @@ func encodeOrderedObject(b *strings.Builder, m *OrderedMap, depth int, opts enco
 		fk := formatKey(key)
 		switch v := val.(type) {
 		case *OrderedMap:
-			if opts.KeyedMap {
-				if ks, vs, vf, kl, ok := keyedMapEligible(v, opts); ok {
-					encodeKeyedMap(b, key, true, ks, vs, vf, kl, depth, opts)
-					continue
-				}
+			if ks, vs, vf, kl, ok := keyedMapEligible(v, opts); ok {
+				encodeKeyedMap(b, key, true, ks, vs, vf, kl, depth, opts)
+				continue
 			}
 			b.WriteString(prefix)
 			b.WriteString("## ")
@@ -128,11 +117,9 @@ func encodeOrderedObject(b *strings.Builder, m *OrderedMap, depth int, opts enco
 			b.WriteByte('\n')
 			encodeOrderedObject(b, v, depth+1, opts)
 		case map[string]any:
-			if opts.KeyedMap {
-				if ks, vs, vf, kl, ok := keyedMapEligible(v, opts); ok {
-					encodeKeyedMap(b, key, true, ks, vs, vf, kl, depth, opts)
-					continue
-				}
+			if ks, vs, vf, kl, ok := keyedMapEligible(v, opts); ok {
+				encodeKeyedMap(b, key, true, ks, vs, vf, kl, depth, opts)
+				continue
 			}
 			b.WriteString(prefix)
 			b.WriteString("## ")
@@ -158,11 +145,9 @@ func encodeObject(b *strings.Builder, m map[string]any, depth int, opts encodeOp
 		fk := formatKey(key)
 		switch v := val.(type) {
 		case *OrderedMap:
-			if opts.KeyedMap {
-				if ks, vs, vf, kl, ok := keyedMapEligible(v, opts); ok {
-					encodeKeyedMap(b, key, true, ks, vs, vf, kl, depth, opts)
-					continue
-				}
+			if ks, vs, vf, kl, ok := keyedMapEligible(v, opts); ok {
+				encodeKeyedMap(b, key, true, ks, vs, vf, kl, depth, opts)
+				continue
 			}
 			b.WriteString(prefix)
 			b.WriteString("## ")
@@ -170,11 +155,9 @@ func encodeObject(b *strings.Builder, m map[string]any, depth int, opts encodeOp
 			b.WriteByte('\n')
 			encodeOrderedObject(b, v, depth+1, opts)
 		case map[string]any:
-			if opts.KeyedMap {
-				if ks, vs, vf, kl, ok := keyedMapEligible(v, opts); ok {
-					encodeKeyedMap(b, key, true, ks, vs, vf, kl, depth, opts)
-					continue
-				}
+			if ks, vs, vf, kl, ok := keyedMapEligible(v, opts); ok {
+				encodeKeyedMap(b, key, true, ks, vs, vf, kl, depth, opts)
+				continue
 			}
 			b.WriteString(prefix)
 			b.WriteString("## ")
@@ -240,20 +223,16 @@ func encodeExpanded(b *strings.Builder, headerPrefix string, arr []any, depth in
 	for i, item := range arr {
 		switch v := item.(type) {
 		case *OrderedMap:
-			if opts.KeyedMap {
-				if ks, vs, vf, kl, ok := keyedMapEligible(v, opts); ok {
-					encodeKeyedMapWithPrefix(b, fmt.Sprintf("%s@%d ", prefix, i), ks, vs, vf, kl, depth+1, opts)
-					continue
-				}
+			if ks, vs, vf, kl, ok := keyedMapEligible(v, opts); ok {
+				encodeKeyedMapWithPrefix(b, fmt.Sprintf("%s@%d ", prefix, i), ks, vs, vf, kl, depth+1, opts)
+				continue
 			}
 			fmt.Fprintf(b, "%s@%d {}\n", prefix, i)
 			encodeOrderedObject(b, v, depth+1, opts)
 		case map[string]any:
-			if opts.KeyedMap {
-				if ks, vs, vf, kl, ok := keyedMapEligible(v, opts); ok {
-					encodeKeyedMapWithPrefix(b, fmt.Sprintf("%s@%d ", prefix, i), ks, vs, vf, kl, depth+1, opts)
-					continue
-				}
+			if ks, vs, vf, kl, ok := keyedMapEligible(v, opts); ok {
+				encodeKeyedMapWithPrefix(b, fmt.Sprintf("%s@%d ", prefix, i), ks, vs, vf, kl, depth+1, opts)
+				continue
 			}
 			fmt.Fprintf(b, "%s@%d {}\n", prefix, i)
 			encodeObject(b, v, depth+1, opts)
@@ -817,20 +796,16 @@ func encodeTabular(b *strings.Builder, headerPrefix string, arr []any, fields []
 			} else {
 				switch av := att.value.(type) {
 				case *OrderedMap:
-					if opts.KeyedMap {
-						if ks, vs, vf, kl, ok := keyedMapEligible(av, opts); ok {
-							encodeKeyedMapWithPrefix(b, fmt.Sprintf("%s.%s ", attIndent, fk), ks, vs, vf, kl, depth+2, opts)
-							break
-						}
+					if ks, vs, vf, kl, ok := keyedMapEligible(av, opts); ok {
+						encodeKeyedMapWithPrefix(b, fmt.Sprintf("%s.%s ", attIndent, fk), ks, vs, vf, kl, depth+2, opts)
+						break
 					}
 					fmt.Fprintf(b, "%s.%s {}\n", attIndent, fk)
 					encodeOrderedObject(b, av, depth+2, opts)
 				case map[string]any:
-					if opts.KeyedMap {
-						if ks, vs, vf, kl, ok := keyedMapEligible(av, opts); ok {
-							encodeKeyedMapWithPrefix(b, fmt.Sprintf("%s.%s ", attIndent, fk), ks, vs, vf, kl, depth+2, opts)
-							break
-						}
+					if ks, vs, vf, kl, ok := keyedMapEligible(av, opts); ok {
+						encodeKeyedMapWithPrefix(b, fmt.Sprintf("%s.%s ", attIndent, fk), ks, vs, vf, kl, depth+2, opts)
+						break
 					}
 					fmt.Fprintf(b, "%s.%s {}\n", attIndent, fk)
 					encodeObject(b, av, depth+2, opts)

@@ -32,18 +32,15 @@ func keyedMapEligible(m any, opts encodeOpts) (keys []string, values []any, valu
 		return nil, nil, nil, "", false
 	}
 
-	// Single-member wrapper deferral: an object with exactly one member whose
-	// value is itself a keyed map is NOT keyed here. Keying it would make the
-	// lone key a one-row header and flatten the inner map's data-keys into
-	// columns (a 1-row, wide/inverted table). Instead the object uses ordinary
-	// encoding and the inner map is a keyed map at its own level (named member
-	// or attachment). This targets only the wrapper case: objects with >=2
-	// members still tabulate, so a record with a uniform nested-object field
-	// (which shares a schema across members) still flattens per Section 7.4.6.
-	if len(keys) == 1 {
-		if _, _, _, _, inner := keyedMapEligible(values[0], opts); inner {
-			return nil, nil, nil, "", false
-		}
+	// A keyed map requires at least two members: the form factors the shared
+	// value fields into one header, which only pays off across multiple members.
+	// A single-member map yields a one-row table the same size as a section, so
+	// keying it would change canonical output for every nested single-member
+	// object (e.g. `{"data":{...}}` wrappers) with no benefit. Single-member
+	// objects use ordinary encoding; a single-key wrapper of a multi-member map
+	// therefore defers, and the inner map is keyed at its own level (SPEC 7.2a.1).
+	if len(keys) < 2 {
+		return nil, nil, nil, "", false
 	}
 
 	// Every value must be an object; build the ordered field union.
@@ -67,6 +64,22 @@ func keyedMapEligible(m any, opts encodeOpts) (keys []string, values []any, valu
 	}
 	if len(valueFields) == 0 {
 		return nil, nil, nil, "", false // all-empty value objects
+	}
+
+	// A keyed header needs at least one value field that can be a tabular column.
+	// A field name containing ">" cannot be a column (SPEC 7.4.6.1.4); if every
+	// value field contains ">", the keyed form would have only the key column,
+	// which is invalid. Such a map uses Section 7.2 section encoding instead, the
+	// object analogue of an array falling back to expanded form.
+	hasColumn := false
+	for _, f := range valueFields {
+		if !strings.Contains(f, ">") {
+			hasColumn = true
+			break
+		}
+	}
+	if !hasColumn {
+		return nil, nil, nil, "", false
 	}
 
 	// Key-column label: "key", made unique by prepending "_" on collision.

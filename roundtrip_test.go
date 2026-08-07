@@ -788,7 +788,7 @@ func TestGtFieldEdgeCases(t *testing.T) {
 func TestPropertyRoundTripKeyedMap(t *testing.T) {
 	iterations := getIterations(100_000)
 	rng := rand.New(rand.NewSource(42))
-	opts := GenericOptions{KeyedMap: true}
+	opts := GenericOptions{}
 	for i := 0; i < iterations; i++ {
 		val := genValue(rng, 0, 4)
 		gcfText := EncodeGeneric(val, opts)
@@ -830,7 +830,7 @@ func genKeyedMap(rng *rand.Rand, depth, maxDepth int) map[string]any {
 func TestPropertyRoundTripKeyedMapBiased(t *testing.T) {
 	iterations := getIterations(100_000)
 	rng := rand.New(rand.NewSource(1234))
-	opts := GenericOptions{KeyedMap: true}
+	opts := GenericOptions{}
 	for i := 0; i < iterations; i++ {
 		val := genKeyedMap(rng, 0, 4)
 		gcfText := EncodeGeneric(val, opts)

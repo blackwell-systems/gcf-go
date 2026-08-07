@@ -113,7 +113,7 @@ func FuzzEncodeGeneric(f *testing.F) {
 		}
 
 		// Keyed-map path: encoding maps of objects as `## [N:]{...}` must also round-trip.
-		km := EncodeGeneric(input, GenericOptions{KeyedMap: true})
+		km := EncodeGeneric(input)
 		kd, err := DecodeGeneric(km)
 		if err != nil {
 			t.Fatalf("decode failed (KeyedMap): %v\n  input JSON: %s\n  gcf: %q",
