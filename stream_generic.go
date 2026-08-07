@@ -73,15 +73,43 @@ func (enc *GenericStreamEncoder) BeginArray(name string, fields []string) {
 }
 
 // formatFieldDecl quotes each field name per Section 2.4 (via formatKey), matching
-// the buffered tabular header. The streaming header previously joined field names
-// raw, so a name containing a delimiter or quote produced an invalid or ambiguous
-// header (SPEC 8.3).
+// the buffered tabular header. The streaming header previously joined raw field
+// names, producing an invalid header for any name that needs quoting (containing
+// a delimiter, quote, etc.).
 func formatFieldDecl(fields []string) string {
 	parts := make([]string, len(fields))
 	for i, f := range fields {
 		parts[i] = formatKey(f)
 	}
 	return strings.Join(parts, ",")
+}
+
+// BeginKeyedMap starts a keyed-map section with deferred count [?:] (SPEC 7.2a).
+// keyLabel is the key column; valueFields are the value-object fields. Each
+// WriteRow value slice is [keyValue, ...valueFields].
+func (enc *GenericStreamEncoder) BeginKeyedMap(name, keyLabel string, valueFields []string) {
+	enc.mu.Lock()
+	defer enc.mu.Unlock()
+
+	if enc.err != nil {
+		return
+	}
+	if enc.current != nil {
+		enc.endArrayLocked()
+	}
+
+	// A streaming value field name containing ">" is a flattened path a stream
+	// cannot represent (SPEC 8.3, 7.4.6). Reject.
+	for _, f := range valueFields {
+		if strings.Contains(f, ">") {
+			enc.err = fmt.Errorf("streaming field name %q contains '>' (a flattened path is not representable in a streaming row)", f)
+			return
+		}
+	}
+
+	fields := append([]string{keyLabel}, valueFields...)
+	fmt.Fprintf(enc.w, "## %s [?:]{%s}\n", formatKey(name), formatFieldDecl(fields))
+	enc.current = &activeArray{name: name, fields: fields}
 }
 
 // WriteRow emits a single pipe-separated row immediately.

@@ -111,5 +111,19 @@ func FuzzEncodeGeneric(f *testing.F) {
 					noFlatten, string(a), string(b), truncate(gcfText, 500))
 			}
 		}
+
+		// Keyed-map path: encoding maps of objects as `## [N:]{...}` must also round-trip.
+		km := EncodeGeneric(input, GenericOptions{KeyedMap: true})
+		kd, err := DecodeGeneric(km)
+		if err != nil {
+			t.Fatalf("decode failed (KeyedMap): %v\n  input JSON: %s\n  gcf: %q",
+				err, truncate(string(data), 200), truncate(km, 300))
+		}
+		ka, _ := json.Marshal(input)
+		kb, _ := json.Marshal(kd)
+		if string(ka) != string(kb) {
+			t.Fatalf("round-trip mismatch (KeyedMap)\n  input: %s\n  decoded: %s\n  gcf: %q",
+				string(ka), string(kb), truncate(km, 500))
+		}
 	})
 }

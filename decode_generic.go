@@ -68,7 +68,7 @@ func DecodeGeneric(input string) (any, error) {
 			summaryLine = trimmed
 			continue
 		}
-		if strings.HasPrefix(trimmed, "## ") && strings.Contains(trimmed, "[?]") {
+		if strings.HasPrefix(trimmed, "## ") && (strings.Contains(trimmed, "[?]") || strings.Contains(trimmed, "[?:]")) {
 			deferredCount++
 		}
 		contentLines = append(contentLines, l)
@@ -256,6 +256,14 @@ func parseArrayFromHeader(lines []string, headerLine, depth int, bracketPart str
 	countStr := bp[1:closeBracket]
 	afterBracket := bp[closeBracket+1:]
 
+	keyed := strings.HasSuffix(countStr, ":")
+	if keyed {
+		countStr = strings.TrimSuffix(countStr, ":")
+		if !strings.HasPrefix(afterBracket, "{") {
+			return nil, 0, fmt.Errorf("keyed_map: missing field declaration")
+		}
+	}
+
 	count := -1
 	if countStr != "?" {
 		n, err := parseCount(countStr)
@@ -263,6 +271,12 @@ func parseArrayFromHeader(lines []string, headerLine, depth int, bracketPart str
 			return nil, 0, err
 		}
 		count = n
+	}
+
+	// A keyed map has at least one member; an empty object is encoded per
+	// Section 7.7, never as [0:] (SPEC 7.2a.4).
+	if keyed && count == 0 {
+		return nil, 0, fmt.Errorf("keyed_map: zero count [0:] is invalid (an empty object uses Section 7.7)")
 	}
 
 	if count == 0 && !strings.HasPrefix(afterBracket, "{") && !strings.HasPrefix(afterBracket, ":") {
@@ -307,6 +321,13 @@ func parseArrayFromHeader(lines []string, headerLine, depth int, bracketPart str
 		}
 		if count >= 0 && len(rows) != count {
 			return nil, 0, fmt.Errorf("count_mismatch: declared %d, got %d", count, len(rows))
+		}
+		if keyed {
+			m, err := keyedRowsToMap(rows, fields)
+			if err != nil {
+				return nil, 0, err
+			}
+			return m, consumed + 1, nil
 		}
 		return rows, consumed + 1, nil
 	}

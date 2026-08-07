@@ -780,3 +780,67 @@ func TestGtFieldEdgeCases(t *testing.T) {
 		})
 	}
 }
+
+// TestPropertyRoundTripKeyedMap runs the same random JSON generator with
+// KeyedMap=true, proving keyed-map encoding never breaks the round-trip
+// invariant on arbitrary values (maps-of-objects take the keyed path; the rest
+// falls through unchanged).
+func TestPropertyRoundTripKeyedMap(t *testing.T) {
+	iterations := getIterations(100_000)
+	rng := rand.New(rand.NewSource(42))
+	opts := GenericOptions{KeyedMap: true}
+	for i := 0; i < iterations; i++ {
+		val := genValue(rng, 0, 4)
+		gcfText := EncodeGeneric(val, opts)
+		if !utf8.ValidString(gcfText) {
+			t.Fatalf("iter %d: invalid UTF-8", i)
+		}
+		decoded, err := DecodeGeneric(gcfText)
+		if err != nil {
+			t.Fatalf("iter %d: decode failed: %v\n  input: %s\n  gcf: %q", i, err, jsonStr(val), truncate(gcfText, 500))
+		}
+		if !jsonDeepEqual(val, decoded) {
+			t.Fatalf("iter %d: round-trip mismatch\n  input: %s\n  gcf: %q\n  decoded: %s", i, jsonStr(val), truncate(gcfText, 500), jsonStr(decoded))
+		}
+	}
+	t.Logf("PASS: %d random values round-tripped with KeyedMap=true", iterations)
+}
+
+// genKeyedMap builds a map whose values are all objects (keyed-map eligible),
+// with quoting-prone keys, to heavily exercise the keyed path.
+func genKeyedMap(rng *rand.Rand, depth, maxDepth int) map[string]any {
+	n := 1 + rng.Intn(6)
+	m := make(map[string]any, n)
+	for i := 0; i < n; i++ {
+		key := genKey(rng)
+		for j := 0; j < 4; j++ {
+			if _, ok := m[key]; !ok {
+				break
+			}
+			key = genKey(rng)
+		}
+		m[key] = genObject(rng, depth+1, maxDepth)
+	}
+	return m
+}
+
+// TestPropertyRoundTripKeyedMapBiased hammers the keyed path: every top-level
+// value is a map of (random) objects, with quoting-heavy keys, encoded with
+// KeyedMap=true.
+func TestPropertyRoundTripKeyedMapBiased(t *testing.T) {
+	iterations := getIterations(100_000)
+	rng := rand.New(rand.NewSource(1234))
+	opts := GenericOptions{KeyedMap: true}
+	for i := 0; i < iterations; i++ {
+		val := genKeyedMap(rng, 0, 4)
+		gcfText := EncodeGeneric(val, opts)
+		decoded, err := DecodeGeneric(gcfText)
+		if err != nil {
+			t.Fatalf("iter %d: decode failed: %v\n  input: %s\n  gcf: %q", i, err, jsonStr(val), truncate(gcfText, 600))
+		}
+		if !jsonDeepEqual(val, decoded) {
+			t.Fatalf("iter %d: round-trip mismatch\n  input: %s\n  gcf: %q\n  decoded: %s", i, jsonStr(val), truncate(gcfText, 600), jsonStr(decoded))
+		}
+	}
+	t.Logf("PASS: %d keyed-map-biased values round-tripped with KeyedMap=true", iterations)
+}

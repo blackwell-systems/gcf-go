@@ -12,6 +12,9 @@ type GenericOptions struct {
 	// objects use attachment syntax instead. Open-weight models currently
 	// comprehend the expanded form better; this gap is expected to close.
 	NoFlatten bool
+
+	// KeyedMap (prototype) encodes a map of objects as a keyed table `## [N:]{key,...}`.
+	KeyedMap bool
 }
 
 // EncodeGeneric encodes with all v3 optimizations:
@@ -30,6 +33,7 @@ func EncodeGeneric(data any, optsList ...GenericOptions) string {
 		SharedArraySchema:  true,
 		MinInlineFields:    3,
 		FlattenNested:      !gopts.NoFlatten,
+		KeyedMap:           gopts.KeyedMap,
 	}
 	return encodeGenericImpl(data, opts)
 }
@@ -42,6 +46,7 @@ type encodeOpts struct {
 	SharedArraySchema  bool
 	MinInlineFields    int
 	FlattenNested      bool
+	KeyedMap           bool
 }
 
 func (o encodeOpts) String() string {
@@ -80,8 +85,20 @@ func encodeRootValue(b *strings.Builder, v any, opts encodeOpts) {
 	case nil:
 		b.WriteString("=-\n")
 	case *OrderedMap:
+		if opts.KeyedMap {
+			if ks, vs, vf, kl, ok := keyedMapEligible(val, opts); ok {
+				encodeKeyedMap(b, "", false, ks, vs, vf, kl, 0, opts)
+				return
+			}
+		}
 		encodeOrderedObject(b, val, 0, opts)
 	case map[string]any:
+		if opts.KeyedMap {
+			if ks, vs, vf, kl, ok := keyedMapEligible(val, opts); ok {
+				encodeKeyedMap(b, "", false, ks, vs, vf, kl, 0, opts)
+				return
+			}
+		}
 		encodeObject(b, val, 0, opts)
 	case []any:
 		encodeRootArray(b, val, opts)
@@ -99,12 +116,24 @@ func encodeOrderedObject(b *strings.Builder, m *OrderedMap, depth int, opts enco
 		fk := formatKey(key)
 		switch v := val.(type) {
 		case *OrderedMap:
+			if opts.KeyedMap {
+				if ks, vs, vf, kl, ok := keyedMapEligible(v, opts); ok {
+					encodeKeyedMap(b, key, true, ks, vs, vf, kl, depth, opts)
+					continue
+				}
+			}
 			b.WriteString(prefix)
 			b.WriteString("## ")
 			b.WriteString(fk)
 			b.WriteByte('\n')
 			encodeOrderedObject(b, v, depth+1, opts)
 		case map[string]any:
+			if opts.KeyedMap {
+				if ks, vs, vf, kl, ok := keyedMapEligible(v, opts); ok {
+					encodeKeyedMap(b, key, true, ks, vs, vf, kl, depth, opts)
+					continue
+				}
+			}
 			b.WriteString(prefix)
 			b.WriteString("## ")
 			b.WriteString(fk)
@@ -129,12 +158,24 @@ func encodeObject(b *strings.Builder, m map[string]any, depth int, opts encodeOp
 		fk := formatKey(key)
 		switch v := val.(type) {
 		case *OrderedMap:
+			if opts.KeyedMap {
+				if ks, vs, vf, kl, ok := keyedMapEligible(v, opts); ok {
+					encodeKeyedMap(b, key, true, ks, vs, vf, kl, depth, opts)
+					continue
+				}
+			}
 			b.WriteString(prefix)
 			b.WriteString("## ")
 			b.WriteString(fk)
 			b.WriteByte('\n')
 			encodeOrderedObject(b, v, depth+1, opts)
 		case map[string]any:
+			if opts.KeyedMap {
+				if ks, vs, vf, kl, ok := keyedMapEligible(v, opts); ok {
+					encodeKeyedMap(b, key, true, ks, vs, vf, kl, depth, opts)
+					continue
+				}
+			}
 			b.WriteString(prefix)
 			b.WriteString("## ")
 			b.WriteString(fk)
@@ -166,7 +207,7 @@ func encodeRootArray(b *strings.Builder, arr []any, opts encodeOpts) {
 		return
 	}
 	if fields := tabularFields(arr); fields != nil {
-		encodeTabular(b, "## ", arr, fields, 0, opts)
+		encodeTabular(b, "## ", arr, fields, 0, opts, false)
 		return
 	}
 	encodeExpanded(b, "## ", arr, 0, opts)
@@ -187,7 +228,7 @@ func encodeNamedArray(b *strings.Builder, name string, arr []any, depth int, opt
 		return
 	}
 	if fields := tabularFields(arr); fields != nil {
-		encodeTabular(b, fmt.Sprintf("%s## %s ", prefix, name), arr, fields, depth, opts)
+		encodeTabular(b, fmt.Sprintf("%s## %s ", prefix, name), arr, fields, depth, opts, false)
 		return
 	}
 	encodeExpanded(b, fmt.Sprintf("%s## %s ", prefix, name), arr, depth, opts)
@@ -199,9 +240,21 @@ func encodeExpanded(b *strings.Builder, headerPrefix string, arr []any, depth in
 	for i, item := range arr {
 		switch v := item.(type) {
 		case *OrderedMap:
+			if opts.KeyedMap {
+				if ks, vs, vf, kl, ok := keyedMapEligible(v, opts); ok {
+					encodeKeyedMapWithPrefix(b, fmt.Sprintf("%s@%d ", prefix, i), ks, vs, vf, kl, depth+1, opts)
+					continue
+				}
+			}
 			fmt.Fprintf(b, "%s@%d {}\n", prefix, i)
 			encodeOrderedObject(b, v, depth+1, opts)
 		case map[string]any:
+			if opts.KeyedMap {
+				if ks, vs, vf, kl, ok := keyedMapEligible(v, opts); ok {
+					encodeKeyedMapWithPrefix(b, fmt.Sprintf("%s@%d ", prefix, i), ks, vs, vf, kl, depth+1, opts)
+					continue
+				}
+			}
 			fmt.Fprintf(b, "%s@%d {}\n", prefix, i)
 			encodeObject(b, v, depth+1, opts)
 		case []any:
@@ -214,7 +267,7 @@ func encodeExpanded(b *strings.Builder, headerPrefix string, arr []any, depth in
 				}
 				fmt.Fprintf(b, "%s@%d [%d]: %s\n", prefix, i, len(v), strings.Join(parts, ","))
 			} else if nf := tabularFields(v); nf != nil {
-				encodeTabular(b, fmt.Sprintf("%s@%d ", prefix, i), v, nf, depth+1, opts)
+				encodeTabular(b, fmt.Sprintf("%s@%d ", prefix, i), v, nf, depth+1, opts, false)
 			} else {
 				encodeExpanded(b, fmt.Sprintf("%s@%d ", prefix, i), v, depth+1, opts)
 			}
@@ -543,13 +596,13 @@ func resolveKeyChain(item any, keys []string) (val any, exists bool) {
 
 // flatColumn describes a column in the expanded (flattened) field list.
 type flatColumn struct {
-	headerName string // formatted name for the header
-	colType    string // "scalar", "flat", or "attachment"
-	field      string // original field name
+	headerName string   // formatted name for the header
+	colType    string   // "scalar", "flat", or "attachment"
+	field      string   // original field name
 	keys       []string // key chain for flat columns
 }
 
-func encodeTabular(b *strings.Builder, headerPrefix string, arr []any, fields []string, depth int, opts encodeOpts) {
+func encodeTabular(b *strings.Builder, headerPrefix string, arr []any, fields []string, depth int, opts encodeOpts, keyed bool) {
 	prefix := indentStr(depth)
 
 	// Phase 0: Analyze fields for flattening potential.
@@ -636,7 +689,11 @@ func encodeTabular(b *strings.Builder, headerPrefix string, arr []any, fields []
 	for i, col := range columns {
 		headerFields[i] = col.headerName
 	}
-	fmt.Fprintf(b, "%s[%d]{%s}\n", headerPrefix, len(arr), strings.Join(headerFields, ","))
+	br := "]"
+	if keyed {
+		br = ":]"
+	}
+	fmt.Fprintf(b, "%s[%d%s{%s}\n", headerPrefix, len(arr), br, strings.Join(headerFields, ","))
 
 	// Encode rows.
 	for i, item := range arr {
@@ -760,9 +817,21 @@ func encodeTabular(b *strings.Builder, headerPrefix string, arr []any, fields []
 			} else {
 				switch av := att.value.(type) {
 				case *OrderedMap:
+					if opts.KeyedMap {
+						if ks, vs, vf, kl, ok := keyedMapEligible(av, opts); ok {
+							encodeKeyedMapWithPrefix(b, fmt.Sprintf("%s.%s ", attIndent, fk), ks, vs, vf, kl, depth+2, opts)
+							break
+						}
+					}
 					fmt.Fprintf(b, "%s.%s {}\n", attIndent, fk)
 					encodeOrderedObject(b, av, depth+2, opts)
 				case map[string]any:
+					if opts.KeyedMap {
+						if ks, vs, vf, kl, ok := keyedMapEligible(av, opts); ok {
+							encodeKeyedMapWithPrefix(b, fmt.Sprintf("%s.%s ", attIndent, fk), ks, vs, vf, kl, depth+2, opts)
+							break
+						}
+					}
 					fmt.Fprintf(b, "%s.%s {}\n", attIndent, fk)
 					encodeObject(b, av, depth+2, opts)
 				case []any:
@@ -794,7 +863,7 @@ func encodeAttachmentArray(b *strings.Builder, attPrefix, fk string, arr []any, 
 		}
 		fmt.Fprintf(b, "%s.%s [%d]: %s\n", attPrefix, fk, len(arr), strings.Join(parts, ","))
 	} else if nestedFields := tabularFields(arr); nestedFields != nil {
-		encodeTabular(b, fmt.Sprintf("%s.%s ", attPrefix, fk), arr, nestedFields, depth, opts)
+		encodeTabular(b, fmt.Sprintf("%s.%s ", attPrefix, fk), arr, nestedFields, depth, opts, false)
 	} else {
 		encodeExpanded(b, fmt.Sprintf("%s.%s ", attPrefix, fk), arr, depth, opts)
 	}

@@ -147,7 +147,6 @@ func parseCount(s string) (int, error) {
 	return n, nil
 }
 
-
 func payloadToMap(p *Payload) map[string]any {
 	syms := make([]any, len(p.Symbols))
 	for i, s := range p.Symbols {
@@ -205,7 +204,7 @@ func validateSummaryCounts(summaryLine string, deferredCount int, contentLines [
 	currentCount := 0
 	for _, l := range contentLines {
 		trimmed := strings.TrimLeft(l, " ")
-		if strings.HasPrefix(trimmed, "## ") && strings.Contains(trimmed, "[?]") {
+		if strings.HasPrefix(trimmed, "## ") && (strings.Contains(trimmed, "[?]") || strings.Contains(trimmed, "[?:]")) {
 			if inDeferred {
 				actualCounts = append(actualCounts, currentCount)
 			}
