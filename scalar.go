@@ -26,6 +26,11 @@ func needsQuote(s string) bool {
 	if s == "-" || s == "~" || s == "^" || s == "true" || s == "false" {
 		return true
 	}
+	// A value shaped like an inline-schema attachment marker (^{...}) would decode
+	// as an attachment and lose the string, so it must be quoted (SPEC 2.4).
+	if len(s) >= 3 && s[0] == '^' && s[1] == '{' && s[len(s)-1] == '}' {
+		return true
+	}
 	if jsonNumberRe.MatchString(s) {
 		return true
 	}
