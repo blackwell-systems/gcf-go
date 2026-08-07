@@ -81,7 +81,7 @@ func DecodeGeneric(input string) (any, error) {
 	}
 
 	if len(contentLines) == 0 {
-		return map[string]any{}, nil
+		return NewOrderedMap(), nil
 	}
 
 	first := contentLines[0]
@@ -98,7 +98,7 @@ func DecodeGeneric(input string) (any, error) {
 		return parseArraySection(contentLines, 0, 0)
 	}
 
-	result := make(map[string]any)
+	result := NewOrderedMap()
 	_, err = parseObjectBody(contentLines, 0, 0, result)
 	if err != nil {
 		return nil, err
@@ -106,7 +106,7 @@ func DecodeGeneric(input string) (any, error) {
 	return result, nil
 }
 
-func parseObjectBody(lines []string, start, depth int, out map[string]any) (int, error) {
+func parseObjectBody(lines []string, start, depth int, out *OrderedMap) (int, error) {
 	indent := strings.Repeat("  ", depth)
 	i := start
 
@@ -131,14 +131,14 @@ func parseObjectBody(lines []string, start, depth int, out map[string]any) (int,
 				if err != nil {
 					return 0, err
 				}
-				if _, exists := out[name]; exists {
+				if _, exists := out.Get(name); exists {
 					return 0, fmt.Errorf("duplicate_key: %s", name)
 				}
 				arr, consumed, err := parseArrayFromHeader(lines, i, depth, headerContent[bracketIdx:])
 				if err != nil {
 					return 0, err
 				}
-				out[name] = arr
+				out.Set(name, arr)
 				i += consumed
 				continue
 			}
@@ -146,16 +146,16 @@ func parseObjectBody(lines []string, start, depth int, out map[string]any) (int,
 			if err != nil {
 				return 0, err
 			}
-			if _, exists := out[name]; exists {
+			if _, exists := out.Get(name); exists {
 				return 0, fmt.Errorf("duplicate_key: %s", name)
 			}
 			i++
-			nested := make(map[string]any)
+			nested := NewOrderedMap()
 			consumed, err := parseObjectBody(lines, i, depth+1, nested)
 			if err != nil {
 				return 0, err
 			}
-			out[name] = nested
+			out.Set(name, nested)
 			i += consumed
 			continue
 		}
@@ -171,7 +171,7 @@ func parseObjectBody(lines []string, start, depth int, out map[string]any) (int,
 				if err != nil {
 					return 0, err
 				}
-				if _, exists := out[key]; exists {
+				if _, exists := out.Get(key); exists {
 					return 0, fmt.Errorf("duplicate_key: %s", key)
 				}
 				valStr := content[eqIdx+1:]
@@ -179,7 +179,7 @@ func parseObjectBody(lines []string, start, depth int, out map[string]any) (int,
 				if err != nil {
 					return 0, err
 				}
-				out[key] = val
+				out.Set(key, val)
 				i++
 				continue
 			}
@@ -202,7 +202,7 @@ func parseObjectBody(lines []string, start, depth int, out map[string]any) (int,
 			if err != nil {
 				return 0, err
 			}
-			out[key] = val
+			out.Set(key, val)
 			i++
 			continue
 		}
@@ -218,7 +218,7 @@ func parseObjectBody(lines []string, start, depth int, out map[string]any) (int,
 			if err != nil {
 				return 0, err
 			}
-			out[key] = arr
+			out.Set(key, arr)
 			i++
 			continue
 		}
@@ -385,7 +385,7 @@ func parseExpandedBody(lines []string, start, depth int) ([]any, int, error) {
 			continue
 		}
 		if strings.HasPrefix(marker, "{}") {
-			nested := make(map[string]any)
+			nested := NewOrderedMap()
 			i++
 			consumed, err := parseObjectBody(lines, i, depth+1, nested)
 			if err != nil {
@@ -413,18 +413,23 @@ func parseExpandedBody(lines []string, start, depth int) ([]any, int, error) {
 	return items, i - start, nil
 }
 
-// unflattenPaths takes a flat map with ">" path keys and reconstructs nested objects.
+// unflattenPaths takes flat ">" path keys and reconstructs nested objects.
+// pathOrder lists the path-column field names in declared header order so that
+// both top-level group placement and nested key order follow declaration order.
 // It also handles the group-level absent/null semantics:
 // if all leaves in a top-level group are absent (~), the parent key is omitted;
 // if all leaves are null (-), the parent key is set to nil.
-func unflattenPaths(pathColumns map[string][]string, flatValues map[string]any, flatAbsent map[string]bool) map[string]any {
-	// Group path columns by their top-level parent.
+// The returned OrderedMap holds only the reconstructed top-level group keys, in
+// the order each group's first path column was declared.
+func unflattenPaths(pathColumns map[string][]string, pathOrder []string, flatValues map[string]any, flatAbsent map[string]bool) *OrderedMap {
+	// Group path columns by their top-level parent, preserving declaration order.
 	type groupInfo struct {
-		paths []string // all path column names in this group
+		paths []string // path column names in this group, in declaration order
 	}
 	groups := make(map[string]*groupInfo)
 	var groupOrder []string
-	for _, paths := range pathColumns {
+	for _, fieldName := range pathOrder {
+		paths := pathColumns[fieldName]
 		if len(paths) == 0 {
 			continue
 		}
@@ -433,14 +438,10 @@ func unflattenPaths(pathColumns map[string][]string, flatValues map[string]any, 
 			groups[topLevel] = &groupInfo{}
 			groupOrder = append(groupOrder, topLevel)
 		}
-	}
-	// Assign each path column to its top-level group.
-	for fieldName, paths := range pathColumns {
-		topLevel := paths[0]
 		groups[topLevel].paths = append(groups[topLevel].paths, fieldName)
 	}
 
-	result := make(map[string]any)
+	result := NewOrderedMap()
 
 	for _, topLevel := range groupOrder {
 		grp := groups[topLevel]
@@ -462,11 +463,12 @@ func unflattenPaths(pathColumns map[string][]string, flatValues map[string]any, 
 			continue // omit the parent key entirely
 		}
 		if allNull {
-			result[topLevel] = nil
+			result.Set(topLevel, nil)
 			continue
 		}
 
-		// Build nested structure.
+		// Build nested structure. Nested keys are inserted in path-column
+		// declaration order, so intermediate objects keep declared key order.
 		for _, fieldName := range grp.paths {
 			if flatAbsent[fieldName] {
 				continue // omit this leaf
@@ -478,14 +480,16 @@ func unflattenPaths(pathColumns map[string][]string, flatValues map[string]any, 
 			current := result
 			for i := 0; i < len(paths)-1; i++ {
 				k := paths[i]
-				next, ok := current[k]
+				next, ok := current.Get(k)
 				if !ok {
-					next = make(map[string]any)
-					current[k] = next
+					child := NewOrderedMap()
+					current.Set(k, child)
+					current = child
+				} else {
+					current = next.(*OrderedMap)
 				}
-				current = next.(map[string]any)
 			}
-			current[paths[len(paths)-1]] = val
+			current.Set(paths[len(paths)-1], val)
 		}
 	}
 
@@ -505,7 +509,9 @@ func parseTabularBody(lines []string, start, depth int, fields []string, expecte
 
 	// Detect path columns: fields containing ">".
 	// pathColumnMap maps field name -> split path segments.
+	// pathOrder lists path columns in declared order for stable unflattening.
 	pathColumnMap := make(map[string][]string)
+	var pathOrder []string
 	for _, f := range fields {
 		if strings.Contains(f, ">") {
 			parts := strings.Split(f, ">")
@@ -520,8 +526,31 @@ func parseTabularBody(lines []string, start, depth int, fields []string, expecte
 			}
 			if valid {
 				pathColumnMap[f] = parts
+				pathOrder = append(pathOrder, f)
 			}
 		}
+	}
+
+	// Plan the declared output-key order for each row. Walk fields once: a regular
+	// field emits its own name at its position; a flatten path column emits its
+	// top-level group key at the position of the group's FIRST path column and is
+	// skipped thereafter. This fixes each output key at its declared position
+	// regardless of when the value is resolved (scalar, attachment, or flatten).
+	var outputOrder []string
+	outputSet := make(map[string]bool)
+	seenGroup := make(map[string]bool)
+	for _, f := range fields {
+		if parts, isPath := pathColumnMap[f]; isPath {
+			top := parts[0]
+			if !seenGroup[top] {
+				seenGroup[top] = true
+				outputOrder = append(outputOrder, top)
+				outputSet[top] = true
+			}
+			continue
+		}
+		outputOrder = append(outputOrder, f)
+		outputSet[f] = true
 	}
 
 	// Track inline schemas declared by ^{fields}.
@@ -582,7 +611,14 @@ func parseTabularBody(lines []string, start, depth int, fields []string, expecte
 			return nil, 0, fmt.Errorf("row_width_mismatch: expected %d fields, got %d", len(fields), len(vals))
 		}
 
-		row := make(map[string]any)
+		// resolved holds each present field's value by name, order-independent; the
+		// row's declared key order is applied at the end via outputOrder.
+		// extraOrder records resolved keys that are NOT declared header fields (the
+		// flatten-fallback attachments, Section 7.4.6.1.4, whose names contain ">"
+		// but are not tabular columns); they are emitted after the declared fields
+		// in the order their attachment lines appeared.
+		resolved := make(map[string]any)
+		var extraOrder []string
 		var traditionalAttFields []string // fields needing .fieldname {} or .fieldname [N]
 		var inlineAttFields []string      // fields with inline schema (positional data)
 		var inlineAttOrder []string       // ordered list for positional decoding
@@ -638,15 +674,18 @@ func parseTabularBody(lines []string, start, depth int, fields []string, expecte
 					traditionalAttFields = append(traditionalAttFields, f)
 				}
 			default:
-				row[f] = parsed
+				resolved[f] = parsed
 			}
 		}
 
-		// Unflatten path columns into nested objects.
+		// Unflatten path columns into nested objects. The reconstructed top-level
+		// group keys are recorded in resolved so they take their planned position
+		// in outputOrder (the position of each group's first path column).
 		if len(pathColumnMap) > 0 {
-			nested := unflattenPaths(pathColumnMap, flatValues, flatAbsent)
-			for k, v := range nested {
-				row[k] = v
+			nested := unflattenPaths(pathColumnMap, pathOrder, flatValues, flatAbsent)
+			for _, k := range nested.Keys() {
+				v, _ := nested.Get(k)
+				resolved[k] = v
 			}
 		}
 
@@ -726,7 +765,7 @@ func parseTabularBody(lines []string, start, depth int, fields []string, expecte
 						if len(inlineVals) != len(ifs) {
 							return nil, 0, fmt.Errorf("inline_width_mismatch: %s expected %d, got %d", attName, len(ifs), len(inlineVals))
 						}
-						obj := make(map[string]any)
+						obj := NewOrderedMap()
 						for k, inf := range ifs {
 							p, err := parseScalar(inlineVals[k], true)
 							if err != nil {
@@ -735,11 +774,11 @@ func parseTabularBody(lines []string, start, depth int, fields []string, expecte
 							switch p.(type) {
 							case missingMarker:
 							default:
-								obj[inf] = p
+								obj.Set(inf, p)
 							}
 						}
 						resolvedAttachments[attName] = struct{}{}
-						row[attName] = obj
+						resolved[attName] = obj
 						i++
 						continue
 					}
@@ -754,7 +793,10 @@ func parseTabularBody(lines []string, start, depth int, fields []string, expecte
 						sharedArraySchemas[attNameT] = parsedFields
 					}
 					resolvedAttachments[attNameT] = struct{}{}
-					row[attNameT] = attVal
+					if _, declared := resolved[attNameT]; !declared && !outputSet[attNameT] {
+						extraOrder = append(extraOrder, attNameT)
+					}
+					resolved[attNameT] = attVal
 					i += consumed
 					continue
 				}
@@ -781,7 +823,7 @@ func parseTabularBody(lines []string, start, depth int, fields []string, expecte
 				if len(inlineVals) != len(ifs) {
 					return nil, 0, fmt.Errorf("inline_width_mismatch: %s expected %d, got %d", nextInlineField, len(ifs), len(inlineVals))
 				}
-				obj := make(map[string]any)
+				obj := NewOrderedMap()
 				for k, inf := range ifs {
 					p, err := parseScalar(inlineVals[k], true)
 					if err != nil {
@@ -790,11 +832,11 @@ func parseTabularBody(lines []string, start, depth int, fields []string, expecte
 					switch p.(type) {
 					case missingMarker:
 					default:
-						obj[inf] = p
+						obj.Set(inf, p)
 					}
 				}
 				resolvedAttachments[nextInlineField] = struct{}{}
-				row[nextInlineField] = obj
+				resolved[nextInlineField] = obj
 				inlineIdx++
 				i++
 			}
@@ -818,6 +860,23 @@ func parseTabularBody(lines []string, start, depth int, fields []string, expecte
 						return nil, 0, fmt.Errorf("duplicate_attachment: %s", extraName)
 					}
 				}
+			}
+		}
+
+		// Build the row in declared field order. Absent fields (~) never entered
+		// resolved, so they are skipped; every present field lands at its planned
+		// position, whether it was a scalar, an attachment, or a flatten group.
+		row := NewOrderedMap()
+		for _, k := range outputOrder {
+			if v, ok := resolved[k]; ok {
+				row.Set(k, v)
+			}
+		}
+		// Append flatten-fallback attachments after the declared fields, in the
+		// order their attachment lines appeared.
+		for _, k := range extraOrder {
+			if v, ok := resolved[k]; ok {
+				row.Set(k, v)
 			}
 		}
 
@@ -870,7 +929,7 @@ func parseAttachment(lines []string, lineIdx int, rest string, depth int, shared
 
 	// Object: {}
 	if strings.HasPrefix(afterName, "{}") {
-		nested := make(map[string]any)
+		nested := NewOrderedMap()
 		consumed, err := parseObjectBody(lines, lineIdx+1, depth, nested)
 		if err != nil {
 			return "", nil, 0, nil, err

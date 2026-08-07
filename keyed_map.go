@@ -147,18 +147,20 @@ func encodeKeyedMapWithPrefix(b *strings.Builder, headerPrefix string, keys []st
 
 // keyedRowsToMap reconstructs the map from decoded keyed-table rows: the first
 // declared field is the member key; the remaining fields form the value object.
-func keyedRowsToMap(rows []any, fields []string) (map[string]any, error) {
+// Members are emitted in row order and each value object keeps the row's declared
+// field order (with the key column removed).
+func keyedRowsToMap(rows []any, fields []string) (*OrderedMap, error) {
 	if len(fields) < 2 {
 		return nil, fmt.Errorf("keyed_map: header must declare at least two fields")
 	}
 	keyLabel := fields[0]
-	out := make(map[string]any, len(rows))
+	out := NewOrderedMap()
 	for _, r := range rows {
-		row, ok := r.(map[string]any)
+		row, ok := r.(*OrderedMap)
 		if !ok {
 			return nil, fmt.Errorf("keyed_map: row is not an object")
 		}
-		kv, present := row[keyLabel]
+		kv, present := row.Get(keyLabel)
 		if !present {
 			return nil, fmt.Errorf("keyed_map: row missing key column %q", keyLabel)
 		}
@@ -166,11 +168,19 @@ func keyedRowsToMap(rows []any, fields []string) (map[string]any, error) {
 		if !ok {
 			ks = fmt.Sprintf("%v", kv)
 		}
-		if _, dup := out[ks]; dup {
+		if _, dup := out.Get(ks); dup {
 			return nil, fmt.Errorf("keyed_map: duplicate member key %q", ks)
 		}
-		delete(row, keyLabel)
-		out[ks] = row
+		// Rebuild the member value in declared order minus the key column.
+		val := NewOrderedMap()
+		for _, k := range row.Keys() {
+			if k == keyLabel {
+				continue
+			}
+			v, _ := row.Get(k)
+			val.Set(k, v)
+		}
+		out.Set(ks, val)
 	}
 	return out, nil
 }

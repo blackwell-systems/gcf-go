@@ -45,15 +45,16 @@ func TestGenericStreamEncoder_RoundTrip(t *testing.T) {
 		t.Fatalf("decode failed: %v\noutput:\n%s", err, buf.String())
 	}
 
-	m := result.(map[string]any)
-	items := m["items"].([]any)
+	m := result.(*OrderedMap)
+	itemsAny, _ := m.Get("items")
+	items := itemsAny.([]any)
 	if len(items) != 2 {
 		t.Fatalf("expected 2 items, got %d", len(items))
 	}
 
-	first := items[0].(map[string]any)
-	if first["name"] != "Widget" {
-		t.Errorf("expected Widget, got %v", first["name"])
+	first := items[0].(*OrderedMap)
+	if name, _ := first.Get("name"); name != "Widget" {
+		t.Errorf("expected Widget, got %v", name)
 	}
 }
 

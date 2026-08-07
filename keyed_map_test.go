@@ -177,13 +177,10 @@ func TestKeyedMapStreaming(t *testing.T) {
 	if err != nil {
 		t.Fatalf("decode: %v\nwire:\n%s", err, wire)
 	}
-	want := map[string]any{
-		"servers": map[string]any{
-			"web-01":  map[string]any{"cpu": 23, "mem": 61},
-			"db-01":   map[string]any{"cpu": 41, "mem": 83},
-			"cache-1": map[string]any{"cpu": 7, "mem": 12},
-		},
-	}
+	// Members must decode in wire (row) order, not sorted; build want in that
+	// order so the comparison is order sensitive.
+	want, _ := ParseJSONOrdered([]byte(
+		`{"servers":{"web-01":{"cpu":23,"mem":61},"db-01":{"cpu":41,"mem":83},"cache-1":{"cpu":7,"mem":12}}}`))
 	if normJSON(t, want) != normJSON(t, got) {
 		t.Errorf("MISMATCH\n want: %s\n got:  %s\n wire:\n%s", normJSON(t, want), normJSON(t, got), wire)
 	} else {
