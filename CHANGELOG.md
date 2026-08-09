@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.6.2 (2026-08-09)
+
+- **Spec v3.5.1 conformance (SPEC 5, score-rounding errata).** SPEC 5 now pins the graph `score` two-decimal wire form to round-half-to-even on the exact IEEE-754 double, resolving a midpoint divergence in the JavaScript and Kotlin SDKs. This SDK's `strconv.FormatFloat` / `fmt %.2f` formatter already rounds half-to-even, so there is no behavior change; re-verified against the new `graph-encode/004_score_midpoint_rounding` conformance fixture.
+
 ## v1.6.1 (2026-08-07)
 
 - Decoders now reject a declared `[N]` section count that does not match the actual item count, in both directions, per SPEC Section 13 (Count Validation). A declared count smaller than the rows or entries present was previously read as a limit and the surplus was dropped; it is now an error. Covers the generic tabular, keyed-map, and root-array forms, the delta and full-set decoders, and the graph `## edges [N]` section. Valid payloads and encoding are unchanged.
