@@ -2,8 +2,10 @@ package gcf
 
 import (
 	"fmt"
+	"math"
 	"reflect"
 	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -135,9 +137,12 @@ func toAny(data any) any {
 	case float64:
 		return v
 	case int:
-		return float64(v)
+		// int is 64-bit on every supported platform and always within the int64
+		// domain; preserve it exactly rather than routing through float64 (which
+		// would silently approximate magnitudes beyond 2^53). SPEC 2.3.2.
+		return int64(v)
 	case int64:
-		return float64(v)
+		return v
 	}
 	v := reflect.ValueOf(data)
 	return reflectToAny(v)
@@ -183,9 +188,18 @@ func reflectToAny(v reflect.Value) any {
 	case reflect.Bool:
 		return v.Bool()
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return float64(v.Int())
+		// Signed values fit the int64 domain exactly; preserve them (SPEC 2.3.2).
+		return v.Int()
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		return float64(v.Uint())
+		u := v.Uint()
+		if u <= math.MaxInt64 {
+			return int64(u)
+		}
+		// A uint64 above int64 max is outside the numeric domain (SPEC 2.3.2).
+		// The generic encoder has no error channel here, so preserve the digits
+		// losslessly as a string rather than approximating through float64. A
+		// strict fail-loud encode path for this case is a separate decision.
+		return strconv.FormatUint(u, 10)
 	case reflect.Float32, reflect.Float64:
 		return v.Float()
 	case reflect.String:

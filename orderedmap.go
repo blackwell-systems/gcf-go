@@ -2,8 +2,10 @@ package gcf
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"strconv"
 	"strings"
 )
 
@@ -121,7 +123,21 @@ func parseJSONValue(dec *json.Decoder) (any, error) {
 			return nil, fmt.Errorf("unexpected delimiter: %v", v)
 		}
 	case json.Number:
-		// Convert to float64 for consistency with standard json.Unmarshal.
+		// Token shape follows domain (SPEC 2.3.2): a bare-integer literal (no
+		// fraction, no exponent) is an int64-domain integer and MUST NOT be routed
+		// through float64, which would silently approximate magnitudes beyond 2^53.
+		// A decimal or exponent literal is a double.
+		s := v.String()
+		if !strings.ContainsAny(s, ".eE") {
+			n, err := strconv.ParseInt(s, 10, 64)
+			if err != nil {
+				if errors.Is(err, strconv.ErrRange) {
+					return nil, fmt.Errorf("out_of_range: integer %s is outside the canonical int64 domain [-9223372036854775808, 9223372036854775807]; model larger values as strings (SPEC 2.3.2)", s)
+				}
+				return nil, err
+			}
+			return n, nil
+		}
 		f, err := v.Float64()
 		if err != nil {
 			return nil, err

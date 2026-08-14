@@ -1,6 +1,7 @@
 package gcf
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"regexp"
@@ -151,7 +152,14 @@ func formatNumber(f float64) string {
 		return "0"
 	}
 	abs := math.Abs(f)
-	if abs >= 1e-6 && abs < 1e21 {
+	// Plain decimal only below 2^53. Every double at or above 2^53 is integer-valued
+	// (a binary64 has no fractional part past 2^52), so a plain rendering would emit a
+	// bare-integer token: indistinguishable from an int64 on the wire, and beyond the
+	// binary64 safe-integer range (2^53-1) so a JavaScript decoder rejects it under its
+	// default policy. Rendering such doubles in exponent shape keeps bare tokens
+	// unambiguously int64 and decimal/exponent tokens doubles (SPEC 2.3.1).
+	// 9007199254740992.0 is 2^53.
+	if abs >= 1e-6 && abs < 9007199254740992.0 {
 		// Plain decimal. Use strconv to get exact representation.
 		s := strconv.FormatFloat(f, 'f', -1, 64)
 		return s
@@ -246,18 +254,25 @@ func parseScalar(s string, tabularContext bool) (any, error) {
 
 	// 6. Number (JSON number grammar).
 	if jsonNumberRe.MatchString(s) {
+		// A plain integer literal (no fraction, no exponent) is parsed directly to
+		// int64 so the full signed 64-bit domain round-trips exactly. Routing it
+		// through a float64 would silently approximate any magnitude beyond 2^53
+		// (SPEC 2.3.2). Fraction/exponent forms remain IEEE-754 doubles.
+		if !strings.Contains(s, ".") && !strings.ContainsAny(s, "eE") {
+			// A bare token (no fraction, no exponent) is an integer; `-0` is integer
+			// syntax and decodes to the value zero (SPEC 2.3.1), not a float -0.0.
+			n, err := strconv.ParseInt(s, 10, 64)
+			if err != nil {
+				if errors.Is(err, strconv.ErrRange) {
+					return nil, fmt.Errorf("out_of_range: integer %s is outside the canonical int64 domain [-9223372036854775808, 9223372036854775807]; model larger values as strings (SPEC 2.3.2)", s)
+				}
+				return s, nil // not a parseable integer; fall through to bare string
+			}
+			return n, nil
+		}
 		f, err := strconv.ParseFloat(s, 64)
 		if err != nil {
 			return s, nil // fall through to bare string
-		}
-		// Check if it's an integer value (but not negative zero, and within float64 exact range).
-		if !math.Signbit(f) || f != 0 {
-			if !strings.Contains(s, ".") && !strings.ContainsAny(s, "eE") {
-				const maxExactInt = 1 << 53 // float64 exact integer range
-				if f >= -maxExactInt && f <= maxExactInt && f == math.Trunc(f) {
-					return int64(f), nil
-				}
-			}
 		}
 		return f, nil
 	}

@@ -13,16 +13,16 @@ import (
 )
 
 type conformanceFixture struct {
-	Name          string `json:"name"`
-	Description   string `json:"description"`
-	Operation     string `json:"operation"`
-	Input         json.RawMessage `json:"input"`
-	Expected      json.RawMessage `json:"expected"`
-	ExpectedError string          `json:"expectedError"`
-	InputBase64   string          `json:"inputBase64"`
+	Name             string          `json:"name"`
+	Description      string          `json:"description"`
+	Operation        string          `json:"operation"`
+	Input            json.RawMessage `json:"input"`
+	Expected         json.RawMessage `json:"expected"`
+	ExpectedError    string          `json:"expectedError"`
+	InputBase64      string          `json:"inputBase64"`
 	BaseSnapshot     json.RawMessage `json:"base_snapshot"`
 	ExpectedSnapshot json.RawMessage `json:"expected_snapshot"`
-	Options       struct {
+	Options          struct {
 		LabeledTrailerCounts bool `json:"labeledTrailerCounts"`
 	} `json:"options"`
 }
@@ -81,10 +81,14 @@ func TestConformance(t *testing.T) {
 				runDecodeTest(t, fix)
 			case "error":
 				runErrorTest(t, fix)
+			case "encode-error":
+				runEncodeErrorTest(t, fix)
 			case "session":
 				runSessionTest(t, data)
 			case "roundtrip":
 				runRoundtripTest(t, fix)
+			case "roundtrip-wire":
+				runRoundtripWireTest(t, fix)
 			case "delta":
 				runDeltaTest(t, fix)
 			case "delta-verify":
@@ -318,10 +322,10 @@ func runGraphEncodeTest(t *testing.T, fix conformanceFixture, expected string) {
 	t.Helper()
 
 	var input struct {
-		Tool        string  `json:"tool"`
-		TokenBudget int     `json:"tokenBudget"`
-		TokensUsed  int     `json:"tokensUsed"`
-		PackRoot    string  `json:"packRoot"`
+		Tool        string `json:"tool"`
+		TokenBudget int    `json:"tokenBudget"`
+		TokensUsed  int    `json:"tokensUsed"`
+		PackRoot    string `json:"packRoot"`
 		Symbols     []struct {
 			QualifiedName string  `json:"qualifiedName"`
 			Kind          string  `json:"kind"`
@@ -331,9 +335,9 @@ func runGraphEncodeTest(t *testing.T, fix conformanceFixture, expected string) {
 		} `json:"symbols"`
 		Edges []struct {
 			Source   string `json:"source"`
-			Target  string `json:"target"`
+			Target   string `json:"target"`
 			EdgeType string `json:"edgeType"`
-			Status  string `json:"status"`
+			Status   string `json:"status"`
 		} `json:"edges"`
 	}
 	if err := json.Unmarshal(fix.Input, &input); err != nil {
@@ -549,6 +553,54 @@ func runRoundtripTest(t *testing.T, fix conformanceFixture) {
 	}
 }
 
+// runRoundtripWireTest handles the "roundtrip-wire" operation: input and expected
+// are both wire strings. It decodes the input wire, re-encodes, and requires the
+// result to equal the expected wire. The value never becomes a host JSON number, so
+// values that a JSON parser would float (integers beyond 2^53) can be pinned here.
+func runRoundtripWireTest(t *testing.T, fix conformanceFixture) {
+	t.Helper()
+
+	var inputWire string
+	if err := json.Unmarshal(fix.Input, &inputWire); err != nil {
+		t.Fatalf("parsing input wire: %v", err)
+	}
+	var expectedWire string
+	if err := json.Unmarshal(fix.Expected, &expectedWire); err != nil {
+		t.Fatalf("parsing expected wire: %v", err)
+	}
+
+	decoded, err := DecodeGeneric(inputWire)
+	if err != nil {
+		t.Fatalf("decode failed: %v\n  input: %s", err, quote(inputWire))
+	}
+	reencoded := EncodeGeneric(decoded)
+	if reencoded != expectedWire {
+		t.Errorf("wire idempotence mismatch:\n  got:      %s\n  expected: %s", quote(reencoded), quote(expectedWire))
+	}
+}
+
+// runEncodeErrorTest handles the "encode-error" operation: the input is a JSON
+// value (encode-side, not a wire string) that is out of the numeric domain. Ingest
+// through ParseJSONOrdered (the JSON->value bridge) must raise a domain error, or,
+// for a value the bridge preserves, the encoder must. The value never becomes an
+// approximate host number.
+func runEncodeErrorTest(t *testing.T, fix conformanceFixture) {
+	t.Helper()
+
+	input, err := ParseJSONOrdered(fix.Input)
+	if err != nil {
+		if !strings.Contains(err.Error(), fix.ExpectedError) {
+			t.Errorf("wrong error category:\n  got:      %s\n  expected: %s", err.Error(), fix.ExpectedError)
+		}
+		return
+	}
+	// Ingest preserved the value (e.g. a bignum an int64-backed bridge cannot hold
+	// is not reachable in Go, but other SDKs may preserve it); the encoder is then
+	// the domain-enforcement site. EncodeGeneric is currently infallible, so a
+	// successful ingest here means the value was in-domain, which is a failure.
+	t.Fatalf("expected error %q, got successful ingest: %#v", fix.ExpectedError, input)
+}
+
 func runErrorTest(t *testing.T, fix conformanceFixture) {
 	t.Helper()
 
@@ -662,8 +714,8 @@ func runSessionTest(t *testing.T, data []byte) {
 	t.Helper()
 
 	var fix struct {
-		Name      string `json:"name"`
-		Calls     []struct {
+		Name  string `json:"name"`
+		Calls []struct {
 			Input    json.RawMessage `json:"input"`
 			Expected string          `json:"expected"`
 		} `json:"calls"`
@@ -685,7 +737,7 @@ func runSessionTest(t *testing.T, data []byte) {
 			} `json:"symbols"`
 			Edges []struct {
 				Source   string `json:"source"`
-				Target  string `json:"target"`
+				Target   string `json:"target"`
 				EdgeType string `json:"edgeType"`
 			} `json:"edges"`
 		}
