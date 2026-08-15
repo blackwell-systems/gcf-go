@@ -86,13 +86,40 @@ func findClosingBrace(s string) int {
 	return -1
 }
 
+// arrayBracketStart returns the index of the "[" that opens a named-array marker
+// (name[N]:), scanning past a quoted key so a "[" inside the key name is not
+// mistaken for the array bracket (SPEC 4.2). Bare keys cannot contain "[".
+func arrayBracketStart(content string) int {
+	if len(content) > 0 && content[0] == '"' {
+		escaped := false
+		for i := 1; i < len(content); i++ {
+			if escaped {
+				escaped = false
+				continue
+			}
+			if content[i] == '\\' {
+				escaped = true
+				continue
+			}
+			if content[i] == '"' {
+				if i+1 < len(content) && content[i+1] == '[' {
+					return i + 1
+				}
+				return -1
+			}
+		}
+		return -1
+	}
+	return strings.Index(content, "[")
+}
+
 // Must not start with "@" or "##".
 func findInlineArrayBracket(content string) int {
 	if strings.HasPrefix(content, "@") || strings.HasPrefix(content, "##") {
 		return -1
 	}
 	// Find [ that's followed by digits/? and ]:
-	idx := strings.Index(content, "[")
+	idx := arrayBracketStart(content)
 	if idx <= 0 {
 		return -1
 	}
