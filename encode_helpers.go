@@ -5,7 +5,6 @@ import (
 	"math"
 	"reflect"
 	"sort"
-	"strconv"
 	"strings"
 )
 
@@ -106,74 +105,93 @@ func orderedKeys(m map[string]any) []string {
 // *OrderedMap, map[string]any, and []any; without full recursion a nested value
 // such as []map[string]any (a distinct type from []any) would fall through to the
 // default scalar path and emit Go's fmt map printing instead of a tabular section.
-func toAny(data any) any {
+func toAny(data any) (any, error) {
 	if data == nil {
-		return nil
+		return nil, nil
 	}
 	switch v := data.(type) {
 	case *OrderedMap:
 		out := NewOrderedMap()
 		for _, k := range v.Keys() {
 			val, _ := v.Get(k)
-			out.Set(k, toAny(val))
+			cv, err := toAny(val)
+			if err != nil {
+				return nil, err
+			}
+			out.Set(k, cv)
 		}
-		return out
+		return out, nil
 	case map[string]any:
 		out := make(map[string]any, len(v))
 		for k, val := range v {
-			out[k] = toAny(val)
+			cv, err := toAny(val)
+			if err != nil {
+				return nil, err
+			}
+			out[k] = cv
 		}
-		return out
+		return out, nil
 	case []any:
 		out := make([]any, len(v))
 		for i, val := range v {
-			out[i] = toAny(val)
+			cv, err := toAny(val)
+			if err != nil {
+				return nil, err
+			}
+			out[i] = cv
 		}
-		return out
+		return out, nil
 	case string:
-		return v
+		return v, nil
 	case bool:
-		return v
+		return v, nil
 	case float64:
-		return v
+		return v, nil
 	case int:
 		// int is 64-bit on every supported platform and always within the int64
 		// domain; preserve it exactly rather than routing through float64 (which
 		// would silently approximate magnitudes beyond 2^53). SPEC 2.3.2.
-		return int64(v)
+		return int64(v), nil
 	case int64:
-		return v
+		return v, nil
 	}
-	v := reflect.ValueOf(data)
-	return reflectToAny(v)
+	return reflectToAny(reflect.ValueOf(data))
 }
 
-func reflectToAny(v reflect.Value) any {
+func reflectToAny(v reflect.Value) (any, error) {
 	for v.IsValid() && (v.Kind() == reflect.Ptr || v.Kind() == reflect.Interface) {
 		if v.IsNil() {
-			return nil
+			return nil, nil
 		}
 		v = v.Elem()
 	}
 	if !v.IsValid() {
-		return nil
+		return nil, nil
 	}
 	switch v.Kind() {
 	case reflect.Map:
 		m := make(map[string]any, v.Len())
 		for _, k := range v.MapKeys() {
-			m[fmt.Sprintf("%v", k.Interface())] = reflectToAny(v.MapIndex(k))
+			cv, err := reflectToAny(v.MapIndex(k))
+			if err != nil {
+				return nil, err
+			}
+			m[fmt.Sprintf("%v", k.Interface())] = cv
 		}
-		return m
+		return m, nil
 	case reflect.Slice, reflect.Array:
-		if v.IsNil() {
-			return nil
+		if v.Kind() == reflect.Slice && v.IsNil() {
+			return nil, nil
 		}
 		arr := make([]any, v.Len())
 		for i := 0; i < v.Len(); i++ {
-			arr[i] = reflectToAny(v.Index(i))
+			cv, err := reflectToAny(v.Index(i))
+			if err != nil {
+				return nil, err
+			}
+			arr[i] = cv
 		}
-		return arr
+		return arr, nil
 	case reflect.Struct:
 		m := make(map[string]any)
 		t := v.Type()
@@ -182,30 +200,35 @@ func reflectToAny(v reflect.Value) any {
 			if !f.IsExported() {
 				continue
 			}
-			m[f.Name] = reflectToAny(v.Field(i))
+			cv, err := reflectToAny(v.Field(i))
+			if err != nil {
+				return nil, err
+			}
+			m[f.Name] = cv
 		}
-		return m
+		return m, nil
 	case reflect.Bool:
-		return v.Bool()
+		return v.Bool(), nil
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		// Signed values fit the int64 domain exactly; preserve them (SPEC 2.3.2).
-		return v.Int()
+		return v.Int(), nil
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		u := v.Uint()
 		if u <= math.MaxInt64 {
-			return int64(u)
+			return int64(u), nil
 		}
-		// A uint64 above int64 max is outside the numeric domain (SPEC 2.3.2).
-		// The generic encoder has no error channel here, so preserve the digits
-		// losslessly as a string rather than approximating through float64. A
-		// strict fail-loud encode path for this case is a separate decision.
-		return strconv.FormatUint(u, 10)
+		// A uint64 above int64 max is outside the canonical numeric domain: the
+		// encoder MUST reject it with an out-of-range error rather than approximate
+		// it or substitute a string, since either changes the value in a way the
+		// decoder cannot reverse (SPEC 2.3.2). Model larger values as strings at the
+		// producer.
+		return nil, fmt.Errorf("out_of_range: integer %d is outside the canonical int64 domain [-9223372036854775808, 9223372036854775807]; model larger values as strings (SPEC 2.3.2)", u)
 	case reflect.Float32, reflect.Float64:
-		return v.Float()
+		return v.Float(), nil
 	case reflect.String:
-		return v.String()
+		return v.String(), nil
 	default:
-		return fmt.Sprintf("%v", v.Interface())
+		return fmt.Sprintf("%v", v.Interface()), nil
 	}
 }
 

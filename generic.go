@@ -14,11 +14,30 @@ type GenericOptions struct {
 	NoFlatten bool
 }
 
-// EncodeGeneric encodes with all v3 optimizations:
-// inline object schemas, no attachment indentation, no field prefix on inline
-// attachments, shared array schemas. MinInlineFields = 3.
-// Pass GenericOptions to customize behavior (e.g. disable flattening).
+// EncodeGeneric encodes any Go value into the GCF generic profile with all v3
+// optimizations: inline object schemas, no attachment indentation, no field prefix on
+// inline attachments, shared array schemas, MinInlineFields = 3. Pass GenericOptions to
+// customize behavior (e.g. disable flattening).
+//
+// It panics if the value contains an integer outside the canonical int64 numeric domain
+// (SPEC 2.3.2) — in practice an unsigned 64-bit integer above math.MaxInt64. Typical
+// inputs (int/int64/string/float, or anything decoded from JSON) never contain one, so
+// this cannot trigger in normal use; the panic is loud rejection of an out-of-domain
+// value, never a silent substitution. A caller that may encode untrusted native values
+// with such integers should use EncodeGenericChecked to get the error instead.
 func EncodeGeneric(data any, optsList ...GenericOptions) string {
+	s, err := EncodeGenericChecked(data, optsList...)
+	if err != nil {
+		panic(err)
+	}
+	return s
+}
+
+// EncodeGenericChecked is EncodeGeneric with the numeric-domain error returned rather
+// than panicked: it returns an out-of-range error for an integer outside int64 (SPEC
+// 2.3.2) instead of approximating the value or substituting a string. Model larger
+// values as strings at the producer.
+func EncodeGenericChecked(data any, optsList ...GenericOptions) (string, error) {
 	var gopts GenericOptions
 	if len(optsList) > 0 {
 		gopts = optsList[0]
@@ -67,12 +86,18 @@ func (o encodeOpts) String() string {
 	return strings.Join(parts, "+")
 }
 
-func encodeGenericImpl(data any, opts encodeOpts) string {
+func encodeGenericImpl(data any, opts encodeOpts) (string, error) {
+	// Normalize and enforce the numeric domain up front (SPEC 2.3.2). toAny errors on
+	// an out-of-int64 integer, so once it succeeds the encode tree below sees only
+	// in-domain values and stays infallible.
+	v, err := toAny(data)
+	if err != nil {
+		return "", err
+	}
 	var b strings.Builder
 	b.WriteString("GCF profile=generic\n")
-	v := toAny(data)
 	encodeRootValue(&b, v, opts)
-	return b.String()
+	return b.String(), nil
 }
 
 func encodeRootValue(b *strings.Builder, v any, opts encodeOpts) {

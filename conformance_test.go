@@ -587,18 +587,21 @@ func runRoundtripWireTest(t *testing.T, fix conformanceFixture) {
 func runEncodeErrorTest(t *testing.T, fix conformanceFixture) {
 	t.Helper()
 
+	// Exercise the full shipped ingest->encode path (what the CLI runs): the value is
+	// out of the numeric domain, so it MUST be rejected either at the JSON->value
+	// bridge (ParseJSONOrdered) or at the encoder. EncodeGenericChecked is the encoder's
+	// error-returning form (the infallible EncodeGeneric panics on the same input); both
+	// are shipped enforcement points, so the fixture guards what actually ships.
 	input, err := ParseJSONOrdered(fix.Input)
-	if err != nil {
-		if !strings.Contains(err.Error(), fix.ExpectedError) {
-			t.Errorf("wrong error category:\n  got:      %s\n  expected: %s", err.Error(), fix.ExpectedError)
-		}
-		return
+	if err == nil {
+		_, err = EncodeGenericChecked(input)
 	}
-	// Ingest preserved the value (e.g. a bignum an int64-backed bridge cannot hold
-	// is not reachable in Go, but other SDKs may preserve it); the encoder is then
-	// the domain-enforcement site. EncodeGeneric is currently infallible, so a
-	// successful ingest here means the value was in-domain, which is a failure.
-	t.Fatalf("expected error %q, got successful ingest: %#v", fix.ExpectedError, input)
+	if err == nil {
+		t.Fatalf("expected error %q, got successful ingest+encode: %#v", fix.ExpectedError, input)
+	}
+	if !strings.Contains(err.Error(), fix.ExpectedError) {
+		t.Errorf("wrong error category:\n  got:      %s\n  expected: %s", err.Error(), fix.ExpectedError)
+	}
 }
 
 func runErrorTest(t *testing.T, fix conformanceFixture) {
