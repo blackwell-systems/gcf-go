@@ -264,7 +264,7 @@ GCF wins 15/16 datasets on the expanded [token efficiency benchmark](https://git
 
 **Zero runtime dependencies. Permanently.** All six implementations depend only on their language's standard library. No transitive dependencies. No supply chain risk. This is a permanent commitment: GCF will never take on external runtime dependencies. MIT licensed. All implementations support both generic profile (`encodeGeneric`) and graph profile (`encode`). CLI included in all 6 languages.
 
-**Specification:** [SPEC v3.5.3 Stable](https://github.com/blackwell-systems/gcf/blob/main/SPEC.md) with 279 conformance fixtures, 43,000,000,000+ lossless round-trips verified across 5 formats and 6 languages. Current versions: Go v1.7.0, TypeScript v2.6.0, Python v2.6.0, Rust v3.0.0, Swift v2.7.0, Kotlin v2.6.0, .NET v0.2.0. Cross-language conformance verified across all seven SDKs.
+**Specification:** [SPEC v3.5.3 Stable](https://github.com/blackwell-systems/gcf/blob/main/SPEC.md) with 281 conformance fixtures, 43,000,000,000+ lossless round-trips verified across 5 formats and 6 languages. Current versions: Go v1.7.1, TypeScript v2.6.1, Python v2.7.0, Rust v3.0.1, Swift v2.7.1, Kotlin v2.6.1, .NET v0.2.1. Cross-language conformance verified across all seven SDKs.
 
 ## Adopted by
 
