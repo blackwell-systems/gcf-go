@@ -15,22 +15,24 @@
 //	gcf-inline  - real gcf.Encode output with `file line col` appended to each
 //	              node line (the rejected alternative; the join-cost baseline)
 //
-// Run (cheap early signal, local Claude Code):
+// Run (cheap early signal; defaults to the local codex CLI):
 //
-//	EVAL_LOC=1 GOWORK=off go test -run TestLocComprehension -v -timeout 20m
+//	EVAL_LOC=1 GOWORK=off go test -run TestLocComprehension -v -timeout 30m
 //
-// Backends mirror TestComprehension: EVAL_BACKEND=cli|api|openai|google|xai.
+// Backend defaults to codex; override with EVAL_BACKEND=cli|api|openai|google
+// (shared setupBackend). Writes a self-contained log to
+// results/comprehension/loc-probe-<backend>-<model>-<timestamp>.log.
 package eval
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"hash/fnv"
 	"os"
-	"os/exec"
+	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	gcf "github.com/blackwell-systems/gcf-go"
 )
@@ -252,7 +254,35 @@ func TestLocComprehension(t *testing.T) {
 		t.Skip("set EVAL_LOC=1 to run the graph loc-section comprehension probe")
 	}
 
-	callLLM, backendLabel := selectLocBackend(t)
+	backendName := os.Getenv("EVAL_BACKEND")
+	if backendName == "" {
+		backendName = "codex"
+	}
+	callLLM, backendLabel, err := setupBackend(t, backendName)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	model := os.Getenv("EVAL_MODEL")
+	if model == "" {
+		model = "default"
+	}
+	resultsDir := filepath.Join("results", "comprehension")
+	os.MkdirAll(resultsDir, 0755)
+	logPath := filepath.Join(resultsDir, fmt.Sprintf("loc-probe-%s-%s-%s.log",
+		backendName, model, time.Now().Format("2006-01-02-150405")))
+	logFile, ferr := os.Create(logPath)
+	if ferr != nil {
+		t.Fatalf("create log: %v", ferr)
+	}
+	defer logFile.Close()
+	logf := func(format string, args ...any) {
+		line := fmt.Sprintf(format, args...)
+		t.Log(line)
+		logFile.WriteString(line + "\n")
+		logFile.Sync()
+	}
+	logf("Log: %s", logPath)
 
 	fixture := buildFixture(500, 200)
 	gcfOut := gcf.Encode(fixture)
@@ -317,12 +347,12 @@ func TestLocComprehension(t *testing.T) {
 		},
 	}
 
-	t.Logf("Backend: %s", backendLabel)
-	t.Logf("Fixture: %d symbols, %d edges | absent probe: %s", len(fixture.Symbols), len(fixture.Edges), absent)
+	logf("Backend: %s", backendLabel)
+	logf("Fixture: %d symbols, %d edges | absent probe: %s", len(fixture.Symbols), len(fixture.Edges), absent)
 	for _, a := range arms {
-		t.Logf("  %-11s tokens (est): %d", a.name, len(a.content)/4)
+		logf("  %-11s tokens (est): %d", a.name, len(a.content)/4)
 	}
-	t.Log("")
+	logf("")
 
 	type res struct{ correct, total int }
 	scores := map[string]*res{}
@@ -353,7 +383,7 @@ func TestLocComprehension(t *testing.T) {
 		for range arms {
 			r := <-ch
 			if r.err != nil {
-				t.Logf("  SKIP %-16s %-11s error: %v", r.q, r.arm, r.err)
+				logf("  SKIP %-16s %-11s error: %v", r.q, r.arm, r.err)
 				continue
 			}
 			scores[r.arm].total++
@@ -366,90 +396,19 @@ func TestLocComprehension(t *testing.T) {
 			if len(got) > 60 {
 				got = got[:60]
 			}
-			t.Logf("  %s %-16s %-11s [%s] got=%q", mark, r.q, r.arm, r.detail, got)
+			logf("  %s %-16s %-11s [%s] got=%q", mark, r.q, r.arm, r.detail, got)
 		}
 	}
 
-	t.Log("")
-	t.Log("=== Loc probe summary ===")
-	t.Logf("%-11s %8s %10s", "Arm", "Accuracy", "Est Tokens")
+	logf("")
+	logf("=== Loc probe summary ===")
+	logf("%-11s %8s %10s", "Arm", "Accuracy", "Est Tokens")
 	for _, a := range arms {
 		s := scores[a.name]
 		acc := 0.0
 		if s.total > 0 {
 			acc = 100.0 * float64(s.correct) / float64(s.total)
 		}
-		t.Logf("%-11s %7.1f%% %10d", a.name, acc, len(a.content)/4)
+		logf("%-11s %7.1f%% %10d", a.name, acc, len(a.content)/4)
 	}
-}
-
-// selectLocBackend mirrors TestComprehension's backend selection (cli default),
-// reusing the in-package callAPI/callOpenAI/callGoogle helpers.
-func selectLocBackend(t *testing.T) (func(string) (string, error), string) {
-	backend := os.Getenv("EVAL_BACKEND")
-	if backend == "" {
-		backend = "cli"
-	}
-	model := os.Getenv("EVAL_MODEL")
-	switch backend {
-	case "cli":
-		if _, err := exec.LookPath("claude"); err != nil {
-			t.Skip("claude not on PATH; set EVAL_BACKEND=api with ANTHROPIC_API_KEY")
-		}
-		label := "cli (claude -p)"
-		if model != "" {
-			label = fmt.Sprintf("cli (claude -p --model %s)", model)
-		}
-		return func(prompt string) (string, error) {
-			args := []string{"-p", prompt}
-			if model != "" {
-				args = []string{"-p", "--model", model, prompt}
-			}
-			cmd := exec.Command("claude", args...)
-			var stdout, stderr bytes.Buffer
-			cmd.Stdout, cmd.Stderr = &stdout, &stderr
-			if err := cmd.Run(); err != nil {
-				return "", fmt.Errorf("claude -p failed: %w\nstderr: %s", err, stderr.String())
-			}
-			return stdout.String(), nil
-		}, label
-	case "api":
-		key := os.Getenv("ANTHROPIC_API_KEY")
-		if key == "" {
-			t.Skip("EVAL_BACKEND=api requires ANTHROPIC_API_KEY")
-		}
-		if model == "" {
-			model = "claude-haiku-4-5-20251001"
-		}
-		return func(p string) (string, error) { return callAPI(key, model, p) }, fmt.Sprintf("api (%s)", model)
-	case "openai":
-		key := os.Getenv("OPENAI_API_KEY")
-		if key == "" {
-			t.Skip("EVAL_BACKEND=openai requires OPENAI_API_KEY")
-		}
-		if model == "" {
-			model = "gpt-4o"
-		}
-		return func(p string) (string, error) { return callOpenAI(key, model, p) }, fmt.Sprintf("openai (%s)", model)
-	case "google":
-		key := os.Getenv("GOOGLE_API_KEY")
-		if key == "" {
-			t.Skip("EVAL_BACKEND=google requires GOOGLE_API_KEY")
-		}
-		if model == "" {
-			model = "gemini-2.0-flash"
-		}
-		return func(p string) (string, error) { return callGoogle(key, model, p) }, fmt.Sprintf("google (%s)", model)
-	case "xai":
-		key := os.Getenv("XAI_API_KEY")
-		if key == "" {
-			t.Skip("EVAL_BACKEND=xai requires XAI_API_KEY")
-		}
-		if model == "" {
-			model = "grok-3"
-		}
-		return func(p string) (string, error) { return callOpenAI(key, model, p) }, fmt.Sprintf("xai (%s)", model)
-	}
-	t.Fatalf("unknown EVAL_BACKEND %q", backend)
-	return nil, ""
 }
