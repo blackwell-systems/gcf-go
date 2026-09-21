@@ -353,22 +353,88 @@ func buildEdgeArms(f edgeFixture) (arms map[string]string, universe map[string]b
 	return arms, universe, queries, idQ, edges, nodeSection
 }
 
-// renderRel builds the direction-explicit REL arm: the node section plus a
-// `## rel` section scoped to the focus node's incident edges, in named SVO
-// (`{source_qname} {type} {target_qname}`) — no @id to chase, no arrow to reverse.
-func renderRel(focus int, idQ map[int]string, edges []dedge, nodeSection string) string {
-	var ls []string
-	for _, e := range edges {
-		if e.src == focus || e.tgt == focus {
-			ls = append(ls, fmt.Sprintf("%s %s %s", idQ[e.src], e.typ, idQ[e.tgt]))
+// nodeLinesByID maps id -> the full node line, from the canonical encoding.
+func nodeLinesByID(encoded string) map[int]string {
+	m := map[int]string{}
+	for _, ln := range strings.Split(encoded, "\n") {
+		if !strings.HasPrefix(ln, "@") || strings.Contains(ln, "<@") || strings.Contains(ln, "#") {
+			continue
+		}
+		f := strings.Fields(ln)
+		if len(f) >= 5 && scoreShaped(f[3]) {
+			var id int
+			fmt.Sscanf(f[0][1:], "%d", &id)
+			m[id] = ln
 		}
 	}
-	return nodeSection + fmt.Sprintf("\n## rel [%d]\n", len(ls)) + strings.Join(ls, "\n")
+	return m
 }
 
-// edgeRunArms is the arm set scored at run time: the static whole-graph arms plus
-// the per-query scoped REL arm.
-var edgeRunArms = []string{"A", "B", "C", "ADJ", "JSON", "REL"}
+// renderRelVariant builds a direction-explicit relationship arm scoped to the focus
+// node's incident edges. Two levers: `labeled` (explicit source=/target=/type= vs bare
+// SVO) and `scoped` (only the neighborhood's node lines vs the full node section).
+func renderRelVariant(focus int, idQ map[int]string, edges []dedge, fullNodeSection string, nodeLines map[int]string, labeled, scoped bool) string {
+	var inc []dedge
+	nbr := map[int]bool{focus: true}
+	for _, e := range edges {
+		if e.src == focus || e.tgt == focus {
+			inc = append(inc, e)
+			nbr[e.src] = true
+			nbr[e.tgt] = true
+		}
+	}
+	nodeSec := fullNodeSection
+	if scoped {
+		var ls []string
+		for id := 0; id < len(idQ)+len(edges); id++ {
+			if nbr[id] {
+				if ln, ok := nodeLines[id]; ok {
+					ls = append(ls, ln)
+				}
+			}
+		}
+		nodeSec = fmt.Sprintf("GCF profile=graph tool=context symbols=%d\n## targets\n%s", len(ls), strings.Join(ls, "\n"))
+	}
+	var rl []string
+	for _, e := range inc {
+		if labeled {
+			rl = append(rl, fmt.Sprintf("source=%s target=%s type=%s", idQ[e.src], idQ[e.tgt], e.typ))
+		} else {
+			rl = append(rl, fmt.Sprintf("%s %s %s", idQ[e.src], e.typ, idQ[e.tgt]))
+		}
+	}
+	return nodeSec + fmt.Sprintf("\n## rel [%d]\n", len(rl)) + strings.Join(rl, "\n")
+}
+
+// renderRel is the original REL arm (bare SVO, full node section).
+func renderRel(focus int, idQ map[int]string, edges []dedge, nodeSection string) string {
+	return renderRelVariant(focus, idQ, edges, nodeSection, nil, false, false)
+}
+
+var relArmSpec = map[string][2]bool{ // arm -> {labeled, scoped}
+	"REL": {false, false}, "RELL": {true, false}, "RELS": {false, true}, "RELSL": {true, true},
+}
+
+// edgeRunArms is the full arm set scored at run time. EVAL_EDGE_ARMS selects a subset.
+var edgeRunArms = []string{"A", "B", "C", "ADJ", "JSON", "REL", "RELL", "RELS", "RELSL"}
+
+func activeArms() []string {
+	sel := os.Getenv("EVAL_EDGE_ARMS")
+	if sel == "" {
+		return edgeRunArms
+	}
+	want := map[string]bool{}
+	for _, s := range strings.Split(sel, ",") {
+		want[strings.TrimSpace(s)] = true
+	}
+	var out []string
+	for _, a := range edgeRunArms {
+		if want[a] {
+			out = append(out, a)
+		}
+	}
+	return out
+}
 
 func TestEdgeProbeArtifacts(t *testing.T) {
 	for _, f := range activeEdgeFixtures() {
@@ -458,25 +524,26 @@ func TestEdgeComprehension(t *testing.T) {
 	type acc struct{ correct, total int }
 	armTotals := map[string]*acc{}
 	armQuery := map[string]map[string]*acc{}
-	for _, a := range edgeRunArms {
+	for _, a := range activeArms() {
 		armTotals[a] = &acc{}
 		armQuery[a] = map[string]*acc{}
 	}
 
 	for _, f := range activeEdgeFixtures() {
 		arms, universe, queries, idQ, edges, nodeSection := buildEdgeArms(f)
+		nodeLines := nodeLinesByID(arms["A"])
 		logf("\n=== fixture %s (%d symbols, %d edges) ===", f.name, f.n, f.e)
 		for _, a := range edgeArms {
 			logf("  arm %-4s tokens(est) %d", a, len(arms[a])/4)
 		}
 		for _, q := range queries {
-			for _, a := range edgeRunArms {
+			for _, a := range activeArms() {
 				if armQuery[a][q.name] == nil {
 					armQuery[a][q.name] = &acc{}
 				}
 				content := arms[a]
-				if a == "REL" {
-					content = renderRel(q.focus, idQ, edges, nodeSection)
+				if spec, ok := relArmSpec[a]; ok {
+					content = renderRelVariant(q.focus, idQ, edges, nodeSection, nodeLines, spec[0], spec[1])
 				}
 				pass := 0
 				var sample string
@@ -509,7 +576,7 @@ func TestEdgeComprehension(t *testing.T) {
 
 	logf("\n=== EDGE PILOT SUMMARY (%s) ===", model)
 	logf("%-4s %10s", "arm", "accuracy")
-	for _, a := range edgeRunArms {
+	for _, a := range activeArms() {
 		t := armTotals[a]
 		if t.total == 0 {
 			continue
@@ -520,7 +587,7 @@ func TestEdgeComprehension(t *testing.T) {
 	qnames := []string{"fwd_calls", "bwd_callers", "shared_out", "shared_in"}
 	for _, qn := range qnames {
 		row := qn + ":"
-		for _, a := range edgeRunArms {
+		for _, a := range activeArms() {
 			if c := armQuery[a][qn]; c != nil && c.total > 0 {
 				row += fmt.Sprintf("  %s=%d/%d", a, c.correct, c.total)
 			}
