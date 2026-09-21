@@ -30,6 +30,8 @@ import (
 	"hash/fnv"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -167,13 +169,49 @@ func jsonWithPos(p *gcf.Payload, omit string) string {
 	return string(out)
 }
 
-func containsFileLine(expectFile string, expectLine int, resp string) (bool, string) {
-	hasFile := strings.Contains(resp, expectFile)
-	hasLine := strings.Contains(resp, fmt.Sprintf("%d", expectLine))
-	if hasFile && hasLine {
-		return true, "file+line"
+var posRe = regexp.MustCompile(`([A-Za-z0-9_./-]+\.go)[:\s]+([0-9]+)`)
+
+// extractPos pulls the first "<file>.go<sep><line>" position out of a response,
+// so an answer that echoes payload syntax (e.g. "@0 internal/x/x.go 42 5") still
+// yields its position for scoring instead of being counted a formatting failure.
+func extractPos(resp string) (file string, line int, ok bool) {
+	m := posRe.FindStringSubmatch(resp)
+	if m == nil {
+		return "", 0, false
 	}
-	return false, fmt.Sprintf("file=%v line=%v", hasFile, hasLine)
+	n, err := strconv.Atoi(m[2])
+	if err != nil {
+		return "", 0, false
+	}
+	return m[1], n, true
+}
+
+// classifyLoc buckets a location answer: "correct" (expected file+line),
+// "wrong" (a position, but not the expected one), or "none" (no position found).
+func classifyLoc(expFile string, expLine int, resp string) string {
+	f, l, ok := extractPos(resp)
+	if !ok {
+		return "none"
+	}
+	if f == expFile && l == expLine {
+		return "correct"
+	}
+	return "wrong"
+}
+
+// classifyAbsent buckets an answer for a symbol with no position in the payload:
+// "declined" (correct), "hallucinated" (invented a position), or "none".
+func classifyAbsent(resp string) string {
+	if _, _, ok := extractPos(resp); ok {
+		return "hallucinated"
+	}
+	low := strings.ToLower(resp)
+	for _, kw := range []string{"unknown", "not given", "not provided", "no location", "not available", "n/a", "not specified", "cannot", "no position"} {
+		if strings.Contains(low, kw) {
+			return "declined"
+		}
+	}
+	return "none"
 }
 
 // TestLocProbeArtifacts verifies the three arms are built correctly without any
@@ -258,9 +296,23 @@ func TestLocComprehension(t *testing.T) {
 	if backendName == "" {
 		backendName = "codex"
 	}
-	callLLM, backendLabel, err := setupBackend(t, backendName)
+	rawCall, backendLabel, err := setupBackend(t, backendName)
 	if err != nil {
 		t.Fatal(err)
+	}
+	// Retry any error (incl. transient TLS/network) so one flaky call does not
+	// zero a whole cell; callOpenAI only retries 429/503 on its own.
+	callLLM := func(prompt string) (string, error) {
+		var lastErr error
+		for attempt := 0; attempt < 4; attempt++ {
+			resp, cerr := rawCall(prompt)
+			if cerr == nil {
+				return resp, nil
+			}
+			lastErr = cerr
+			time.Sleep(time.Duration(1<<attempt) * time.Second)
+		}
+		return "", lastErr
 	}
 
 	model := os.Getenv("EVAL_MODEL")
@@ -269,8 +321,9 @@ func TestLocComprehension(t *testing.T) {
 	}
 	resultsDir := filepath.Join("results", "comprehension")
 	os.MkdirAll(resultsDir, 0755)
+	safeModel := strings.ReplaceAll(model, "/", "_")
 	logPath := filepath.Join(resultsDir, fmt.Sprintf("loc-probe-%s-%s-%s.log",
-		backendName, model, time.Now().Format("2006-01-02-150405")))
+		backendName, safeModel, time.Now().Format("2006-01-02-150405")))
 	logFile, ferr := os.Create(logPath)
 	if ferr != nil {
 		t.Fatalf("create log: %v", ferr)
@@ -291,11 +344,14 @@ func TestLocComprehension(t *testing.T) {
 		t.Fatalf("parsed %d node lines, expected %d", len(nodes), len(fixture.Symbols))
 	}
 
-	// Probe symbols (all qnames are unique in this fixture).
-	locTarget := fixture.Symbols[137].QualifiedName // symbol_location, edit_target
+	// Probe symbols (all qnames are unique in this fixture). Two single-hop
+	// location lookups plus an edit-target lookup isolate loc retrieval. The
+	// earlier edge-direction "caller_location" question was dropped: all arms
+	// (including json-loc) failed it equally, so it measured edge-arrow
+	// reasoning, not the loc layout under test.
+	loc1 := fixture.Symbols[137].QualifiedName
+	loc2 := fixture.Symbols[288].QualifiedName
 	editTarget := fixture.Symbols[311].QualifiedName
-	callee := fixture.Symbols[0].QualifiedName // edges[0]: Symbols[1] calls Symbols[0]
-	caller := fixture.Symbols[1].QualifiedName
 	absent := fixture.Symbols[42].QualifiedName // omitted from every arm
 
 	locSection := buildLocSection(nodes, absent)
@@ -306,44 +362,32 @@ func TestLocComprehension(t *testing.T) {
 		{"gcf-inline", "GCF", inlineLoc(gcfOut, absent)},
 	}
 
-	lf, ll, _ := posFor(locTarget)
+	f1, l1, _ := posFor(loc1)
+	f2, l2, _ := posFor(loc2)
 	ef, el, _ := posFor(editTarget)
-	cf, cl, _ := posFor(caller)
+
+	const ansFmt = " Reply with ONLY the source file path and line number, formatted exactly as path:line (for example internal/foo/foo.go:42). Do not copy identifiers, ids, or scores from the payload."
 
 	type qn struct {
-		name, prompt string
-		verify       func(resp string) (bool, string)
+		name, prompt, passBucket string
+		classify                 func(resp string) string
 	}
 	questions := []qn{
 		{
-			"symbol_location",
-			fmt.Sprintf("What source file and line is the symbol %q defined at? Reply as file:line, nothing else.", locTarget),
-			func(r string) (bool, string) { return containsFileLine(lf, ll, r) },
+			"symbol_location", fmt.Sprintf("What source file and line is the symbol %q defined at?", loc1) + ansFmt, "correct",
+			func(r string) string { return classifyLoc(f1, l1, r) },
 		},
 		{
-			"caller_location",
-			fmt.Sprintf("According to the relationships in this context, one symbol calls %q. At what source file and line is that calling symbol defined? Reply as file:line, nothing else.", callee),
-			func(r string) (bool, string) { return containsFileLine(cf, cl, r) },
+			"symbol_location2", fmt.Sprintf("What source file and line is the symbol %q defined at?", loc2) + ansFmt, "correct",
+			func(r string) string { return classifyLoc(f2, l2, r) },
 		},
 		{
-			"edit_target",
-			fmt.Sprintf("You need to modify the behavior of the symbol %q. What source file and line should you edit? Reply as file:line, nothing else.", editTarget),
-			func(r string) (bool, string) { return containsFileLine(ef, el, r) },
+			"edit_target", fmt.Sprintf("You need to modify the behavior of the symbol %q. What source file and line should you edit?", editTarget) + ansFmt, "correct",
+			func(r string) string { return classifyLoc(ef, el, r) },
 		},
 		{
-			"absent_location",
-			fmt.Sprintf("What source file and line is the symbol %q defined at? If the location is not given in the context, reply exactly \"unknown\". Reply with file:line or unknown, nothing else.", absent),
-			func(r string) (bool, string) {
-				low := strings.ToLower(strings.TrimSpace(r))
-				af, _, _ := posFor(absent)
-				if strings.Contains(low, "unknown") || strings.Contains(low, "not given") || strings.Contains(low, "not provided") || strings.Contains(low, "no location") {
-					return true, "declined"
-				}
-				if strings.Contains(r, af) {
-					return false, "hallucinated file"
-				}
-				return false, "did not decline"
-			},
+			"absent_location", fmt.Sprintf("What source file and line is the symbol %q defined at? If its location is not given anywhere in the context, reply with exactly the word: unknown", absent), "declined",
+			func(r string) string { return classifyAbsent(r) },
 		},
 	}
 
@@ -354,15 +398,15 @@ func TestLocComprehension(t *testing.T) {
 	}
 	logf("")
 
-	type res struct{ correct, total int }
-	scores := map[string]*res{}
+	type tally struct{ correct, wrong, none, hallucinated, declined, total int }
+	scores := map[string]*tally{}
 	for _, a := range arms {
-		scores[a.name] = &res{}
+		scores[a.name] = &tally{}
 	}
 
 	type ev struct {
-		q, arm, detail, got string
-		ok                  bool
+		q, arm, bucket, got string
+		pass                bool
 		err                 error
 	}
 	for _, q := range questions {
@@ -376,8 +420,8 @@ func TestLocComprehension(t *testing.T) {
 					ch <- ev{q: q.name, arm: a.name, err: err}
 					return
 				}
-				ok, detail := q.verify(resp)
-				ch <- ev{q: q.name, arm: a.name, ok: ok, detail: detail, got: strings.TrimSpace(resp)}
+				bucket := q.classify(resp)
+				ch <- ev{q: q.name, arm: a.name, bucket: bucket, pass: bucket == q.passBucket, got: strings.TrimSpace(resp)}
 			}(a)
 		}
 		for range arms {
@@ -386,29 +430,43 @@ func TestLocComprehension(t *testing.T) {
 				logf("  SKIP %-16s %-11s error: %v", r.q, r.arm, r.err)
 				continue
 			}
-			scores[r.arm].total++
+			s := scores[r.arm]
+			s.total++
+			switch r.bucket {
+			case "correct":
+				s.correct++
+			case "wrong":
+				s.wrong++
+			case "none":
+				s.none++
+			case "hallucinated":
+				s.hallucinated++
+			case "declined":
+				s.declined++
+			}
 			mark := "FAIL"
-			if r.ok {
+			if r.pass {
 				mark = "PASS"
-				scores[r.arm].correct++
 			}
 			got := r.got
 			if len(got) > 60 {
 				got = got[:60]
 			}
-			logf("  %s %-16s %-11s [%s] got=%q", mark, r.q, r.arm, r.detail, got)
+			logf("  %s %-16s %-11s [%s] got=%q", mark, r.q, r.arm, r.bucket, got)
 		}
 	}
 
 	logf("")
-	logf("=== Loc probe summary ===")
-	logf("%-11s %8s %10s", "Arm", "Accuracy", "Est Tokens")
+	logf("=== Loc probe summary (%s) ===", backendLabel)
+	logf("%-11s %9s   %-11s  %s", "Arm", "Accuracy", "Est Tokens", "buckets correct/wrong/none/halluc/declined")
 	for _, a := range arms {
 		s := scores[a.name]
+		pass := s.correct + s.declined
 		acc := 0.0
 		if s.total > 0 {
-			acc = 100.0 * float64(s.correct) / float64(s.total)
+			acc = 100.0 * float64(pass) / float64(s.total)
 		}
-		logf("%-11s %7.1f%% %10d", a.name, acc, len(a.content)/4)
+		logf("%-11s %8.1f%%   %-11d  %d/%d/%d/%d/%d", a.name, acc, len(a.content)/4,
+			s.correct, s.wrong, s.none, s.hallucinated, s.declined)
 	}
 }
