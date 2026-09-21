@@ -168,6 +168,7 @@ type edgeQuery struct {
 	name, prompt string
 	expect       map[string]bool // short names that MUST appear
 	opposite     map[string]bool // short names whose presence = reversed direction (wrong)
+	focus        int             // probe node id, used to build the scoped REL arm
 }
 
 // selectQueries builds direction-sensitive queries with ground truth from edges.
@@ -212,6 +213,7 @@ func selectQueries(idQ map[int]string, edges []dedge) []edgeQuery {
 				name:   "fwd_calls",
 				prompt: fmt.Sprintf("Which symbols does %s call directly? List only their names.", edgeShort(idQ[id])),
 				expect: set(calls, func(e dedge) int { return e.tgt }),
+				focus:  id,
 			})
 			break
 		}
@@ -224,6 +226,7 @@ func selectQueries(idQ map[int]string, edges []dedge) []edgeQuery {
 				name:   "bwd_callers",
 				prompt: fmt.Sprintf("Which symbols call %s directly? List only their names.", edgeShort(idQ[id])),
 				expect: set(calls, func(e dedge) int { return e.src }),
+				focus:  id,
 			})
 			break
 		}
@@ -248,18 +251,21 @@ func selectQueries(idQ map[int]string, edges []dedge) []edgeQuery {
 		if !disjoint {
 			continue
 		}
+		sn := edgeShort(idQ[id])
 		qs = append(qs,
 			edgeQuery{
 				name:     "shared_out",
-				prompt:   fmt.Sprintf("Which symbols does %s point to (its outgoing relationships)? List only their names.", edgeShort(idQ[id])),
+				prompt:   fmt.Sprintf("List the symbols that are the TARGET of a relationship whose SOURCE is %s (i.e. the symbols %s calls or references). List only their names.", sn, sn),
 				expect:   outSet,
 				opposite: inSet,
+				focus:    id,
 			},
 			edgeQuery{
 				name:     "shared_in",
-				prompt:   fmt.Sprintf("Which symbols point to %s (its incoming relationships)? List only their names.", edgeShort(idQ[id])),
+				prompt:   fmt.Sprintf("List the symbols that are the SOURCE of a relationship whose TARGET is %s (i.e. the symbols that call or reference %s). List only their names.", sn, sn),
 				expect:   inSet,
 				opposite: outSet,
+				focus:    id,
 			})
 		break
 	}
@@ -330,7 +336,7 @@ func activeEdgeFixtures() []edgeFixture {
 	return out
 }
 
-func buildEdgeArms(f edgeFixture) (arms map[string]string, universe map[string]bool, queries []edgeQuery) {
+func buildEdgeArms(f edgeFixture) (arms map[string]string, universe map[string]bool, queries []edgeQuery, idQ map[int]string, edges []dedge, nodeSection string) {
 	fx := buildFixture(f.n, f.e)
 	encoded := gcf.Encode(fx)
 	idQ, edges, lines, es, ee := parseGraph(encoded)
@@ -343,28 +349,55 @@ func buildEdgeArms(f edgeFixture) (arms map[string]string, universe map[string]b
 		universe[edgeShort(qn)] = true
 	}
 	queries = selectQueries(idQ, edges)
-	return arms, universe, queries
+	nodeSection = strings.Join(lines[:es-1], "\n")
+	return arms, universe, queries, idQ, edges, nodeSection
 }
+
+// renderRel builds the direction-explicit REL arm: the node section plus a
+// `## rel` section scoped to the focus node's incident edges, in named SVO
+// (`{source_qname} {type} {target_qname}`) — no @id to chase, no arrow to reverse.
+func renderRel(focus int, idQ map[int]string, edges []dedge, nodeSection string) string {
+	var ls []string
+	for _, e := range edges {
+		if e.src == focus || e.tgt == focus {
+			ls = append(ls, fmt.Sprintf("%s %s %s", idQ[e.src], e.typ, idQ[e.tgt]))
+		}
+	}
+	return nodeSection + fmt.Sprintf("\n## rel [%d]\n", len(ls)) + strings.Join(ls, "\n")
+}
+
+// edgeRunArms is the arm set scored at run time: the static whole-graph arms plus
+// the per-query scoped REL arm.
+var edgeRunArms = []string{"A", "B", "C", "ADJ", "JSON", "REL"}
 
 func TestEdgeProbeArtifacts(t *testing.T) {
 	for _, f := range activeEdgeFixtures() {
-		arms, universe, queries := buildEdgeArms(f)
+		arms, universe, queries, idQ, edges, nodeSection := buildEdgeArms(f)
 		if len(queries) == 0 {
 			t.Fatalf("%s: no queries selected", f.name)
 		}
 		t.Logf("=== fixture %s (%d symbols, %d edges), %d unique names, %d queries ===",
 			f.name, f.n, f.e, len(universe), len(queries))
 		for _, q := range queries {
-			t.Logf("  %-12s expect=%v opposite=%v", q.name, keys(q.expect), keys(q.opposite))
+			t.Logf("  %-12s focus=@%d expect=%v opposite=%v", q.name, q.focus, keys(q.expect), keys(q.opposite))
 		}
 		// arm A must equal canonical; B/C/ADJ/JSON must differ and be non-empty.
 		if arms["A"] == arms["B"] || arms["B"] == arms["C"] || len(arms["JSON"]) == 0 || len(arms["ADJ"]) == 0 {
 			t.Errorf("%s: arm rendering degenerate", f.name)
 		}
+		// REL arm must build (scoped, non-empty rel section) for each query.
+		for _, q := range queries {
+			rel := renderRel(q.focus, idQ, edges, nodeSection)
+			if !strings.Contains(rel, "## rel [") {
+				t.Errorf("%s/%s: REL arm missing rel section", f.name, q.name)
+			}
+		}
 		if f.name == "small" {
 			for _, a := range edgeArms {
 				t.Logf("--- arm %s ---\n%s", a, arms[a])
 			}
+			t.Logf("--- arm REL (scoped to %s) ---\n%s", queries[0].name,
+				renderRel(queries[0].focus, idQ, edges, nodeSection))
 		}
 	}
 }
@@ -425,27 +458,31 @@ func TestEdgeComprehension(t *testing.T) {
 	type acc struct{ correct, total int }
 	armTotals := map[string]*acc{}
 	armQuery := map[string]map[string]*acc{}
-	for _, a := range edgeArms {
+	for _, a := range edgeRunArms {
 		armTotals[a] = &acc{}
 		armQuery[a] = map[string]*acc{}
 	}
 
 	for _, f := range activeEdgeFixtures() {
-		arms, universe, queries := buildEdgeArms(f)
+		arms, universe, queries, idQ, edges, nodeSection := buildEdgeArms(f)
 		logf("\n=== fixture %s (%d symbols, %d edges) ===", f.name, f.n, f.e)
 		for _, a := range edgeArms {
 			logf("  arm %-4s tokens(est) %d", a, len(arms[a])/4)
 		}
 		for _, q := range queries {
-			for _, a := range edgeArms {
+			for _, a := range edgeRunArms {
 				if armQuery[a][q.name] == nil {
 					armQuery[a][q.name] = &acc{}
+				}
+				content := arms[a]
+				if a == "REL" {
+					content = renderRel(q.focus, idQ, edges, nodeSection)
 				}
 				pass := 0
 				var sample string
 				for r := 0; r < runs; r++ {
 					prompt := fmt.Sprintf("Here is a code context payload:\n\n%s\n\nQuestion: %s\nAnswer concisely.",
-						arms[a], q.prompt)
+						content, q.prompt)
 					resp, cerr := callLLM(prompt)
 					if cerr != nil {
 						continue
@@ -472,7 +509,7 @@ func TestEdgeComprehension(t *testing.T) {
 
 	logf("\n=== EDGE PILOT SUMMARY (%s) ===", model)
 	logf("%-4s %10s", "arm", "accuracy")
-	for _, a := range edgeArms {
+	for _, a := range edgeRunArms {
 		t := armTotals[a]
 		if t.total == 0 {
 			continue
@@ -483,7 +520,7 @@ func TestEdgeComprehension(t *testing.T) {
 	qnames := []string{"fwd_calls", "bwd_callers", "shared_out", "shared_in"}
 	for _, qn := range qnames {
 		row := qn + ":"
-		for _, a := range edgeArms {
+		for _, a := range edgeRunArms {
 			if c := armQuery[a][qn]; c != nil && c.total > 0 {
 				row += fmt.Sprintf("  %s=%d/%d", a, c.correct, c.total)
 			}
