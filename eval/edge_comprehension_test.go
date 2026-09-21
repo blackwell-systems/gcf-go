@@ -171,12 +171,29 @@ type edgeQuery struct {
 }
 
 // selectQueries builds direction-sensitive queries with ground truth from edges.
+// Probe symbols and every answer-set member are required to have a short name that
+// is UNIQUE in the fixture: at 500 symbols the name list cycles (short names repeat),
+// so without this guard a probe or answer would be ambiguous. Selection iterates ids
+// in order for determinism (map ranges are randomized in Go).
 func selectQueries(idQ map[int]string, edges []dedge) []edgeQuery {
 	out := map[int][]dedge{}
 	in := map[int][]dedge{}
 	for _, e := range edges {
 		out[e.src] = append(out[e.src], e)
 		in[e.tgt] = append(in[e.tgt], e)
+	}
+	shortCount := map[string]int{}
+	for _, qn := range idQ {
+		shortCount[edgeShort(qn)]++
+	}
+	uniq := func(id int) bool { return shortCount[edgeShort(idQ[id])] == 1 }
+	allUniq := func(es []dedge, pick func(dedge) int) bool {
+		for _, e := range es {
+			if shortCount[edgeShort(idQ[pick(e)])] != 1 {
+				return false
+			}
+		}
+		return true
 	}
 	set := func(es []dedge, pick func(dedge) int) map[string]bool {
 		m := map[string]bool{}
@@ -185,11 +202,12 @@ func selectQueries(idQ map[int]string, edges []dedge) []edgeQuery {
 		}
 		return m
 	}
+	maxID := len(idQ)
 	var qs []edgeQuery
-	// fwd: a node with outgoing calls
-	for id, es := range out {
-		calls := filterType(es, "calls")
-		if len(calls) >= 1 && len(in[id]) == 0 { // pure source, unambiguous
+	// fwd: a pure-source node with outgoing calls, all endpoints unique-short
+	for id := 0; id < maxID; id++ {
+		calls := filterType(out[id], "calls")
+		if len(calls) >= 1 && len(in[id]) == 0 && uniq(id) && allUniq(calls, func(e dedge) int { return e.tgt }) {
 			qs = append(qs, edgeQuery{
 				name:   "fwd_calls",
 				prompt: fmt.Sprintf("Which symbols does %s call directly? List only their names.", edgeShort(idQ[id])),
@@ -198,10 +216,10 @@ func selectQueries(idQ map[int]string, edges []dedge) []edgeQuery {
 			break
 		}
 	}
-	// bwd: a node with incoming calls (the hard one)
-	for id, es := range in {
-		calls := filterType(es, "calls")
-		if len(calls) >= 1 && len(out[id]) == 0 { // pure target
+	// bwd: a pure-target node with incoming calls (the hard one)
+	for id := 0; id < maxID; id++ {
+		calls := filterType(in[id], "calls")
+		if len(calls) >= 1 && len(out[id]) == 0 && uniq(id) && allUniq(calls, func(e dedge) int { return e.src }) {
 			qs = append(qs, edgeQuery{
 				name:   "bwd_callers",
 				prompt: fmt.Sprintf("Which symbols call %s directly? List only their names.", edgeShort(idQ[id])),
@@ -210,26 +228,40 @@ func selectQueries(idQ map[int]string, edges []dedge) []edgeQuery {
 			break
 		}
 	}
-	// shared node: both in and out edges
-	for id := 0; id < len(idQ)+len(edges); id++ {
-		if len(out[id]) >= 1 && len(in[id]) >= 1 {
-			outSet := set(out[id], func(e dedge) int { return e.tgt })
-			inSet := set(in[id], func(e dedge) int { return e.src })
-			qs = append(qs,
-				edgeQuery{
-					name:     "shared_out",
-					prompt:   fmt.Sprintf("Which symbols does %s point to (its outgoing relationships)? List only their names.", edgeShort(idQ[id])),
-					expect:   outSet,
-					opposite: inSet,
-				},
-				edgeQuery{
-					name:     "shared_in",
-					prompt:   fmt.Sprintf("Which symbols point to %s (its incoming relationships)? List only their names.", edgeShort(idQ[id])),
-					expect:   inSet,
-					opposite: outSet,
-				})
-			break
+	// shared node: both in and out edges, all endpoints unique-short, in/out disjoint
+	for id := 0; id < maxID; id++ {
+		if len(out[id]) < 1 || len(in[id]) < 1 || !uniq(id) {
+			continue
 		}
+		if !allUniq(out[id], func(e dedge) int { return e.tgt }) || !allUniq(in[id], func(e dedge) int { return e.src }) {
+			continue
+		}
+		outSet := set(out[id], func(e dedge) int { return e.tgt })
+		inSet := set(in[id], func(e dedge) int { return e.src })
+		disjoint := true
+		for n := range outSet {
+			if inSet[n] {
+				disjoint = false
+				break
+			}
+		}
+		if !disjoint {
+			continue
+		}
+		qs = append(qs,
+			edgeQuery{
+				name:     "shared_out",
+				prompt:   fmt.Sprintf("Which symbols does %s point to (its outgoing relationships)? List only their names.", edgeShort(idQ[id])),
+				expect:   outSet,
+				opposite: inSet,
+			},
+			edgeQuery{
+				name:     "shared_in",
+				prompt:   fmt.Sprintf("Which symbols point to %s (its incoming relationships)? List only their names.", edgeShort(idQ[id])),
+				expect:   inSet,
+				opposite: outSet,
+			})
+		break
 	}
 	return qs
 }
@@ -276,7 +308,27 @@ type edgeFixture struct {
 	n, e int
 }
 
-var edgeFixtures = []edgeFixture{{"small", 20, 12}, {"med", 50, 30}}
+var edgeFixtures = []edgeFixture{{"small", 20, 12}, {"med", 50, 30}, {"large", 500, 200}}
+
+// activeEdgeFixtures filters by EVAL_EDGE_FIXTURES (comma list of names), e.g.
+// EVAL_EDGE_FIXTURES=large to run only the 500-symbol rung. Default: all.
+func activeEdgeFixtures() []edgeFixture {
+	sel := os.Getenv("EVAL_EDGE_FIXTURES")
+	if sel == "" {
+		return edgeFixtures
+	}
+	want := map[string]bool{}
+	for _, s := range strings.Split(sel, ",") {
+		want[strings.TrimSpace(s)] = true
+	}
+	var out []edgeFixture
+	for _, f := range edgeFixtures {
+		if want[f.name] {
+			out = append(out, f)
+		}
+	}
+	return out
+}
 
 func buildEdgeArms(f edgeFixture) (arms map[string]string, universe map[string]bool, queries []edgeQuery) {
 	fx := buildFixture(f.n, f.e)
@@ -295,7 +347,7 @@ func buildEdgeArms(f edgeFixture) (arms map[string]string, universe map[string]b
 }
 
 func TestEdgeProbeArtifacts(t *testing.T) {
-	for _, f := range edgeFixtures {
+	for _, f := range activeEdgeFixtures() {
 		arms, universe, queries := buildEdgeArms(f)
 		if len(queries) == 0 {
 			t.Fatalf("%s: no queries selected", f.name)
@@ -378,7 +430,7 @@ func TestEdgeComprehension(t *testing.T) {
 		armQuery[a] = map[string]*acc{}
 	}
 
-	for _, f := range edgeFixtures {
+	for _, f := range activeEdgeFixtures() {
 		arms, universe, queries := buildEdgeArms(f)
 		logf("\n=== fixture %s (%d symbols, %d edges) ===", f.name, f.n, f.e)
 		for _, a := range edgeArms {
