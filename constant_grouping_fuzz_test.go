@@ -16,6 +16,44 @@ import (
 	"unicode/utf8"
 )
 
+// hazardStrings mimic v3.6.0 syntax tokens (clauses, subheaders, structural markers) so the
+// generators can plant them as field names and values. The point is discrimination: a value or
+// name that LOOKS like a grouping clause, a constant entry, a subheader, or another shape's
+// marker must still decode as plain data, never reclassify the payload.
+var hazardStrings = []string{
+	"group=dept", "group=", "region=us-east", "= [1]", "k=v [1]",
+	"dept=Sales [2]", "}", "{a}", "[2]", "[2:]", "[0]", "[?]",
+	"## section", ".field", "@id", "@0", "a|b", "-", "~",
+}
+
+func hazardValue(rng *rand.Rand) any {
+	if rng.Intn(3) == 0 {
+		return hazardStrings[rng.Intn(len(hazardStrings))]
+	}
+	return genAdversarialScalar(rng)
+}
+
+// genFieldName returns mostly bare keys, sometimes a quoting-required key (including names that
+// contain "=", which must NOT be read as a constant-column separator, and names that mimic other
+// markers). Never returns a name already used.
+func genFieldName(rng *rand.Rand, used map[string]bool) string {
+	for {
+		var f string
+		switch rng.Intn(4) {
+		case 0:
+			f = genKey(rng) // 1/4 of these are adversarial (incl "=", "", "|")
+		case 1:
+			f = hazardStrings[rng.Intn(len(hazardStrings))]
+		default:
+			f = genBareKey(rng)
+		}
+		if !used[f] {
+			used[f] = true
+			return f
+		}
+	}
+}
+
 // recField reads a field from a record that may be a map (input) or an *OrderedMap (decoded).
 func recField(rec any, name string) any {
 	switch m := rec.(type) {
@@ -41,18 +79,13 @@ func genConstBiasedArray(rng *rand.Rand) []any {
 	fields := make([]string, 0, k)
 	used := map[string]bool{}
 	for len(fields) < k {
-		f := genBareKey(rng)
-		if used[f] {
-			continue
-		}
-		used[f] = true
-		fields = append(fields, f)
+		fields = append(fields, genFieldName(rng, used))
 	}
 	constVal := map[string]any{}
 	forceAll := rng.Intn(8) == 0 // ~12% all-constant
 	for _, f := range fields {
 		if forceAll || rng.Intn(2) == 0 {
-			constVal[f] = genAdversarialScalar(rng)
+			constVal[f] = hazardValue(rng)
 		}
 	}
 	arr := make([]any, n)
@@ -61,6 +94,8 @@ func genConstBiasedArray(rng *rand.Rand) []any {
 		for _, f := range fields {
 			if v, ok := constVal[f]; ok {
 				rec[f] = v
+			} else if rng.Intn(4) == 0 {
+				rec[f] = hazardValue(rng)
 			} else {
 				rec[f] = genScalar(rng)
 			}
@@ -122,39 +157,44 @@ func headerHasFactoredColumn(gcf string) bool {
 func genGroupedSet(rng *rand.Rand) (arr []any, keyField, groupField string) {
 	keyField, groupField = "k", "g"
 	n := 2 + rng.Intn(8) // 2..9 records
-	// a small pool of distinct group values
+	// a small pool of distinct group values, drawn from the hazard pool so a group value may
+	// mimic a subheader, a clause, or another marker and must still round-trip.
 	poolSize := 1 + rng.Intn(4)
-	pool := make([]any, poolSize)
-	for i := range pool {
-		pool[i] = genAdversarialScalar(rng)
+	pool := make([]any, 0, poolSize)
+	seen := map[string]bool{}
+	for len(pool) < poolSize {
+		v := hazardValue(rng)
+		kkey := fmt.Sprintf("%T/%v", v, v)
+		if seen[kkey] {
+			continue
+		}
+		seen[kkey] = true
+		pool = append(pool, v)
 	}
-	// extra fields, some constant
+	// extra fields, some constant; names may require quoting (incl "=").
 	extraN := rng.Intn(4)
 	extras := make([]string, 0, extraN)
 	used := map[string]bool{"k": true, "g": true}
 	for len(extras) < extraN {
-		f := genBareKey(rng)
-		if used[f] {
-			continue
-		}
-		used[f] = true
-		extras = append(extras, f)
+		extras = append(extras, genFieldName(rng, used))
 	}
 	extraConst := map[string]any{}
 	for _, f := range extras {
 		if rng.Intn(2) == 0 {
-			extraConst[f] = genAdversarialScalar(rng)
+			extraConst[f] = hazardValue(rng)
 		}
 	}
 	arr = make([]any, n)
 	for i := 0; i < n; i++ {
 		rec := map[string]any{
 			keyField:   fmt.Sprintf("k%04d", i),
-			groupField: pool[rng.Intn(poolSize)],
+			groupField: pool[rng.Intn(len(pool))],
 		}
 		for _, f := range extras {
 			if v, ok := extraConst[f]; ok {
 				rec[f] = v
+			} else if rng.Intn(4) == 0 {
+				rec[f] = hazardValue(rng)
 			} else {
 				rec[f] = genScalar(rng)
 			}
@@ -270,6 +310,38 @@ func TestConstantGroupedDecodeRobustness(t *testing.T) {
 		}()
 	}
 	t.Logf("PASS: %d mutated inputs decoded without panic", iterations)
+}
+
+// TestShapeDiscrimination pins that the v3.6.0 markers do not reclassify a payload of another
+// shape: an @-marked field without a group= clause stays invalid (not silently grouped), a keyed
+// map stays a map (not read as grouped), and a flat tabular array stays flat.
+func TestShapeDiscrimination(t *testing.T) {
+	// @-key field without group= must be rejected, not treated as a grouped section.
+	if _, err := DecodeGeneric("GCF profile=generic\n## [2]{@id,x}\nu1|1\nu2|2\n"); err == nil {
+		t.Fatalf("@-marked field without group= should be rejected")
+	} else if !strings.Contains(err.Error(), "invalid field name") {
+		t.Fatalf("unexpected error category for @-without-group: %v", err)
+	}
+	// Keyed map [N:] decodes to an object, not an array; the group= path must not intercept it.
+	got, err := DecodeGeneric("GCF profile=generic\n## [2:]{key,x}\na|1\nb|2\n")
+	if err != nil {
+		t.Fatalf("keyed map decode failed: %v", err)
+	}
+	if _, isMap := got.(*OrderedMap); !isMap {
+		t.Fatalf("keyed map [N:] decoded as %T, want *OrderedMap", got)
+	}
+	// A flat tabular array with no constant column stays flat and round-trips.
+	flat := []any{
+		map[string]any{"id": "u1", "r": "a"},
+		map[string]any{"id": "u2", "r": "b"},
+	}
+	wire := EncodeGeneric(flat)
+	if headerHasFactoredColumn(wire) {
+		t.Fatalf("flat array with varying columns should not factor: %q", wire)
+	}
+	if dec, err := DecodeGeneric(wire); err != nil || !jsonDeepEqual(any(flat), dec) {
+		t.Fatalf("flat round-trip failed: err=%v wire=%q", err, wire)
+	}
 }
 
 // FuzzConstantGroupedDecode is the native-fuzz entrypoint (go test -fuzz). Under a plain
