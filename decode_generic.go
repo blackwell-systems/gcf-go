@@ -322,7 +322,45 @@ func parseArrayFromHeader(lines []string, headerLine, depth int, bracketPart str
 		if endBrace < 0 {
 			return nil, 0, fmt.Errorf("invalid field declaration")
 		}
-		fields, err := splitFieldDecl(afterBracket[:endBrace+1])
+		declStr := afterBracket[:endBrace+1]
+		groupClause := strings.TrimSpace(afterBracket[endBrace+1:])
+
+		// Value-grouping (SPEC 7.4.8): non-keyed tabular array with a group= clause.
+		if !keyed && strings.HasPrefix(groupClause, "group=") {
+			entries, err := parseFieldEntries(declStr)
+			if err != nil {
+				return nil, 0, err
+			}
+			return decodeGroupedArray(lines, headerLine, depth, entries, groupClause, count)
+		}
+		if groupClause != "" {
+			return nil, 0, fmt.Errorf("malformed_header_field: unexpected content after field declaration: %s", groupClause)
+		}
+
+		// Constant-column factoring (SPEC 7.4.7): a non-keyed tabular array whose field
+		// declaration carries name=value entries (or a stray @, which is valid only with
+		// a group= clause). The common case (no "=" or "@") takes the plain path.
+		if !keyed && strings.ContainsAny(declStr, "=@") {
+			entries, err := parseFieldEntries(declStr)
+			if err != nil {
+				return nil, 0, err
+			}
+			hasConst := false
+			for _, e := range entries {
+				if e.isKey {
+					return nil, 0, fmt.Errorf("invalid field name: @%s (an @ key column is valid only in a grouped section)", e.name)
+				}
+				if e.isConst {
+					hasConst = true
+				}
+			}
+			if hasConst {
+				return decodeConstantArray(lines, headerLine, depth, entries, count)
+			}
+			// No constants after all (e.g. a quoted name containing "="): plain path.
+		}
+
+		fields, err := splitFieldDecl(declStr)
 		if err != nil {
 			return nil, 0, err
 		}

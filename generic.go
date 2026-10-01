@@ -215,7 +215,7 @@ func encodeRootArray(b *strings.Builder, arr []any, opts encodeOpts) {
 		return
 	}
 	if fields := tabularFields(arr); fields != nil {
-		encodeTabular(b, "## ", arr, fields, 0, opts, false)
+		encodeTabular(b, "## ", arr, fields, 0, opts, false, true)
 		return
 	}
 	encodeExpanded(b, "## ", arr, 0, opts)
@@ -236,7 +236,7 @@ func encodeNamedArray(b *strings.Builder, name string, arr []any, depth int, opt
 		return
 	}
 	if fields := tabularFields(arr); fields != nil {
-		encodeTabular(b, fmt.Sprintf("%s## %s ", prefix, name), arr, fields, depth, opts, false)
+		encodeTabular(b, fmt.Sprintf("%s## %s ", prefix, name), arr, fields, depth, opts, false, true)
 		return
 	}
 	encodeExpanded(b, fmt.Sprintf("%s## %s ", prefix, name), arr, depth, opts)
@@ -271,7 +271,7 @@ func encodeExpanded(b *strings.Builder, headerPrefix string, arr []any, depth in
 				}
 				fmt.Fprintf(b, "%s@%d [%d]: %s\n", prefix, i, len(v), strings.Join(parts, ","))
 			} else if nf := tabularFields(v); nf != nil {
-				encodeTabular(b, fmt.Sprintf("%s@%d ", prefix, i), v, nf, depth+1, opts, false)
+				encodeTabular(b, fmt.Sprintf("%s@%d ", prefix, i), v, nf, depth+1, opts, false, false)
 			} else {
 				encodeExpanded(b, fmt.Sprintf("%s@%d ", prefix, i), v, depth+1, opts)
 			}
@@ -606,7 +606,7 @@ type flatColumn struct {
 	keys       []string // key chain for flat columns
 }
 
-func encodeTabular(b *strings.Builder, headerPrefix string, arr []any, fields []string, depth int, opts encodeOpts, keyed bool) {
+func encodeTabular(b *strings.Builder, headerPrefix string, arr []any, fields []string, depth int, opts encodeOpts, keyed bool, factorConst bool) {
 	prefix := indentStr(depth)
 
 	// Phase 0: Analyze fields for flattening potential.
@@ -688,10 +688,68 @@ func encodeTabular(b *strings.Builder, headerPrefix string, arr []any, fields []
 		}
 	}
 
+	// Constant-column factoring (SPEC 7.4.7): a plain scalar column identical across
+	// every record is declared once in the header as name=value and omitted from the
+	// rows. Mandatory canonical for tabular arrays, gated off for keyed maps and the
+	// nested-attachment path (factorConst). At least one per-record column remains.
+	constCol := make([]bool, len(columns))
+	constHeaderVal := make([]string, len(columns))
+	if factorConst && !keyed && len(arr) >= 2 {
+		for j, col := range columns {
+			if col.colType != "" {
+				continue // only plain scalar columns qualify, never flattened/attachment
+			}
+			first := ""
+			firstSet := false
+			isConst := true
+			for _, item := range arr {
+				v, exists := objectItemGet(item, col.field)
+				if !exists {
+					isConst = false
+					break
+				}
+				switch v.(type) {
+				case *OrderedMap, map[string]any, []any:
+					isConst = false
+				}
+				if !isConst {
+					break
+				}
+				cv := formatConstValue(v)
+				if !firstSet {
+					first = cv
+					firstSet = true
+				} else if cv != first {
+					isConst = false
+					break
+				}
+			}
+			if isConst {
+				constCol[j] = true
+				constHeaderVal[j] = first
+			}
+		}
+		// At least one per-record column MUST remain. If every column is constant
+		// (an array of identical objects), leave the last union field unfactored.
+		bare := 0
+		for j := range columns {
+			if !constCol[j] {
+				bare++
+			}
+		}
+		if bare == 0 {
+			constCol[len(columns)-1] = false
+		}
+	}
+
 	// Format header.
 	headerFields := make([]string, len(columns))
 	for i, col := range columns {
-		headerFields[i] = col.headerName
+		if constCol[i] {
+			headerFields[i] = col.headerName + "=" + constHeaderVal[i]
+		} else {
+			headerFields[i] = col.headerName
+		}
 	}
 	br := "]"
 	if keyed {
@@ -787,7 +845,14 @@ func encodeTabular(b *strings.Builder, headerPrefix string, arr []any, fields []
 			attachments = append(attachments, fieldAttachment{name: f, value: v})
 		}
 
-		row := strings.Join(cells, "|")
+		// Omit constant columns from the per-row cells (SPEC 7.4.7.3).
+		rowCells := make([]string, 0, len(cells))
+		for j := range cells {
+			if !constCol[j] {
+				rowCells = append(rowCells, cells[j])
+			}
+		}
+		row := strings.Join(rowCells, "|")
 		if rowHasAttachment {
 			fmt.Fprintf(b, "%s@%d %s\n", prefix, i, row)
 		} else {
@@ -863,7 +928,7 @@ func encodeAttachmentArray(b *strings.Builder, attPrefix, fk string, arr []any, 
 		}
 		fmt.Fprintf(b, "%s.%s [%d]: %s\n", attPrefix, fk, len(arr), strings.Join(parts, ","))
 	} else if nestedFields := tabularFields(arr); nestedFields != nil {
-		encodeTabular(b, fmt.Sprintf("%s.%s ", attPrefix, fk), arr, nestedFields, depth, opts, false)
+		encodeTabular(b, fmt.Sprintf("%s.%s ", attPrefix, fk), arr, nestedFields, depth, opts, false, false)
 	} else {
 		encodeExpanded(b, fmt.Sprintf("%s.%s ", attPrefix, fk), arr, depth, opts)
 	}

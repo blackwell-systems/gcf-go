@@ -142,7 +142,7 @@ func encodeKeyedMapWithPrefix(b *strings.Builder, headerPrefix string, keys []st
 		aug[keyLabel] = k
 		arr[i] = aug
 	}
-	encodeTabular(b, headerPrefix, arr, fields, depth, opts, true)
+	encodeTabular(b, headerPrefix, arr, fields, depth, opts, true, false)
 }
 
 // keyedRowsToMap reconstructs the map from decoded keyed-table rows: the first
