@@ -46,6 +46,12 @@ func encodeKeyedMap(ids []string, m map[string]any, format string) (string, erro
 	switch format {
 	case "keyed-map":
 		return gcf.EncodeGeneric(m), nil
+	case "keyed-map-primed":
+		// keyed-map with a one-line format primer prepended (producer aid test)
+		primer := "Format note: the header `## [N:]{key,...}` declares a keyed table. The first " +
+			"column is each record's key; every following line is one record, fields in header " +
+			"order. To find a record, match its key in the first column.\n\n"
+		return primer + gcf.EncodeGeneric(m), nil
 	case "generic":
 		arr := make([]any, len(ids))
 		for i, id := range ids {
