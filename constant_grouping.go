@@ -135,7 +135,11 @@ func parseConstValue(tok string) (any, error) {
 	if tok == "~" {
 		return nil, fmt.Errorf("invalid_const_value: absent marker ~ is not valid in a field declaration")
 	}
-	if tok == "^" || (len(tok) >= 2 && tok[0] == '^' && tok[1] == '{') {
+	// Reject only a complete attachment marker, mirroring the encoder's Section 2.4
+	// quoting predicate (scalar.go: bare "^", or "^{...}" ending in "}"). A "^{"-prefixed
+	// token without a closing "}" (e.g. "^{abc") is not a marker; it is a literal string,
+	// and the encoder leaves it bare, so the decoder must accept it as a scalar.
+	if tok == "^" || (len(tok) >= 3 && tok[0] == '^' && tok[1] == '{' && tok[len(tok)-1] == '}') {
 		return nil, fmt.Errorf("invalid_const_value: attachment marker is not a scalar")
 	}
 	return parseScalar(tok, false)
@@ -379,7 +383,10 @@ func decodeGroupedArray(lines []string, headerLine, depth int, entries []fieldEn
 			bareVals := make(map[string]any, len(bareFields))
 			for j, f := range bareFields {
 				cell := cells[j]
-				if cell == "^" || (len(cell) >= 2 && cell[0] == '^' && cell[1] == '{') {
+				// Only a complete attachment marker (bare "^" or "^{...}" ending in "}")
+				// is forbidden here; a "^{"-prefixed cell without a closing "}" is a
+				// literal scalar (Section 7.4 row cell), not an attachment.
+				if cell == "^" || (len(cell) >= 3 && cell[0] == '^' && cell[1] == '{' && cell[len(cell)-1] == '}') {
 					return nil, 0, fmt.Errorf("invalid_group_header: grouped records must not carry attachments")
 				}
 				pv, perr := parseScalar(cell, true)
